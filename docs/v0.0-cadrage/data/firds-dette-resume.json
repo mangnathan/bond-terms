@@ -1,0 +1,41 @@
+{
+  "date_publication_firds": "2026-10-17",
+  "fichiers": [
+    "FULINS_D_20261017_01of04.zip",
+    "FULINS_D_20261017_02of04.zip",
+    "FULINS_D_20261017_03of04.zip",
+    "FULINS_D_20261017_04of04.zip"
+  ],
+  "enregistrements": 1744381,
+  "isin_distincts": 631239,
+  "categories_cfi": {
+    "DE": 345546,
+    "DT": 145129,
+    "DB": 81526,
+    "DA": 26632,
+    "DS": 12581,
+    "DM": 7536,
+    "DN": 4104,
+    "DY": 3443,
+    "DG": 3277,
+    "DC": 1417
+  },
+  "taux_de_remplissage": {
+    "maturity_date": 1.0,
+    "nominal_amount": 1.0,
+    "seniority": 0.252
+  },
+  "obligations_classiques": 116884,
+  "obligations_classiques_par_pays_isin": {
+    "XS": 47106,
+    "US": 30091,
+    "DE": 15053,
+    "FR": 6187,
+    "CH": 2332,
+    "CA": 2022,
+    "AT": 1741,
+    "NO": 1727
+  },
+  "duree_lecture_s": 537,
+  "memoire_pic_mo": 103
+}
