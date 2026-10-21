@@ -1,0 +1,25 @@
+# Données téléchargées (fichiers FIRDS, PDF du registre) : jamais versionnées.
+# La barre initiale limite la règle à la racine, pour garder docs/*/data/ (agrégats des rapports).
+/data/
+*.zip
+*.parquet
+*.pdf
+!docs/pdf/*.pdf
+
+# Secrets
+.env
+
+# Python
+__pycache__/
+*.py[cod]
+.venv/
+.mypy_cache/
+.ruff_cache/
+.pytest_cache/
+*.egg-info/
+
+# Éditeurs et système
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
