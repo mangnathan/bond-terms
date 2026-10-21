@@ -22,7 +22,7 @@ Un tirage au hasard dans le registre ne trouve presque rien d'utile. La collecte
 
 - Titres : obligations classiques à ISIN français de huit émetteurs couvrant la banque, l'assurance, le luxe et l'aviation : BNP Paribas, Société Générale, Crédit Agricole S.A., BPCE, AXA, LVMH, Kering et Air France-KLM. Hermès n'a aucune obligation dans FIRDS.
 - Documents : conditions définitives et prospectus d'émission isolée qui citent l'ISIN, sans les suppléments.
-- Volume attendu : 1 160 obligations, dont environ 65 % ont un document dans le registre, soit environ 750 documents.
+- Volume attendu : 1 163 obligations, dont environ 65 % ont un document dans le registre, soit environ 750 documents.
 
 ### La vérité terrain est officielle, pas annotée
 
@@ -34,7 +34,7 @@ L'indicateur principal porte uniquement sur des champs dont la valeur est publi�
 | Date d'échéance | FIRDS | Égalité exacte |
 | Type de taux (fixe ou variable) | FIRDS | Égalité exacte |
 | Taux fixe | FIRDS | Égalité à 4 décimales |
-| Référence et marge d'un taux variable | FIRDS | Référence identique, marge égale en points de base |
+| Référence et marge d'un taux variable | FIRDS | Même référence et même durée (Euribor 3 mois n'est pas Euribor 6 mois), marge égale en points de base |
 | Valeur nominale par titre | FIRDS | Égalité exacte |
 | Montant nominal total | FIRDS | Seulement pour les ISIN qui n'ont qu'un seul document |
 | Rang de la dette | FIRDS | Seulement quand FIRDS le renseigne (25 % des titres) |
@@ -69,6 +69,15 @@ La référence est un extracteur à règles, fondé sur les rubriques numéroté
 
 Les seuils de production (fraîcheur des données, détection des pannes et des changements de format) seront fixés en v0.4.
 
+## Précisions apportées avant toute extraction
+
+Ajoutées le 21 octobre 2026 après une relecture externe du dépôt, alors qu'aucune extraction n'avait encore été faite sur un document.
+
+- **Lecture des seuils.** Chaque seuil se juge sur l'estimation ponctuelle ; l'intervalle de confiance à 95 % (bootstrap par document) est publié à côté. Avec environ 225 documents de test, une exactitude de 98 % est connue à environ 1,8 point près : exiger que la borne basse dépasse 98 % reviendrait à exiger presque aucune erreur. Si l'estimation atteint le seuil mais pas la borne basse, le rapport l'écrit : « seuil atteint, marge statistique insuffisante ».
+- **Exactitude globale.** Pour la comparaison entre les règles et le LLM, l'exactitude globale est calculée sur toutes les paires (document, champ) qui ont une valeur dans FIRDS, chaque paire comptant une fois. Le bootstrap tire des documents entiers.
+- **Documents chronométrés.** Les dix documents de la saisie chronométrée ont été approuvés en 2022 ou 2023. Ils devraient se trouver dans la partie développement, mais ce n'est certain qu'une fois la date de coupure calculée. Si l'un d'eux tombe dans le test, il en est retiré.
+- **Lecture de FIRDS corrigée.** La première version des scripts ignorait les références de taux variable écrites sous forme de code (`<Indx>EURI</Indx>`) et la durée de la référence. Ces titres avaient une référence vide et étaient exclus à tort. Après correction, la population visée passe de 1 160 à 1 163 obligations ; les chiffres de `docs/v0.0-cadrage/data` ont été recalculés.
+
 ## Alternatives écartées
 
 | Option | Raison |
@@ -81,5 +90,5 @@ Les seuils de production (fraîcheur des données, détection des pannes et des 
 ## Conséquences
 
 - La v0.1 construit la collecte (FIRDS, registre, PDF) et calcule la date de coupure avant toute extraction.
-- Le temps de saisie manuelle de dix documents de développement sert de référence au business case.
+- Le temps de saisie manuelle de dix documents approuvés en 2022 ou 2023 sert de référence au business case.
 - Les PDF ne sont jamais versionnés : le dépôt garde seulement les identifiants et les liens. À partir de la v0.1, les requêtes vers l'ESMA sont limitées à une par seconde, avec un cache local.
