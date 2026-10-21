@@ -27,6 +27,8 @@ from typing import Any
 
 from defusedxml.ElementTree import iterparse
 
+from bond_terms.instruments import is_plain_bond
+
 FILES_INDEX = "https://registers.esma.europa.eu/solr/esma_registers_firds_files/select"
 USER_AGENT = "bond-terms (projet personnel ; github.com/mangnathan)"
 RAW_DIR = Path("data/raw/firds")
@@ -48,8 +50,6 @@ COLUMNS = [
     "first_trade_date",
     "full_name",
 ]
-# Codes CFI des obligations et des titres de dette à moyen terme (EMTN).
-BOND_CFI_PREFIXES = ("DB", "DT")
 
 
 def fetch_json(url: str, params: list[tuple[str, str]]) -> dict[str, Any]:
@@ -134,18 +134,6 @@ def iter_records(zip_path: Path) -> Iterator[dict[str, str]]:
                 "full_name": values.get("FullNm", ""),
             }
             element.clear()
-
-
-def is_plain_bond(row: dict[str, str]) -> bool:
-    """Obligation classique : taux fixe positif, ou taux variable indexé sur une vraie référence.
-
-    Les produits structurés classés en dette affichent souvent un taux nul ou « FORMULA ».
-    """
-    if not row["cfi"].startswith(BOND_CFI_PREFIXES):
-        return False
-    if row["rate_type"] == "fixed":
-        return float(row["fixed_rate"] or 0) > 0
-    return row["rate_type"] == "floating" and row["reference_rate"] not in ("", "FORMULA")
 
 
 def main() -> None:
