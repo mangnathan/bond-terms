@@ -1,0 +1,48 @@
+# Relance les contrôles de qualité sur une machine propre à chaque PR et à chaque push sur main.
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+# Lecture seule : la CI n'a aucune raison de pouvoir modifier le dépôt.
+permissions:
+  contents: read
+
+# Un nouveau push sur la même branche annule l'exécution précédente, devenue inutile.
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  quality:
+    name: Lint, types et tests
+    # Version fixe : ubuntu-latest change de système sans prévenir.
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      # Actions épinglées sur un SHA de commit : une étiquette de version peut être déplacée.
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      - uses: astral-sh/setup-uv@1c37ad07a6a961277cf70c0d37d6f313000f5884 # v10.3.0
+        with:
+          version: "0.13.1"
+          python-version: "3.12"
+          enable-cache: true
+
+      - name: Installer les dépendances du uv.lock
+        run: uv sync --locked
+
+      - name: Lint (ruff)
+        run: uv run ruff check .
+
+      - name: Format (ruff)
+        run: uv run ruff format --check .
+
+      - name: Types (mypy)
+        run: uv run mypy
+
+      - name: Tests (pytest)
+        run: uv run pytest
