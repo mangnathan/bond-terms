@@ -88,7 +88,7 @@ def main() -> None:
         print(row, flush=True)
     OUTPUT.parent.mkdir(parents=True, exist_ok=True)
     with OUTPUT.open("w", newline="", encoding="utf-8") as out:
-        writer = csv.DictWriter(out, fieldnames=list(rows[0]))
+        writer = csv.DictWriter(out, fieldnames=list(rows[0]), lineterminator="\n")
         writer.writeheader()
         writer.writerows(rows)
 

@@ -153,7 +153,7 @@ def main() -> None:
 
     INDEX_PATH.parent.mkdir(parents=True, exist_ok=True)
     with INDEX_PATH.open("w", newline="", encoding="utf-8") as out:
-        writer = csv.DictWriter(out, fieldnames=COLUMNS)
+        writer = csv.DictWriter(out, fieldnames=COLUMNS, lineterminator="\n")
         writer.writeheader()
         for name, link in files:
             zip_path = download(link, RAW_DIR / name)
