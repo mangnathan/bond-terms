@@ -6,7 +6,9 @@ readme = "README.md"
 authors = [{ name = "Nathan Mang" }]
 license = "MIT"
 requires-python = ">=3.12"
-dependencies = []
+dependencies = [
+    "defusedxml>=0.7.1",
+]
 
 [dependency-groups]
 dev = [
@@ -14,6 +16,7 @@ dev = [
     "mypy>=1.18",
     "pytest>=8.4",
     "pre-commit>=4.3",
+    "types-defusedxml>=0.7.0.20260504",
 ]
 
 [build-system]
@@ -37,6 +40,8 @@ select = [
 ]
 
 [tool.ruff.lint.per-file-ignores]
+# Scripts : URL fixes choisies par nous, et tirages d'échantillons sans enjeu de sécurité.
+"scripts/**" = ["S310", "S311"]
 "tests/**" = ["S101"]
 
 [tool.mypy]
