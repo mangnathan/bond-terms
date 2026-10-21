@@ -21,12 +21,10 @@ import urllib.parse
 import urllib.request
 import zipfile
 from collections import Counter
-from collections.abc import Iterator
 from pathlib import Path
 from typing import Any
 
-from defusedxml.ElementTree import iterparse
-
+from bond_terms.firds import COLUMNS, iter_records
 from bond_terms.instruments import is_plain_bond
 
 FILES_INDEX = "https://registers.esma.europa.eu/solr/esma_registers_firds_files/select"
@@ -34,22 +32,6 @@ USER_AGENT = "bond-terms (projet personnel ; github.com/mangnathan)"
 RAW_DIR = Path("data/raw/firds")
 INDEX_PATH = Path("data/interim/firds-dette.csv")
 SUMMARY_PATH = Path("docs/v0.0-cadrage/data/firds-dette-resume.json")
-COLUMNS = [
-    "isin",
-    "cfi",
-    "issuer_lei",
-    "currency",
-    "nominal_amount",
-    "denomination",
-    "maturity_date",
-    "rate_type",
-    "fixed_rate",
-    "reference_rate",
-    "spread_bps",
-    "seniority",
-    "first_trade_date",
-    "full_name",
-]
 
 
 def fetch_json(url: str, params: list[tuple[str, str]]) -> dict[str, Any]:
@@ -96,46 +78,6 @@ def download(url: str, destination: Path) -> Path:
     return destination
 
 
-def local_name(tag: str) -> str:
-    return tag.rsplit("}", 1)[-1]
-
-
-def iter_records(zip_path: Path) -> Iterator[dict[str, str]]:
-    """Lit un fichier FIRDS en flux et renvoie les champs utiles de chaque enregistrement."""
-    with zipfile.ZipFile(zip_path) as archive, archive.open(archive.namelist()[0]) as xml_file:
-        for _, element in iterparse(xml_file, events=("end",)):
-            if local_name(element.tag) != "RefData":
-                continue
-            values: dict[str, str] = {}
-            for child in element.iter():
-                values.setdefault(local_name(child.tag), (child.text or "").strip())
-            general = next(c for c in element if local_name(c.tag) == "FinInstrmGnlAttrbts")
-            isin = next(c.text or "" for c in general if local_name(c.tag) == "Id")
-            if "Fxd" in values:
-                rate_type = "fixed"
-            elif "Fltg" in values:
-                rate_type = "floating"
-            else:
-                rate_type = ""
-            yield {
-                "isin": isin,
-                "cfi": values.get("ClssfctnTp", ""),
-                "issuer_lei": values.get("Issr", ""),
-                "currency": values.get("NtnlCcy", ""),
-                "nominal_amount": values.get("TtlIssdNmnlAmt", ""),
-                "denomination": values.get("NmnlValPerUnit", ""),
-                "maturity_date": values.get("MtrtyDt", ""),
-                "rate_type": rate_type,
-                "fixed_rate": values.get("Fxd", ""),
-                "reference_rate": values.get("Nm", "") or values.get("ISIN", ""),
-                "spread_bps": values.get("BsisPtSprd", ""),
-                "seniority": values.get("DebtSnrty", ""),
-                "first_trade_date": values.get("FrstTradDt", "")[:10],
-                "full_name": values.get("FullNm", ""),
-            }
-            element.clear()
-
-
 def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--date", help="date de publication FIRDS (AAAA-MM-JJ)")
@@ -150,6 +92,8 @@ def main() -> None:
     filled: Counter[str] = Counter()
     plain_bonds = 0
     plain_by_country: Counter[str] = Counter()
+    # Contrôle de lecture : un taux variable sans référence trahit une forme XML non lue.
+    floating_without_reference = 0
 
     INDEX_PATH.parent.mkdir(parents=True, exist_ok=True)
     with INDEX_PATH.open("w", newline="", encoding="utf-8") as out:
@@ -157,18 +101,24 @@ def main() -> None:
         writer.writeheader()
         for name, link in files:
             zip_path = download(link, RAW_DIR / name)
-            for row in iter_records(zip_path):
-                records += 1
-                # Un titre apparaît une fois par plateforme de négociation : on garde le premier.
-                if row["isin"] in seen:
-                    continue
-                seen.add(row["isin"])
-                writer.writerow(row)
-                cfi_counts[row["cfi"][:2]] += 1
-                filled.update(k for k in ("maturity_date", "nominal_amount", "seniority") if row[k])
-                if is_plain_bond(row):
-                    plain_bonds += 1
-                    plain_by_country[row["isin"][:2]] += 1
+            with zipfile.ZipFile(zip_path) as archive, archive.open(archive.namelist()[0]) as xml:
+                for row in iter_records(xml):
+                    records += 1
+                    # Un titre apparaît pour chaque plateforme de négociation : on garde le premier.
+                    if row["isin"] in seen:
+                        continue
+                    seen.add(row["isin"])
+                    writer.writerow(row)
+                    cfi_counts[row["cfi"][:2]] += 1
+                    filled.update(
+                        k for k in ("maturity_date", "nominal_amount", "seniority") if row[k]
+                    )
+                    floating_without_reference += (
+                        row["rate_type"] == "floating" and not row["reference_rate"]
+                    )
+                    if is_plain_bond(row):
+                        plain_bonds += 1
+                        plain_by_country[row["isin"][:2]] += 1
             print(f"{name} : {records} enregistrements, {len(seen)} ISIN", flush=True)
 
     total = len(seen)
@@ -179,6 +129,7 @@ def main() -> None:
         "isin_distincts": total,
         "categories_cfi": dict(cfi_counts.most_common(10)),
         "taux_de_remplissage": {k: round(v / total, 3) for k, v in filled.items()},
+        "taux_variables_sans_reference": floating_without_reference,
         "obligations_classiques": plain_bonds,
         "obligations_classiques_par_pays_isin": dict(plain_by_country.most_common(8)),
         "duree_lecture_s": round(time.monotonic() - started),
