@@ -14,7 +14,7 @@ Ces règles sont écrites et versionnées avant toute extraction sur un document
 
 ### Les obligations classiques, pas les produits structurés
 
-Le registre compte 6,5 millions de documents déposés entre janvier et septembre 2026, presque tous des produits structurés allemands (certificats, warrants). Même chez les émetteurs français, environ 10 % des conditions définitives concernent une obligation classique. Le projet se limite aux obligations classiques, définies dans `bond_terms.instruments.is_plain_bond` : code CFI DB ou DT, et taux fixe positif ou taux variable indexé sur une vraie référence. Les produits structurés sont hors périmètre.
+Le registre compte 6,5 millions de documents déposés entre janvier et septembre 2026, presque tous des produits structurés allemands (certificats, warrants). Même chez les émetteurs français, environ 10 % des conditions définitives concernent une obligation classique. Le projet se limite aux obligations classiques, définies dans `bond_terms.instruments.is_plain_bond` : code CFI DB ou DT, et taux fixe compris entre 0 et 10 % ou taux variable indexé sur une vraie référence (ni FORMULA, ni OTHER, ni panier d'indices). Les produits structurés sont hors périmètre.
 
 ### Une collecte qui part de FIRDS
 
@@ -22,7 +22,7 @@ Un tirage au hasard dans le registre ne trouve presque rien d'utile. La collecte
 
 - Titres : obligations classiques à ISIN français de huit émetteurs couvrant la banque, l'assurance, le luxe et l'aviation : BNP Paribas, Société Générale, Crédit Agricole S.A., BPCE, AXA, LVMH, Kering et Air France-KLM. Hermès n'a aucune obligation dans FIRDS.
 - Documents : conditions définitives et prospectus d'émission isolée qui citent l'ISIN, sans les suppléments.
-- Volume attendu : 1 163 obligations, dont environ 65 % ont un document dans le registre, soit environ 750 documents.
+- Volume attendu : 838 obligations, dont environ 60 % ont un document dans le registre, soit environ 500 documents.
 
 ### La vérité terrain est officielle, pas annotée
 
@@ -73,10 +73,11 @@ Les seuils de production (fraîcheur des données, détection des pannes et des 
 
 Ajoutées le 21 octobre 2026 après une relecture externe du dépôt, alors qu'aucune extraction n'avait encore été faite sur un document.
 
-- **Lecture des seuils.** Chaque seuil se juge sur l'estimation ponctuelle ; l'intervalle de confiance à 95 % (bootstrap par document) est publié à côté. Avec environ 225 documents de test, une exactitude de 98 % est connue à environ 1,8 point près : exiger que la borne basse dépasse 98 % reviendrait à exiger presque aucune erreur. Si l'estimation atteint le seuil mais pas la borne basse, le rapport l'écrit : « seuil atteint, marge statistique insuffisante ».
+- **Lecture des seuils.** Chaque seuil se juge sur l'estimation ponctuelle ; l'intervalle de confiance à 95 % (bootstrap par document) est publié à côté. Avec environ 150 documents de test, une exactitude de 98 % est connue à environ 2,2 points près : exiger que la borne basse dépasse 98 % reviendrait à exiger presque aucune erreur. Si l'estimation atteint le seuil mais pas la borne basse, le rapport l'écrit : « seuil atteint, marge statistique insuffisante ».
 - **Exactitude globale.** Pour la comparaison entre les règles et le LLM, l'exactitude globale est calculée sur toutes les paires (document, champ) qui ont une valeur dans FIRDS, chaque paire comptant une fois. Le bootstrap tire des documents entiers.
 - **Documents chronométrés.** Les dix documents de la saisie chronométrée ont été approuvés en 2022 ou 2023. Ils devraient se trouver dans la partie développement, mais ce n'est certain qu'une fois la date de coupure calculée. Si l'un d'eux tombe dans le test, il en est retiré.
 - **Lecture de FIRDS corrigée.** La première version des scripts ignorait les références de taux variable écrites sous forme de code (`<Indx>EURI</Indx>`) et la durée de la référence. Ces titres avaient une référence vide et étaient exclus à tort. Après correction, la population visée passe de 1 160 à 1 163 obligations ; les chiffres de `docs/v0.0-cadrage/data` ont été recalculés.
+- **Règle « obligation classique » renforcée.** La saisie chronométrée a fait apparaître un titre au coupon de « 60 % payable in arrear », décrit dans FIRDS comme un taux variable de référence OTHER, sans durée ni marge. Dans la population visée, 85 titres avaient cette référence et 240 un « taux fixe » au-dessus de 10 % : des coupons cumulés de produits structurés, presque tous de Société Générale. La règle exclut désormais les références OTHER et les paniers d'indices, et les taux fixes au-dessus de 10 %, seuil tiré de la distribution mesurée. La population visée passe de 1 163 à 838 obligations, pour environ 500 documents attendus.
 
 ## Alternatives écartées
 
