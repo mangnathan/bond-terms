@@ -26,17 +26,17 @@
     "seniority": 0.252
   },
   "taux_variables_sans_reference": 0,
-  "obligations_classiques": 119426,
+  "obligations_classiques": 112339,
   "obligations_classiques_par_pays_isin": {
-    "XS": 47564,
-    "US": 30139,
-    "DE": 15064,
-    "FR": 6258,
-    "CH": 2332,
-    "CA": 2024,
-    "NO": 1810,
-    "AT": 1743
+    "XS": 42466,
+    "US": 29701,
+    "DE": 15043,
+    "FR": 5243,
+    "CH": 2319,
+    "CA": 2017,
+    "AT": 1741,
+    "NO": 1727
   },
-  "duree_lecture_s": 1208,
+  "duree_lecture_s": 1021,
   "memoire_pic_mo": 103
 }
