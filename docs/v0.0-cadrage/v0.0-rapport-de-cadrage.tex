@@ -1,0 +1,256 @@
+\documentclass[11pt,a4paper]{article}
+
+\newcommand{\rapporttitre}{Rapport de cadrage}
+\newcommand{\rapportversion}{v0.0}
+\input{../latex/preambule}
+\usepackage{needspace}
+\usepackage{amsmath}
+\usepackage{etoolbox}
+% Un titre de section ne reste jamais seul en bas de page.
+\pretocmd{\section}{\needspace{10\baselineskip}}{}{}
+
+\begin{document}
+
+\pagedegarde{Extraction des conditions des obligations à partir des documents de l'ESMA}{23 octobre 2026}{Version 0.0, avant toute extraction}
+
+\setcounter{tocdepth}{1}
+\tableofcontents
+\newpage
+
+\section*{Synthèse}
+\addcontentsline{toc}{section}{Synthèse}
+
+Quand une banque, une société de gestion ou un assureur achète une obligation, son équipe «~référentiel titres~» crée une fiche décrivant le titre : devise, montant, échéance, taux, rang de la dette. Ces informations figurent dans les documents juridiques de l'émission, des PDF déposés auprès des régulateurs et publiés par l'ESMA, l'Autorité européenne des marchés financiers. Aujourd'hui, la fiche est saisie à la main ou achetée à un fournisseur de données.
+
+Le projet bond-terms propose d'extraire ces conditions automatiquement, chaque valeur étant accompagnée d'une citation exacte du document, vérifiée par le code. Les cas douteux sont envoyés en revue humaine, et un rapport signale les écarts entre le document et la base de référence européenne FIRDS.
+
+Ce rapport fixe le cadre avant toute extraction : la population étudiée, la vérité terrain, les seuils de réussite et la référence humaine. Il s'appuie sur des mesures reproductibles, faites avec les scripts de \texttt{scripts/feasibility}.
+
+\begin{itemize}
+  \item La population retenue compte 838 obligations classiques à ISIN français, émises par huit groupes de la banque, de l'assurance, du luxe et de l'aviation. Environ 500 documents sont attendus.
+  \item L'indicateur principal ne repose que sur des valeurs officielles (FIRDS et GLEIF), sans annotation manuelle.
+  \item Une saisie manuelle chronométrée de dix documents prend 3 minutes par document en médiane, avec 82~\% de champs justes. L'outil devra atteindre 95 à 98~\% selon les champs.
+  \item Deux défauts de la définition de la population ont été trouvés et corrigés pendant le cadrage, avant toute extraction.
+\end{itemize}
+
+\section{Le besoin}
+
+\subsection{L'utilisateur et son problème}
+
+L'utilisateur visé est l'équipe référentiel titres d'une banque ou d'une société de gestion. Pour chaque nouvelle obligation, elle doit renseigner une fiche exacte : une échéance fausse ou une option de remboursement oubliée fausse ensuite les valorisations, les calculs de risque et les déclarations réglementaires. Les sources sont les conditions définitives (\emph{final terms}), un document de 8 à 18 pages qui fixe les conditions d'une émission précise, en complément d'un long prospectus de base.
+
+\subsection{Pourquoi ce n'est pas déjà résolu}
+
+La base FIRDS de l'ESMA publie déjà les champs de base de chaque titre. Elle ne contient pas les clauses qui comptent pour un analyste (remboursement anticipé, label vert, garant) et peut s'écarter du document juridique. Les fournisseurs de données (Refinitiv, Bloomberg) sont payants. Je n'ai trouvé aucun outil libre qui extrait ces conditions et les vérifie sur FIRDS.
+
+\section{Les données}
+
+\subsection{Trois sources publiques}
+
+\begin{table}[H]
+\small
+\begin{tabularx}{\linewidth}{lY}
+\toprule
+\textbf{Source} & \textbf{Contenu et accès} \\
+\midrule
+FIRDS (ESMA) & Base de référence des instruments financiers : fichiers complets chaque semaine, mises à jour chaque jour, sans clé. Publication utilisée : 17 octobre 2026. \\
+Registre des prospectus (ESMA) & Documents approuvés par les autorités nationales, avec leurs ISIN ; PDF téléchargeables, sans clé. \\
+GLEIF & Identifiants LEI des émetteurs, sous licence CC0, par une API sans clé. \\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+L'ESMA autorise la reproduction de ses contenus si la source est citée. Le dépôt ne contient aucun document de l'ESMA : seulement des identifiants, des liens et des chiffres calculés. Les requêtes vers l'ESMA sont espacées et mises en cache.
+
+\subsection{Ce que contient FIRDS}
+
+Les quatre fichiers de la catégorie dette publiés le 17 octobre 2026 pèsent environ 450~Mo chacun une fois décompressés. Ils sont lus en flux : 1\,744\,381 enregistrements, 631\,239 titres distincts, en 17 minutes et avec un pic de mémoire de 103~Mo, compatible avec un poste de 8~Go. L'échéance et le montant sont toujours renseignés, le rang de la dette dans 25~\% des cas. Après exclusion des produits structurés (section~\ref{sec:population}), il reste 112\,339 obligations classiques, dont 5\,243 à ISIN français.
+
+\subsection{Ce que contient le registre}
+
+Le registre compte 6,5 millions de documents déposés entre janvier et septembre 2026, presque tous des produits structurés allemands (certificats, warrants). Un tirage au hasard ne trouve aucune obligation classique. Mesuré par segment, sur 60 documents tirés au hasard :
+
+\begin{table}[H]
+\small
+\begin{tabularx}{\linewidth}{Yrrr}
+\toprule
+\textbf{Segment} & \textbf{Documents} & \textbf{Dans FIRDS (dette)} & \textbf{Obligations classiques} \\
+\midrule
+Tous pays & 6\,503\,900 & 2 sur 60 & 0 sur 60 \\
+France, conditions définitives & 8\,201 & 38 sur 60 & 6 sur 60 \\
+Irlande & 18\,317 & 55 sur 60 & 4 sur 60 \\
+Luxembourg & 56\,637 & 4 sur 60 & 1 sur 60 \\
+Pays-Bas & 14\,263 & 0 sur 60 & 0 sur 60 \\
+Hors conditions définitives & 3\,534 & 5 sur 60 & 3 sur 60 \\
+\bottomrule
+\end{tabularx}
+\caption{Part d'obligations classiques par segment du registre (\texttt{correspondance-registre-firds.csv}).}
+\end{table}
+
+La collecte part donc de FIRDS : on prend les obligations en circulation, puis on cherche leurs documents par ISIN.
+
+\section{La population étudiée}
+\label{sec:population}
+
+\subsection{Huit émetteurs}
+
+\begin{table}[H]
+\small
+\begin{tabularx}{\linewidth}{Ylrr}
+\toprule
+\textbf{Émetteur} & \textbf{Secteur} & \textbf{Obligations à ISIN FR} & \textbf{ISIN avec document} \\
+\midrule
+BNP Paribas & banque & 251 & 4 sur 8 \\
+Société Générale & banque & 142 & 4 sur 8 \\
+Crédit Agricole S.A. & banque & 202 & 6 sur 8 \\
+BPCE & banque & 200 & 4 sur 8 \\
+AXA & assurance & 4 & 2 sur 4 \\
+LVMH & luxe & 13 & 6 sur 8 \\
+Kering & luxe & 16 & 6 sur 8 \\
+Air France-KLM & aviation & 10 & 4 sur 8 \\
+\midrule
+Total & & 838 & 36 sur 60 \\
+\bottomrule
+\end{tabularx}
+\caption{Couverture des émetteurs (\texttt{couverture-emetteurs.csv}). Hermès n'a aucune obligation dans FIRDS. Les LEI sont vérifiés auprès de GLEIF.}
+\end{table}
+
+Les ISIN français sont retenus parce que les ISIN «~XS~» ont rarement un document dans le registre et que les ISIN «~US~» ou «~CH~» relèvent d'autres régulateurs. Avec 60~\% d'ISIN trouvés, on peut attendre environ 500 documents.
+
+\subsection{Une définition corrigée deux fois}
+
+Une obligation classique est, dans \texttt{bond\_terms.instruments.is\_plain\_bond}, un titre de code CFI DB ou DT, avec un taux fixe compris entre 0 et 10~\% ou un taux variable indexé sur une vraie référence. Cette définition a été corrigée deux fois pendant le cadrage, avant toute extraction :
+
+\begin{itemize}
+  \item \textbf{Lecture des références de FIRDS.} FIRDS écrit la référence d'un taux variable sous trois formes ; la forme par code (\texttt{<Indx>EURI</Indx>}) n'était pas lue. Ces titres avaient une référence vide et étaient exclus à tort. L'erreur a été signalée par une relecture externe du dépôt. La lecture est désormais testée sur les trois formes, garde la durée de la référence, et un contrôle vérifie qu'aucun taux variable n'est resté sans référence.
+  \item \textbf{Produits structurés déguisés.} La saisie chronométrée a fait apparaître un titre au coupon de «~60~\% payable in arrear~», décrit dans FIRDS comme un taux variable de référence OTHER. Dans la population, 85 titres avaient cette référence et 240 un «~taux fixe~» au-dessus de 10~\% : des coupons cumulés de produits structurés pour particuliers, presque tous de Société Générale. Ils sont désormais exclus ; le seuil de 10~\% vient de la distribution mesurée. La population est passée de 1\,163 à 838 obligations.
+\end{itemize}
+
+\aretenir{La population a été définie à partir des données, puis vérifiée sur de vrais documents. Les deux corrections sont tracées dans l'ADR 0001, avec leurs chiffres avant et après.}
+
+\section{Vérité terrain et critères de succès}
+
+\subsection{Une vérité officielle, sans annotation}
+
+Je ne suis pas spécialiste de la finance de marché. Une vérité terrain annotée par un seul non-spécialiste fausserait la mesure. L'indicateur principal porte donc uniquement sur des champs publiés par une source officielle (niveau A) :
+
+\begin{table}[H]
+\small
+\begin{tabularx}{\linewidth}{lY}
+\toprule
+\textbf{Champ} & \textbf{Règle de comparaison} \\
+\midrule
+Devise, date d'échéance, type de taux & Égalité exacte avec FIRDS \\
+Taux fixe & Égalité à 4 décimales \\
+Taux variable & Même référence, même durée, marge égale en points de base \\
+Valeur nominale par titre & Égalité exacte \\
+Montant nominal total & Seulement pour un ISIN à document unique (une émission abondée change le total) \\
+Rang de la dette & Seulement quand FIRDS le renseigne \\
+LEI de l'émetteur & Égalité exacte avec FIRDS, nom contrôlé par GLEIF \\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+Le niveau B porte sur quelques rubriques littérales (remboursement au gré de l'émetteur ou du porteur, remboursement \emph{make-whole}, affectation verte). Environ 50 documents seront annotés deux fois à une semaine d'écart ; ce niveau reste indicatif, sans seuil. Le LLM juge est abandonné, faute de vérité fiable pour le calibrer.
+
+\subsection{Découpage et seuils}
+
+Les documents sont triés par date d'approbation ; les 30~\% les plus récents forment le test, ouvert une seule fois. La date de coupure sera calculée sur les seules métadonnées et versionnée avant toute extraction.
+
+\begin{table}[H]
+\small
+\begin{tabularx}{\linewidth}{Yl}
+\toprule
+\textbf{Indicateur, sur le test} & \textbf{Seuil} \\
+\midrule
+Échéance, devise, type de taux, taux fixe & au moins 98~\% chacun \\
+Marge, valeur nominale, montant, rang & au moins 95~\% chacun \\
+Valeur sans citation retrouvée dans le document & refusée, comptée fausse \\
+Documents envoyés en revue humaine & au plus 30~\% \\
+Rapport d'exceptions & au moins 80~\% de vrais écarts \\
+Coût & 0~€ \\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+Chaque seuil se juge sur l'estimation, avec l'intervalle à 95~\% publié à côté : avec environ 150 documents de test, une exactitude de 98~\% est connue à environ 2,2 points près. La référence à battre est un extracteur à règles fondé sur les rubriques numérotées des conditions définitives. Le LLM n'est retenu que s'il fait au moins 2 points de mieux en exactitude globale (sur les paires document--champ), avec une borne basse de l'intervalle (bootstrap par document) au-dessus de zéro.
+
+\section{La référence humaine}
+
+\subsection{La saisie chronométrée}
+
+J'ai saisi à la main les champs du niveau A de dix documents approuvés en 2022 ou 2023, avec Ctrl+F et copier-coller, sans autre source, puis j'ai comparé ma saisie à FIRDS avec les règles ci-dessus.
+
+\begin{itemize}
+  \item \textbf{Temps} : 28 minutes pour dix documents, 3 minutes par document en médiane, à une minute près.
+  \item \textbf{Exactitude} : 58 champs justes sur 71, soit 82~\%, sur les neuf obligations classiques. Le document 6 s'est révélé être un produit structuré et ne compte que pour le temps.
+\end{itemize}
+
+\begin{table}[H]
+\small
+\begin{tabularx}{\linewidth}{Yrr}
+\toprule
+\textbf{Champ} & \textbf{Justes} & \textbf{Comparés} \\
+\midrule
+Devise, échéance, type de taux & 27 & 27 \\
+Valeur nominale & 8 & 9 \\
+Taux fixe & 7 & 8 \\
+Référence et marge du taux variable & 2 & 2 \\
+Rang & 5 & 7 \\
+LEI de l'émetteur & 5 & 9 \\
+Montant nominal total & 4 & 9 \\
+\bottomrule
+\end{tabularx}
+\caption{Saisie humaine comparée à FIRDS (\texttt{chronometrage-resultats.json}).}
+\end{table}
+
+\subsection{Ce que les erreurs apprennent}
+
+\begin{itemize}
+  \item \textbf{Le piège de la recherche.} Chercher «~Aggregate Nominal Amount~» mène aussi à la ligne «~\foreignlanguage{english}{Issue Price: 99.513 per cent. of the Aggregate Nominal Amount}~» : quatre fois, le prix d'émission a été saisi à la place du montant. L'extracteur devra s'ancrer sur l'intitulé numéroté de la rubrique.
+  \item \textbf{La ligne recopiée.} Un document a reçu les valeurs du précédent, sauf l'échéance : une erreur humaine typique de fin de série.
+  \item \textbf{Les identifiants.} Deux LEI manquent et un a perdu son premier caractère. Un LEI et un ISIN portent une clé de contrôle : l'outil la vérifiera.
+  \item \textbf{Un premier écart réel.} Pour le document 10, le PDF annonce 30 millions d'euros et FIRDS 7,5 millions. Même une lecture juste aurait été comptée fausse : c'est ce que le rapport d'exceptions devra signaler.
+\end{itemize}
+
+La fiche de saisie n'avait pas de colonne pour la durée de la référence d'un taux variable : ce champ n'a pas été comparé. Les documents chronométrés devraient se trouver dans la partie développement ; ce sera vérifié une fois la coupure calculée, et un document tombé dans le test en sera retiré.
+
+\section{Business case}
+
+Le gain se calcule par une formule dont les termes seront mesurés, pas supposés :
+\[
+\text{gain} = N \times (t_{\text{manuel}} - t_{\text{revue}}) + N \times (e_{\text{manuel}} - e_{\text{outil}}) \times c_{\text{erreur}}
+\]
+où $N$ est le nombre de documents traités, $t$ le temps par document et $e$ le nombre d'erreurs par document. Les termes manuels sont mesurés : $t_{\text{manuel}} = 3$ minutes et $e_{\text{manuel}} = 13/9 \approx 1{,}4$ champ faux par document. Les termes de l'outil seront mesurés sur le test. Le coût d'une erreur, $c_{\text{erreur}}$, dépend de l'usage de la fiche ; il restera un paramètre explicite plutôt qu'un chiffre inventé.
+
+Pour l'ordre de grandeur, les 500 documents attendus représentent environ 25 heures de saisie manuelle et, au taux mesuré, environ 700 champs faux à rattraper.
+
+\section{Risques et limites}
+
+\begin{itemize}
+  \item \textbf{Volume} : environ 150 documents de test laissent une incertitude de l'ordre de 2 points ; elle sera publiée avec chaque résultat.
+  \item \textbf{Référence humaine} : une seule personne, non spécialiste, sur dix documents. C'est un ordre de grandeur, pas une mesure de la profession.
+  \item \textbf{FIRDS n'est pas parfait} : le document 10 montre un écart sur le montant. Les écarts seront examinés un par un dans le rapport d'exceptions.
+  \item \textbf{Évolution des sources} : le registre change en continu, et le Listing Act modifie le régime des prospectus. La collecte gardera les dates et les versions des données utilisées.
+\end{itemize}
+
+\section{Suite du projet}
+
+\begin{table}[H]
+\small
+\begin{tabularx}{\linewidth}{lY}
+\toprule
+\textbf{Version} & \textbf{Contenu} \\
+\midrule
+v0.1 & Collecte (FIRDS, registre, PDF), date de coupure versionnée, entrepôt de données \\
+v0.2 & Extracteur à règles contre LLM sur le niveau A, test ouvert une fois \\
+v0.3 & Niveau B, file de revue humaine, rapport d'exceptions \\
+v0.4 & API, collecte planifiée, surveillance de la qualité des données \\
+v1.0 & Démonstration publique, note de synthèse et business case mesuré \\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+Les décisions de ce cadrage sont consignées dans l'ADR 0001 (\texttt{docs/adr/0001-cadrage.md}).
+
+\end{document}
