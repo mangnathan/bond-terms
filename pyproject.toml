@@ -40,8 +40,8 @@ select = [
 ]
 
 [tool.ruff.lint.per-file-ignores]
-# Scripts : URL fixes choisies par nous, et tirages d'échantillons sans enjeu de sécurité.
-"scripts/**" = ["S310", "S311"]
+# Scripts : URL et programmes fixes choisis par nous, tirages d'échantillons sans enjeu de sécurité.
+"scripts/**" = ["S310", "S311", "S603"]
 "tests/**" = ["S101"]
 
 [tool.mypy]

@@ -1,0 +1,67 @@
+% Mise en page commune à tous les rapports du projet.
+% Chaque rapport définit \rapporttitre et \rapportversion avant de charger ce fichier.
+
+\usepackage{fontspec}
+\usepackage[french]{babel}
+\usepackage[a4paper,margin=2.2cm,bottom=2.6cm]{geometry}
+\usepackage{graphicx}
+\usepackage{float}
+\usepackage{booktabs}
+\usepackage{tabularx}
+\usepackage{array}
+\usepackage[table]{xcolor}
+\usepackage{caption}
+\usepackage{enumitem}
+\usepackage{titlesec}
+\usepackage{fancyhdr}
+\usepackage{hyperref}
+\usepackage{xurl}
+
+\setmainfont{texgyreheros}[
+  Extension=.otf,
+  UprightFont=*-regular,
+  BoldFont=*-bold,
+  ItalicFont=*-italic,
+  BoldItalicFont=*-bolditalic]
+\definecolor{accent}{HTML}{2A78D6}
+\definecolor{ink2}{HTML}{52514E}
+\definecolor{fond}{HTML}{EEF4FC}
+\hypersetup{colorlinks=true, linkcolor=accent, urlcolor=accent}
+\graphicspath{{figures/}}
+
+\titleformat{\section}{\Large\bfseries\color{accent}}{\thesection.}{0.6em}{}[\vspace{-0.4em}\color{accent}\rule{\linewidth}{0.8pt}]
+\titleformat{\subsection}{\large\bfseries}{\thesubsection}{0.6em}{}
+\titlespacing*{\section}{0pt}{1.6em}{0.9em}
+
+\captionsetup{font={small,color=ink2}, labelfont=bf, justification=raggedright, singlelinecheck=false}
+\setlist{itemsep=0.25em, topsep=0.4em}
+\setlength{\parskip}{0.45em}
+\renewcommand{\arraystretch}{1.25}
+\newcolumntype{Y}{>{\raggedright\arraybackslash}X}
+
+\pagestyle{fancy}
+\fancyhf{}
+\fancyhead[L]{\small\color{ink2} bond-terms -- \rapporttitre}
+\fancyhead[R]{\small\color{ink2} \rapportversion}
+\fancyfoot[R]{\small\color{ink2}\thepage}
+\renewcommand{\headrulewidth}{0.3pt}
+
+% \pagedegarde{sous-titre}{date}{ligne de version}
+\newcommand{\pagedegarde}[3]{%
+  \hypersetup{pageanchor=false}
+  \begin{titlepage}
+    \setlength{\parindent}{0pt}
+    \vspace*{5cm}
+    {\color{accent}\bfseries\large BOND-TERMS}\par\vspace{0.6cm}
+    {\fontsize{30}{36}\selectfont\bfseries \rapporttitre}\par\vspace{0.5cm}
+    {\Large\color{ink2} #1}\par
+    \vfill
+    {\color{accent}\rule{\linewidth}{1.2pt}}\par\vspace{0.3cm}
+    {\color{ink2} Nathan Mang\\ #2\\ #3}
+    \vspace{2cm}
+  \end{titlepage}
+  \hypersetup{pageanchor=true}}
+
+% Encadré pour les points à retenir.
+\newcommand{\aretenir}[1]{%
+  \par\noindent\colorbox{fond}{\parbox{\dimexpr\linewidth-2\fboxsep}{\small #1}}\par}
