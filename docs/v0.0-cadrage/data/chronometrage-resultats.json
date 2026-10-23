@@ -1,0 +1,71 @@
+{
+  "documents": 10,
+  "duree_minutes": {
+    "par_document": {
+      "1": 4.0,
+      "2": 3.0,
+      "3": 2.0,
+      "4": 2.0,
+      "5": 3.0,
+      "6": 3.0,
+      "7": 2.0,
+      "8": 4.0,
+      "9": 2.0,
+      "10": 3.0
+    },
+    "total": 28.0,
+    "mediane": 3.0,
+    "moyenne": 2.8,
+    "resolution": "heures relevées à la minute : chaque durée est connue à 1 minute près"
+  },
+  "exclus_de_l_exactitude": {
+    "6": "pas une obligation classique selon FIRDS"
+  },
+  "exactitude_par_champ": {
+    "devise": {
+      "justes": 9,
+      "compares": 9
+    },
+    "date_echeance": {
+      "justes": 9,
+      "compares": 9
+    },
+    "type_taux": {
+      "justes": 9,
+      "compares": 9
+    },
+    "valeur_nominale": {
+      "justes": 8,
+      "compares": 9
+    },
+    "lei_emetteur": {
+      "justes": 5,
+      "compares": 9
+    },
+    "taux_fixe": {
+      "justes": 7,
+      "compares": 8
+    },
+    "montant_nominal_total": {
+      "justes": 4,
+      "compares": 9
+    },
+    "rang": {
+      "justes": 5,
+      "compares": 7
+    },
+    "reference_taux_variable": {
+      "justes": 1,
+      "compares": 1
+    },
+    "marge_points_de_base": {
+      "justes": 1,
+      "compares": 1
+    }
+  },
+  "exactitude_globale": {
+    "justes": 58,
+    "compares": 71,
+    "taux": 0.817
+  }
+}
