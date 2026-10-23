@@ -21,11 +21,23 @@ def test_zero_or_missing_fixed_rate_is_structured(rate: str) -> None:
     assert not is_plain_bond(bond(fixed_rate=rate))
 
 
+@pytest.mark.parametrize("rate", ["7.35", "10"])
+def test_high_but_plausible_fixed_rate_is_plain(rate: str) -> None:
+    # Les obligations en leu roumain ou en rand sud-africain paient jusqu'à environ 10 %.
+    assert is_plain_bond(bond(fixed_rate=rate))
+
+
+@pytest.mark.parametrize("rate", ["10.5", "46", "60"])
+def test_fixed_rate_above_ten_percent_is_structured(rate: str) -> None:
+    # Coupon cumulé d'un produit structuré, par exemple « SoGenerale 46% 14 12 2032 ».
+    assert not is_plain_bond(bond(fixed_rate=rate))
+
+
 def test_floating_rate_with_real_reference_is_plain() -> None:
     assert is_plain_bond(bond(rate_type="floating", fixed_rate="", reference_rate="EURI"))
 
 
-@pytest.mark.parametrize("reference", ["", "FORMULA"])
+@pytest.mark.parametrize("reference", ["", "FORMULA", "OTHER", "other", "AT000BASKET0"])
 def test_floating_rate_without_real_reference_is_structured(reference: str) -> None:
     assert not is_plain_bond(bond(rate_type="floating", fixed_rate="", reference_rate=reference))
 
