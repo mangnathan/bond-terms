@@ -1,0 +1,77 @@
+{
+  "source": "ESMA, registre des prospectus",
+  "date_collecte": "2026-10-23",
+  "index_firds": "dette-2026-10-17.parquet",
+  "fichier": "interim/registre/documents-2026-10-23.parquet",
+  "obligations": 838,
+  "couples_isin_document": 503,
+  "types_de_documents": {
+    "FTWS": 475,
+    "STDA": 28
+  },
+  "couples_documents_d_emission": 503,
+  "documents_d_emission_distincts": 502,
+  "obligations_avec_document": 486,
+  "obligations_a_document_unique": 469,
+  "documents_par_obligation_mediane": 1.0,
+  "date_approbation_min": "2020-11-24",
+  "date_approbation_max": "2026-10-14",
+  "par_emetteur": [
+    {
+      "emetteur": "BNP Paribas",
+      "secteur": "banque",
+      "obligations": 251,
+      "obligations_avec_document": 123,
+      "documents": 133
+    },
+    {
+      "emetteur": "Société Générale",
+      "secteur": "banque",
+      "obligations": 142,
+      "obligations_avec_document": 86,
+      "documents": 92
+    },
+    {
+      "emetteur": "Crédit Agricole S.A.",
+      "secteur": "banque",
+      "obligations": 202,
+      "obligations_avec_document": 128,
+      "documents": 128
+    },
+    {
+      "emetteur": "BPCE",
+      "secteur": "banque",
+      "obligations": 200,
+      "obligations_avec_document": 120,
+      "documents": 121
+    },
+    {
+      "emetteur": "AXA",
+      "secteur": "assurance",
+      "obligations": 4,
+      "obligations_avec_document": 2,
+      "documents": 2
+    },
+    {
+      "emetteur": "LVMH",
+      "secteur": "luxe",
+      "obligations": 13,
+      "obligations_avec_document": 10,
+      "documents": 10
+    },
+    {
+      "emetteur": "Kering",
+      "secteur": "luxe",
+      "obligations": 16,
+      "obligations_avec_document": 13,
+      "documents": 13
+    },
+    {
+      "emetteur": "Air France-KLM",
+      "secteur": "aviation",
+      "obligations": 10,
+      "obligations_avec_document": 4,
+      "documents": 4
+    }
+  ]
+}
