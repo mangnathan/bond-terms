@@ -1,0 +1,63 @@
+{
+  "source": "ESMA, FIRDS, publication complète de la catégorie dette (FULINS_D)",
+  "date_publication": "2026-10-17",
+  "fichiers": [
+    {
+      "nom": "FULINS_D_20261017_01of04.zip",
+      "octets": 17150888,
+      "sha256": "c4e46063f25ca182c8e3e1317f7b697d5e6ef413c6978805930254526aa47a14"
+    },
+    {
+      "nom": "FULINS_D_20261017_02of04.zip",
+      "octets": 8813748,
+      "sha256": "9c97a6c71515d28d1e4b417727b03258748ce0e750aca7655fe3a1c7757e3ea9"
+    },
+    {
+      "nom": "FULINS_D_20261017_03of04.zip",
+      "octets": 15239451,
+      "sha256": "eacc103c3013c8d83a81d8220331dac04715cbe0895264c89cbfdf7de1918c19"
+    },
+    {
+      "nom": "FULINS_D_20261017_04of04.zip",
+      "octets": 11081422,
+      "sha256": "3dcc0c25bbfd143ef8ee9a55be27a354618e243c9cf98329ca8d18daa2f73884"
+    }
+  ],
+  "index": {
+    "chemin": "interim/firds/dette-2026-10-17.parquet",
+    "lignes": 631239
+  },
+  "index_sha256": "b8f1cf91c0c06fabfeef062656dfc4210c25091bc340059109c32507e32215bb",
+  "enregistrements": 1744381,
+  "isin_distincts": 631239,
+  "categories_cfi": {
+    "DE": 345546,
+    "DT": 145129,
+    "DB": 81526,
+    "DA": 26632,
+    "DS": 12581,
+    "DM": 7536,
+    "DN": 4104,
+    "DY": 3443,
+    "DG": 3277,
+    "DC": 1417
+  },
+  "taux_de_remplissage": {
+    "maturity_date": 1.0,
+    "nominal_amount": 1.0,
+    "seniority": 0.252
+  },
+  "obligations_classiques": 112339,
+  "obligations_classiques_par_pays_isin": {
+    "XS": 42466,
+    "US": 29701,
+    "DE": 15043,
+    "FR": 5243,
+    "CH": 2319,
+    "CA": 2017,
+    "AT": 1741,
+    "NO": 1727
+  },
+  "taux_variables_sans_reference": 0,
+  "duree_lecture_s": 142
+}

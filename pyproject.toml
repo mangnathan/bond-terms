@@ -8,6 +8,7 @@ license = "MIT"
 requires-python = ">=3.12"
 dependencies = [
     "defusedxml>=0.7.1",
+    "pyarrow>=21",
 ]
 
 [dependency-groups]
@@ -48,6 +49,11 @@ select = [
 python_version = "3.12"
 strict = true
 files = ["src", "scripts"]
+
+# pyarrow ne publie pas d'annotations de types : ses imports sont acceptés sans vérification.
+[[tool.mypy.overrides]]
+module = ["pyarrow", "pyarrow.*"]
+ignore_missing_imports = true
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
