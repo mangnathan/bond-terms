@@ -1,0 +1,61 @@
+{
+  "graine": 20261025,
+  "part_du_test": 0.3,
+  "date_de_coupure": "2024-09-27",
+  "documents_par_jeu": {
+    "developpement": 351,
+    "test": 151,
+    "test_nouveaux_emetteurs": 100,
+    "exclu_chronometre": 0
+  },
+  "documents_chronometres_dans_le_test": 0,
+  "par_emetteur": [
+    {
+      "emetteur": "BNP Paribas",
+      "developpement": 92,
+      "test": 41
+    },
+    {
+      "emetteur": "Société Générale",
+      "developpement": 62,
+      "test": 30
+    },
+    {
+      "emetteur": "Crédit Agricole S.A.",
+      "developpement": 86,
+      "test": 42
+    },
+    {
+      "emetteur": "BPCE",
+      "developpement": 93,
+      "test": 27
+    },
+    {
+      "emetteur": "AXA",
+      "developpement": 2,
+      "test": 0
+    },
+    {
+      "emetteur": "LVMH",
+      "developpement": 4,
+      "test": 6
+    },
+    {
+      "emetteur": "Kering",
+      "developpement": 11,
+      "test": 2
+    },
+    {
+      "emetteur": "Air France-KLM",
+      "developpement": 1,
+      "test": 3
+    }
+  ],
+  "nouveaux_emetteurs": {
+    "vivier_obligations": 4405,
+    "obligations_tirees": 300,
+    "obligations_avec_document": 131,
+    "documents_trouves": 147,
+    "documents_gardes": 100
+  }
+}
