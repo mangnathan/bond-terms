@@ -1,0 +1,69 @@
+{
+  "date": "2026-10-25",
+  "entrees": {
+    "firds": "2026-10-17",
+    "registre": "2026-10-23"
+  },
+  "tables_brutes_lignes": {
+    "decoupage": 603,
+    "firds_titres": 930,
+    "pdf_controle": 602,
+    "population": 838,
+    "registre_documents": 611
+  },
+  "envoi_bigquery_octets": 208343,
+  "dbt_build": {
+    "duckdb": "PASS=26 ERROR=0",
+    "bigquery": "PASS=26 ERROR=0"
+  },
+  "verite_terrain": {
+    "developpement": {
+      "couples": 352,
+      "montant_comparable": 332,
+      "rang_comparable": 302
+    },
+    "test": {
+      "couples": 151,
+      "montant_comparable": 137,
+      "rang_comparable": 119
+    },
+    "test_nouveaux_emetteurs": {
+      "couples": 100,
+      "montant_comparable": 79,
+      "rang_comparable": 84
+    }
+  },
+  "documents": {
+    "developpement": {
+      "documents": 351,
+      "scannes": 10
+    },
+    "test": {
+      "documents": 151,
+      "scannes": 8
+    },
+    "test_nouveaux_emetteurs": {
+      "documents": 100,
+      "scannes": 6
+    }
+  },
+  "population_par_secteur": {
+    "banque": {
+      "obligations": 795,
+      "avec_documents": 457
+    },
+    "luxe": {
+      "obligations": 29,
+      "avec_documents": 23
+    },
+    "aviation": {
+      "obligations": 10,
+      "avec_documents": 4
+    },
+    "assurance": {
+      "obligations": 4,
+      "avec_documents": 2
+    }
+  },
+  "parite_duckdb_bigquery": "résultats identiques sur verite_terrain, documents et population"
+}

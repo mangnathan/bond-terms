@@ -1,0 +1,52 @@
+version: 2
+
+models:
+  - name: stg_firds_titres
+    columns:
+      - name: isin
+        data_tests: [not_null, unique]
+
+  - name: population
+    description: Les obligations étudiées, avec leur émetteur et leurs documents d'émission.
+    columns:
+      - name: isin
+        data_tests:
+          - not_null
+          - unique
+          - relationships:
+              arguments:
+                to: ref('stg_firds_titres')
+                field: isin
+      - name: emetteur
+        data_tests: [not_null]
+      - name: secteur
+        data_tests:
+          - accepted_values:
+              arguments:
+                values: [banque, assurance, luxe, aviation]
+
+  - name: documents
+    description: Les documents du découpage, avec le contrôle de lecture de leur PDF.
+    columns:
+      - name: document_id
+        data_tests: [not_null, unique]
+      - name: jeu
+        data_tests:
+          - not_null
+          - accepted_values:
+              arguments:
+                values: [developpement, test, test_nouveaux_emetteurs, exclu_chronometre]
+
+  - name: verite_terrain
+    description: Valeurs officielles de FIRDS pour chaque couple document-ISIN du découpage.
+    columns:
+      - name: devise
+        data_tests: [not_null]
+      - name: date_echeance
+        data_tests: [not_null]
+      - name: type_taux
+        data_tests:
+          - not_null
+          - accepted_values:
+              arguments:
+                values: [fixed, floating]

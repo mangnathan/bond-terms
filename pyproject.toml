@@ -21,6 +21,18 @@ dev = [
     "pre-commit>=4.3",
     "types-defusedxml>=0.7.0.20260504",
 ]
+entrepot = [
+    "dbt-core>=1.10",
+    "dbt-duckdb>=1.10",
+]
+# Bac à sable BigQuery : installé à la demande (--group bigquery), jamais en CI.
+bigquery = [
+    "dbt-bigquery>=1.12",
+]
+
+[tool.uv]
+# L'entrepôt est installé sur le poste et en CI, pour que mypy et les tests le vérifient aussi.
+default-groups = ["dev", "entrepot"]
 
 [build-system]
 requires = ["uv_build>=0.13,<0.14"]
@@ -55,6 +67,11 @@ files = ["src", "scripts"]
 # pyarrow ne publie pas d'annotations de types : ses imports sont acceptés sans vérification.
 [[tool.mypy.overrides]]
 module = ["pyarrow", "pyarrow.*"]
+ignore_missing_imports = true
+
+# Le client BigQuery n'est pas installé en CI : ses imports n'y sont pas vérifiés.
+[[tool.mypy.overrides]]
+module = ["google", "google.*"]
 ignore_missing_imports = true
 
 [tool.pytest.ini_options]

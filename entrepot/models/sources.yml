@@ -1,0 +1,17 @@
+version: 2
+
+sources:
+  - name: brut
+    description: Sorties de la collecte, chargées sans transformation et en texte (bond_terms.entrepot).
+    schema: "{{ var('schema_brut') }}"
+    tables:
+      - name: firds_titres
+        description: Titres de FIRDS utiles au projet (population et documents du découpage).
+      - name: population
+        description: Les 838 obligations classiques à ISIN français des huit émetteurs visés.
+      - name: registre_documents
+        description: Documents du registre des prospectus, pour la population et les émetteurs jamais vus.
+      - name: decoupage
+        description: Jeu de chaque document, figé avant toute extraction (ADR 0001).
+      - name: pdf_controle
+        description: Contrôle de lecture des PDF, sans aucun contenu.
