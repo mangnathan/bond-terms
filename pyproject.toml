@@ -7,8 +7,10 @@ authors = [{ name = "Nathan Mang" }]
 license = "MIT"
 requires-python = ">=3.12"
 dependencies = [
+    "cryptography>=44",
     "defusedxml>=0.7.1",
     "pyarrow>=21",
+    "pypdf>=6",
 ]
 
 [dependency-groups]

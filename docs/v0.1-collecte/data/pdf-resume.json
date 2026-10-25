@@ -1,0 +1,29 @@
+{
+  "developpement": {
+    "documents": 351,
+    "lus": 351,
+    "erreurs": {},
+    "pages_mediane": 9,
+    "documents_avec_pages_sans_texte": 48,
+    "documents_sans_texte": 10,
+    "documents_sans_rubrique_echeance": 11
+  },
+  "test": {
+    "documents": 151,
+    "lus": 151,
+    "erreurs": {},
+    "pages_mediane": 10,
+    "documents_avec_pages_sans_texte": 15,
+    "documents_sans_texte": 8,
+    "documents_sans_rubrique_echeance": 9
+  },
+  "test_nouveaux_emetteurs": {
+    "documents": 100,
+    "lus": 100,
+    "erreurs": {},
+    "pages_mediane": 11.0,
+    "documents_avec_pages_sans_texte": 8,
+    "documents_sans_texte": 6,
+    "documents_sans_rubrique_echeance": 8
+  }
+}
