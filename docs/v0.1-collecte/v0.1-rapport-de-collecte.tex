@@ -1,0 +1,201 @@
+\documentclass[11pt,a4paper]{article}
+
+\newcommand{\rapporttitre}{Rapport de collecte}
+\newcommand{\rapportversion}{v0.1}
+\input{../latex/preambule}
+\usepackage{needspace}
+\usepackage{etoolbox}
+% Un titre de section ne reste jamais seul en bas de page.
+\pretocmd{\section}{\needspace{10\baselineskip}}{}{}
+
+\begin{document}
+
+\pagedegarde{Extraction des conditions des obligations à partir des documents de l'ESMA}{25 octobre 2026}{Version 0.1, collecte et entrepôt de données}
+
+\setcounter{tocdepth}{1}
+\tableofcontents
+\newpage
+
+\section*{Synthèse}
+\addcontentsline{toc}{section}{Synthèse}
+
+La version 0.0 a fixé le cadre de l'évaluation. La version 0.1 rassemble les données sur lesquelles l'extraction sera développée puis mesurée : la base FIRDS, les documents du registre des prospectus, leurs PDF et leur texte. Elle fige aussi la séparation entre développement et test, avant qu'aucun document ne soit lu par un extracteur.
+
+\begin{itemize}
+  \item 486 des 838 obligations de la population ont au moins un document d'émission dans le registre : 502 documents en tout.
+  \item La date de coupure est le 27 septembre 2024 : 351 documents pour le développement, 151 pour le test. Un second test de 100 documents porte sur des émetteurs jamais vus.
+  \item Les 602 PDF sont tous lus. 24 sont des scans sans texte, dont 8 dans le test : ils limitent un extracteur qui ne lit que le texte à environ 95~\%, sous les seuils de 98~\%.
+  \item Un entrepôt de données dbt prépare la vérité terrain de la v0.2. Il donne les mêmes résultats sur DuckDB, en local et en CI, et sur le bac à sable BigQuery, sans aucune dépense.
+\end{itemize}
+
+\section{Ce que la version devait livrer}
+
+La version a été menée comme un sprint Scrum d'une semaine, du 23 au 30 octobre 2026, suivi sur un tableau GitHub public. Chaque tâche est une issue, livrée par une branche et une pull request relue, que la CI doit valider avant la fusion.
+
+\begin{table}[H]
+\small
+\begin{tabularx}{\linewidth}{lYl}
+\toprule
+\textbf{Issue} & \textbf{Livrable} & \textbf{Pull request} \\
+\midrule
+\#7 & Collecte de FIRDS et index des titres de dette & \#13 \\
+\#8 & Documents du registre pour chaque obligation de la population & \#14 \\
+\#9 & Date de coupure du test et second test d'émetteurs jamais vus & \#15 \\
+\#10 & Téléchargement des PDF et extraction du texte & \#16 \\
+\#11 & Entrepôt de données dbt sur DuckDB et BigQuery & \#17 \\
+\#12 & Clôture : rapport, CHANGELOG, tag v0.1 & ce rapport \\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+Toutes les requêtes vers l'ESMA passent par un même client : une requête par seconde au plus, nouvelle tentative seulement sur une erreur du serveur ou du réseau, adresses limitées aux sites prévus, téléchargement écrit d'un bloc avec son empreinte SHA-256. Les réponses sont mises en cache : une collecte relancée ne refait pas les requêtes déjà faites.
+
+\section{FIRDS}
+
+La publication complète de la catégorie dette du 17 octobre 2026 compte quatre fichiers compressés (52~Mo). Leur nom, leur taille et leur empreinte sont enregistrés dans un manifeste versionné avec les autres chiffres de la version. La lecture donne 1\,744\,381 enregistrements et 631\,239 titres distincts, rangés dans un index Parquet.
+
+La lecture prenait 21 minutes. La cause principale n'était pas le format : l'outil de mesure de la mémoire, \texttt{tracemalloc}, ralentissait le programme d'un facteur 4,2. Sans lui, et avec des chemins de lecture précalculés, la lecture prend 2 minutes 22 secondes. L'index produit est identique à celui de la v0.0, ligne pour ligne.
+
+\aretenir{Un outil de mesure peut fausser ce qu'il mesure. Le pic de mémoire avait été mesuré une fois en v0.0 ; il n'avait pas à rester actif à chaque lecture.}
+
+\section{Le registre des prospectus}
+
+Pour chacune des 838 obligations, le registre est interrogé par ISIN. Deux types de documents décrivent une émission : les conditions définitives (475 documents) et le prospectus autonome (28 documents).
+
+\begin{table}[H]
+\small
+\begin{tabularx}{\linewidth}{Ylrrr}
+\toprule
+\textbf{Émetteur} & \textbf{Secteur} & \textbf{Obligations} & \textbf{Avec document} & \textbf{Documents} \\
+\midrule
+BNP Paribas & banque & 251 & 123 & 133 \\
+Société Générale & banque & 142 & 86 & 92 \\
+Crédit Agricole S.A. & banque & 202 & 128 & 128 \\
+BPCE & banque & 200 & 120 & 121 \\
+AXA & assurance & 4 & 2 & 2 \\
+LVMH & luxe & 13 & 10 & 10 \\
+Kering & luxe & 16 & 13 & 13 \\
+Air France-KLM & aviation & 10 & 4 & 4 \\
+\midrule
+Total & & 838 & 486 & 502 \\
+\bottomrule
+\end{tabularx}
+\caption{Documents d'émission trouvés le 23 octobre 2026 (\texttt{registre-resume-2026-10-23.json}). Un document peut couvrir plusieurs obligations.}
+\end{table}
+
+Les documents ont été approuvés entre le 24 novembre 2020 et le 14 octobre 2026. 469 obligations n'ont qu'un document d'émission : c'est pour elles seules que le montant total sera comparé à FIRDS. 41 documents sont rédigés en français, les autres en anglais ; l'extracteur à règles devra donc connaître les intitulés des rubriques dans les deux langues.
+
+\section{Le découpage entre développement et test}
+
+\subsection{La date de coupure}
+
+Comme prévu par l'ADR 0001, les documents sont triés par date d'approbation, et les 30~\% les plus récents forment le test. Le découpage se fait par document : les obligations d'un même document restent ensemble, et deux documents approuvés le même jour tombent du même côté. La règle a été versionnée avant le calcul, et le résultat avant tout téléchargement de PDF.
+
+\begin{itemize}
+  \item \textbf{Date de coupure} : 27 septembre 2024.
+  \item \textbf{Développement} : 351 documents, approuvés du 24 novembre 2020 au 26 septembre 2024.
+  \item \textbf{Test} : 151 documents, approuvés du 27 septembre 2024 au 14 octobre 2026.
+\end{itemize}
+
+Les neuf documents d'obligations classiques chronométrés en v0.0 sont tous dans le développement : aucun n'a dû être retiré du test.
+
+\subsection{Un second test : des émetteurs jamais vus}
+
+Les huit émetteurs étudiés publient des documents très réguliers. Un extracteur réglé sur eux pourrait échouer sur un autre émetteur. Un second test a donc été tiré au hasard (graine fixée) parmi les 4\,405 obligations classiques à ISIN français des autres émetteurs : sur 300 obligations tirées, 131 ont un document, et 100 des 147 documents trouvés sont gardés. Ce test sera ouvert une seule fois, comme le premier, et la règle de décision entre les règles et le LLM ne change pas.
+
+\section{Les PDF et leur texte}
+
+Les 602 documents des trois jeux ont été téléchargés (249~Mo, jamais versionnés) et leur texte extrait page par page. Le texte est normalisé (minuscules, accents et apostrophes uniformisés) pour que les recherches ne dépendent pas de la typographie du document.
+
+\begin{table}[H]
+\small
+\begin{tabularx}{\linewidth}{Yrrr}
+\toprule
+\textbf{Contrôle} & \textbf{Développement} & \textbf{Test} & \textbf{Émetteurs jamais vus} \\
+\midrule
+Documents lus & 351 sur 351 & 151 sur 151 & 100 sur 100 \\
+Pages par document (médiane) & 9 & 10 & 11 \\
+Scans, sans aucun texte & 10 & 8 & 6 \\
+Texte sans rubrique d'échéance & 1 & 1 & 2 \\
+\bottomrule
+\end{tabularx}
+\caption{Qualité de lecture des PDF (\texttt{pdf-resume.json}, \texttt{pdf-controle.csv}). Les chiffres du test sont des comptes, sans aucun contenu de document.}
+\end{table}
+
+Huit PDF du développement sont chiffrés (chiffrement AES sans mot de passe d'ouverture) ; leur lecture demandait une bibliothèque de plus. Le document de développement sans rubrique d'échéance est un avis d'une page sur le montant final, où l'échéance est écrite dans une phrase.
+
+\subsection{Le point à trancher : les scans}
+
+L'ADR 0001 compte une valeur refusée comme une erreur. Un extracteur qui ne lit que le texte ne peut rien extraire des 8 scans du test : il est limité à environ 143 documents justes sur 151, soit 94,7~\% par champ, sous les seuils de 98~\%. Deux réponses sont possibles : baisser les seuils, ou lire les scans par reconnaissance de caractères (OCR) gratuite, en local. La seconde garde la règle intacte. Elle sera mesurée sur les 10 scans du développement et décidée dans l'ADR 0002, avant tout développement de la v0.2.
+
+\aretenir{Seuls des comptes agrégés du test ont été regardés : nombre de documents, de pages, de scans. Aucun texte ni aucune valeur d'un document de test n'a été lu.}
+
+\section{L'entrepôt de données}
+
+\subsection{Ce qu'il contient}
+
+Les sorties de la collecte sont chargées telles quelles, en texte, dans un schéma brut. Un projet dbt les type, les nettoie et les assemble en trois tables :
+
+\begin{itemize}
+  \item \texttt{population} : une ligne par obligation, avec son émetteur, son secteur et son nombre de documents ;
+  \item \texttt{documents} : une ligne par document, avec son jeu et le contrôle de lecture de son PDF ;
+  \item \texttt{verite\_terrain} : une ligne par couple document--ISIN, avec les valeurs de FIRDS et les règles de comparabilité de l'ADR 0001 (montant comparé seulement pour un ISIN à document unique, rang seulement quand FIRDS le renseigne). C'est la table de référence de l'évaluation de la v0.2.
+\end{itemize}
+
+\begin{table}[H]
+\small
+\begin{tabularx}{\linewidth}{Yrrr}
+\toprule
+\textbf{Vérité terrain} & \textbf{Couples} & \textbf{Montant comparable} & \textbf{Rang comparable} \\
+\midrule
+Développement & 352 & 332 & 302 \\
+Test & 151 & 137 & 119 \\
+Émetteurs jamais vus & 100 & 79 & 84 \\
+\bottomrule
+\end{tabularx}
+\caption{Contenu de la table \texttt{verite\_terrain} (\texttt{entrepot-resume.json}).}
+\end{table}
+
+Les taux sont stockés en double précision : en simple précision, un taux de 3,873 devient 3,8729999 et la comparaison à quatre décimales prévue par l'ADR échouerait.
+
+\subsection{Des tests sur les données}
+
+L'entrepôt porte 26 contrôles : clés uniques et non nulles, relations entre tables, valeurs acceptées, et trois règles propres au projet. Tout document de test est approuvé après le dernier document de développement ; aucun document du second test n'appartient à un émetteur étudié ; la vérité terrain n'a qu'une ligne par couple document--ISIN. Dans la CI, un test lance la construction sur de petites données fabriquées : le SQL est vérifié à chaque pull request, sans les vraies données. Un autre test vérifie qu'un document de test plus ancien que le développement fait bien échouer la construction.
+
+\subsection{Le même entrepôt sur BigQuery}
+
+Les mêmes modèles tournent sur le bac à sable BigQuery de Google, sans moyen de paiement. Les règles de zéro dépense sont appliquées :
+
+\begin{itemize}
+  \item aucun compte de facturation lié au projet Google Cloud ;
+  \item envoi par chargement de fichiers, gratuit, et plafond local de 20~Mo (l'envoi réel fait 0,2~Mo) : le stockage du bac à sable, 10~Gio, vaut pour toute la vie du projet ;
+  \item chaque requête est plafonnée à 1~Go lu, sans nouvelle tentative après un refus ;
+  \item les accès viennent d'un fichier \texttt{.env} jamais versionné, la clé est rangée hors du dépôt, et les dépendances BigQuery restent hors de la CI.
+\end{itemize}
+
+Les 26 contrôles passent sur les deux moteurs, et les mêmes requêtes donnent des résultats identiques, jusqu'à la somme des taux au millionième près. Les tables du bac à sable expirent après 60 jours ; deux commandes les recréent.
+
+\section{Revue de sprint et rétrospective}
+
+Les cinq issues de développement ont été livrées le 25 octobre, avant l'échéance du 30. Le nombre de tests est passé de 23 à 59.
+
+\textbf{Ce qui a bien marché.} Les règles du découpage ont été versionnées avant le calcul, et le calcul avant les PDF : l'ordre des commits le prouve. Le client poli vers l'ESMA a servi aux trois collectes sans modification. Les chiffres clés sont recalculés par le code et rangés dans des fichiers versionnés, pas recopiés à la main.
+
+\textbf{Ce qui a moins bien marché.}
+\begin{itemize}
+  \item La lecture de FIRDS a d'abord été lente à cause de \texttt{tracemalloc}, resté actif depuis la v0.0.
+  \item Sous Windows, un PDF invalide ne pouvait pas être supprimé tant que le fichier restait ouvert : le contrôle lit maintenant l'en-tête, ferme le fichier, puis le supprime.
+  \item Les PDF chiffrés n'ont été découverts qu'au premier téléchargement complet : 8 erreurs sur 351.
+  \item Dans la CI, dbt garde sa connexion à DuckDB ouverte : le test qui relit la base doit l'ouvrir avec la même configuration.
+  \item Le premier essai sur BigQuery a échoué parce que le chargement des tables brutes n'avait pas été lancé avant dbt. La documentation donne maintenant les deux commandes dans l'ordre.
+\end{itemize}
+
+\textbf{Pour la suite.} Lancer une collecte complète plus tôt, sur un petit échantillon, pour découvrir les cas comme les PDF chiffrés avant le développement plutôt qu'après.
+
+\section{Suite du projet}
+
+La v0.2 commence par l'ADR 0002, écrite avant tout développement : décision sur les scans (OCR local et gratuit, mesuré sur les 10 scans du développement), schéma de sortie de l'extracteur avec citation, version du prompt et réglages du modèle, tableau de compromis entre exactitude, latence et coût, cas de régression tirés des erreurs observées, et repli sur l'extracteur à règles si le quota gratuit est épuisé. Viendront ensuite l'extracteur à règles, l'extracteur LLM, puis l'ouverture unique des deux tests.
+
+Les décisions de cette version sont consignées dans l'ADR 0001 (\texttt{docs/adr/0001-cadrage.md}), dont les précisions ont été versionnées avant toute extraction.
+
+\end{document}
