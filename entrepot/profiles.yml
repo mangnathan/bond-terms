@@ -7,3 +7,18 @@ bond_terms:
       path: "{{ env_var('BOND_TERMS_DUCKDB', 'data/entrepot/bond_terms.duckdb') }}"
       schema: main
       threads: 2
+    # Bac à sable BigQuery, sans facturation liée. Lancer avec :
+    #   uv run --group bigquery --env-file .env dbt build --target bigquery ...
+    bigquery:
+      type: bigquery
+      method: service-account
+      keyfile: "{{ env_var('GOOGLE_APPLICATION_CREDENTIALS') }}"
+      project: "{{ env_var('BOND_TERMS_GCP_PROJECT') }}"
+      dataset: bond_terms
+      location: EU
+      threads: 2
+      # Plafond local : aucune requête ne peut lire plus de 1 Go (les tables font quelques Mo).
+      maximum_bytes_billed: 1000000000
+      # Arrêt au premier refus, sans nouvelle tentative.
+      job_retries: 0
+      job_execution_timeout_seconds: 300
