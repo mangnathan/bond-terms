@@ -120,6 +120,7 @@ def test_collect_checks_quality_and_keeps_failures(tmp_path: Path) -> None:
         "erreurs": {},
         "pages_mediane": 2.0,
         "documents_avec_pages_sans_texte": 1,
+        "documents_sans_texte": 0,
         "documents_sans_rubrique_echeance": 0,
     }
     assert summary["test"]["lus"] == 0

@@ -139,6 +139,8 @@ def summarize(quality: list[dict[str, Any]]) -> dict[str, Any]:
             "erreurs": dict(Counter(q["erreur"].split(" :")[0] for q in rows if q["erreur"])),
             "pages_mediane": statistics.median(q["pages"] for q in read) if read else 0,
             "documents_avec_pages_sans_texte": sum(q["pages_sans_texte"] > 0 for q in read),
+            # Aucune page avec du texte : document scanné, illisible sans reconnaissance d'image.
+            "documents_sans_texte": sum(q["pages_sans_texte"] == q["pages"] for q in read),
             "documents_sans_rubrique_echeance": sum(not q["rubrique_echeance"] for q in read),
         }
     return summary
