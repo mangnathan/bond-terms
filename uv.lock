@@ -119,6 +119,7 @@ wheels = [
 name = "bond-terms"
 version = "0.0.0"
 source = { editable = "." }
+default-groups = ["dev", "entrepot"]
 dependencies = [
     { name = "cryptography" },
     { name = "defusedxml" },
