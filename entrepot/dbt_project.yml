@@ -1,0 +1,22 @@
+# Entrepôt de données de bond-terms : mêmes modèles sur DuckDB (poste, CI) et BigQuery (bac à sable).
+name: bond_terms
+version: "0.1.0"
+config-version: 2
+profile: bond_terms
+
+model-paths: ["models"]
+seed-paths: ["seeds"]
+test-paths: ["tests"]
+macro-paths: ["macros"]
+
+vars:
+  # Schéma (DuckDB) ou jeu de données (BigQuery) qui contient les tables brutes.
+  schema_brut: brut
+
+models:
+  bond_terms:
+    staging:
+      +materialized: view
+    marts:
+      # Tables reconstruites en entier : le bac à sable BigQuery n'accepte pas les mises à jour.
+      +materialized: table

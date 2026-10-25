@@ -1,0 +1,9 @@
+# Aucun secret ici : le chemin de la base et l'accès à BigQuery viennent de variables d'environnement.
+bond_terms:
+  target: duckdb
+  outputs:
+    duckdb:
+      type: duckdb
+      path: "{{ env_var('BOND_TERMS_DUCKDB', 'data/entrepot/bond_terms.duckdb') }}"
+      schema: main
+      threads: 2
