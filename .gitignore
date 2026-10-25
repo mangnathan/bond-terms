@@ -23,3 +23,10 @@ __pycache__/
 .idea/
 .DS_Store
 Thumbs.db
+
+# Entrepôt dbt : bases locales, compilations et journaux
+*.duckdb
+*.duckdb.wal
+/entrepot/target/
+/entrepot/logs/
+/entrepot/dbt_packages/
