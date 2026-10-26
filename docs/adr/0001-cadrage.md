@@ -84,6 +84,13 @@ Ajoutées le 25 octobre 2026, après la collecte du registre et avant le calcul 
 - **Unité et règle du découpage.** Le découpage se fait par document d'émission (conditions définitives ou prospectus d'émission isolée). La date de coupure est la plus récente date d'approbation telle que les documents approuvés à cette date ou après représentent au moins 30 % des documents ; tous les documents d'une même date restent du même côté.
 - **Second jeu de test : émetteurs jamais vus.** Les 8 émetteurs suivent un petit nombre de modèles de documents, et le test principal vient des mêmes émetteurs : il ne mesure pas la capacité à lire le document d'un émetteur inconnu, qui est pourtant le cas courant d'une équipe référentiel titres. Un second jeu de test est donc constitué : 300 obligations classiques à ISIN français tirées au hasard (graine 20261025) parmi celles des autres émetteurs de FIRDS, puis leurs documents d'émission, réduits par un second tirage (même graine) à 100 documents au plus. Ces documents ne sont jamais ouverts pendant le développement ; ils sont ouverts une seule fois, avec le test principal, et leurs résultats sont publiés à côté, avec les mêmes indicateurs. La règle de choix entre l'extracteur à règles et le LLM reste fondée sur le test principal, comme fixé ci-dessus.
 
+Ajoutées le 26 octobre 2026, après des mesures sur le seul développement et avant toute extraction ; le détail est dans l'[ADR 0002](0002-conception-extracteur.md).
+
+- **Pages sans texte lues par OCR.** Les seuils ne changent pas : l'OCR locale lit les scans aussi bien que le texte natif.
+- **Rattachement vérifié.** Un couple document-ISIN n'entre dans la vérité terrain que si le document cite l'ISIN. Le contrôle est appliqué aux trois jeux ; les couples écartés sont publiés comme anomalies du registre.
+- **Montant indicatif.** FIRDS publie l'encours, le document le montant de son émission : le montant est mesuré et publié avec son intervalle, sans seuil de réussite, et ses écarts vont au rapport d'exceptions.
+- **Obligations perpétuelles.** « Perpétuelle » est la bonne réponse quand FIRDS donne l'échéance du 31 décembre 9999.
+
 ## Alternatives écartées
 
 | Option | Raison |
