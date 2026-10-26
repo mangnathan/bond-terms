@@ -55,7 +55,7 @@ def test_values_are_cleaned_checked_and_cited(tmp_path: Path) -> None:
     # Valeur hors format : écartée et signalée.
     assert champs["rang"].valeur is None
     assert extraction.remarque == "format refusé : rang"
-    assert extraction.jetons_entree == 1200 and extraction.version == "faux-modele/extraction-v1"
+    assert extraction.jetons_entree == 1200 and extraction.version == "faux-modele/extraction-v2"
 
 
 def test_the_isin_and_the_numbered_pages_are_sent(tmp_path: Path) -> None:

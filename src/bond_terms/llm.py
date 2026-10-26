@@ -21,7 +21,7 @@ from typing import Any, Protocol
 
 from bond_terms.extraction import FIELDS, PERPETUAL, Extraction, Value, verify
 
-PROMPT_VERSION = "extraction-v1"
+PROMPT_VERSION = "extraction-v2"
 SYSTEM_PROMPT = (Path(__file__).parent / "prompts" / f"{PROMPT_VERSION}.txt").read_text(
     encoding="utf-8"
 )
