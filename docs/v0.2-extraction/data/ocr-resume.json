@@ -1,0 +1,18 @@
+{
+  "developpement": {
+    "documents_avec_pages_sans_texte": 48,
+    "pages_lues_par_ocr": 127,
+    "pages_toujours_vides": 2
+  },
+  "test": {
+    "documents_avec_pages_sans_texte": 15,
+    "pages_lues_par_ocr": 110,
+    "pages_toujours_vides": 5
+  },
+  "test_nouveaux_emetteurs": {
+    "documents_avec_pages_sans_texte": 8,
+    "pages_lues_par_ocr": 63,
+    "pages_toujours_vides": 2
+  },
+  "secondes_par_page_mediane": 3.32
+}

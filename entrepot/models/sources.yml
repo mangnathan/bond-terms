@@ -15,3 +15,5 @@ sources:
         description: Jeu de chaque document, figé avant toute extraction (ADR 0001).
       - name: pdf_controle
         description: Contrôle de lecture des PDF, sans aucun contenu.
+      - name: rattachement
+        description: Pour chaque couple document-ISIN, le document cite-t-il l'ISIN ? (bond_terms.rattachement, ADR 0002)

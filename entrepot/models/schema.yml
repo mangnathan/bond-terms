@@ -40,6 +40,8 @@ models:
   - name: verite_terrain
     description: Valeurs officielles de FIRDS pour chaque couple document-ISIN du découpage.
     columns:
+      - name: isin_cite
+        data_tests: [not_null]
       - name: devise
         data_tests: [not_null]
       - name: date_echeance

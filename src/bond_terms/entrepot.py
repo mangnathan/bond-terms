@@ -12,6 +12,7 @@ dont la limite de stockage vaut pour toute la vie du projet.
 from __future__ import annotations
 
 import argparse
+import csv
 import json
 from pathlib import Path
 
@@ -27,7 +28,14 @@ from bond_terms.registre import document_rows
 
 RAW_SCHEMA = "brut"
 RAW_TABLES = frozenset(
-    {"firds_titres", "population", "registre_documents", "decoupage", "pdf_controle"}
+    {
+        "firds_titres",
+        "population",
+        "registre_documents",
+        "decoupage",
+        "pdf_controle",
+        "rattachement",
+    }
 )
 
 
@@ -37,9 +45,14 @@ def _strings(table: pa.Table) -> pa.Table:
 
 
 def read_csv(path: Path) -> pa.Table:
-    options = pacsv.ConvertOptions(strings_can_be_null=False, column_types={})
-    table = pacsv.read_csv(path, convert_options=options)
-    return _strings(table)
+    """Chaque colonne est lue comme du texte, sans deviner son type : deviner puis reconvertir
+    changerait « True » en « true », « 007 » en « 7 » ou « 3.8730 » en « 3.873 »."""
+    with path.open(encoding="utf-8", newline="") as f:
+        header = next(csv.reader(f))
+    options = pacsv.ConvertOptions(
+        strings_can_be_null=False, column_types=dict.fromkeys(header, pa.string())
+    )
+    return pacsv.read_csv(path, convert_options=options)
 
 
 def new_issuer_documents(cache_dir: Path, isins: set[str]) -> list[dict[str, str]]:
@@ -59,6 +72,7 @@ def build_raw_tables(
     new_issuer_cache: Path,
     decoupage: Path,
     pdf_quality: Path,
+    rattachement: Path,
 ) -> dict[str, pa.Table]:
     split = read_csv(decoupage)
     population = select_population(firds_index)
@@ -88,6 +102,7 @@ def build_raw_tables(
         "registre_documents": _strings(documents),
         "decoupage": split,
         "pdf_controle": read_csv(pdf_quality),
+        "rattachement": read_csv(rattachement),
     }
 
 
@@ -123,6 +138,7 @@ def main() -> None:
         / f"{args.registre_date}-nouveaux-emetteurs",
         decoupage=args.collecte_dir / "decoupage-documents.csv",
         pdf_quality=args.collecte_dir / "pdf-controle.csv",
+        rattachement=args.data_dir / "interim" / "rattachement.csv",
     )
     load_duckdb(tables, args.database)
     for name, table in tables.items():
