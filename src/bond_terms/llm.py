@@ -102,6 +102,7 @@ class UnavailableError(RuntimeError):
 
 UNAVAILABLE_ATTEMPTS = 3
 UNAVAILABLE_WAIT_S = 30.0
+REQUEST_TIMEOUT_MS = 120_000
 
 
 @dataclass
@@ -266,12 +267,17 @@ class GeminiModel:  # pragma: no cover - appelle l'API Gemini
         self.types = types
         self.client = genai.Client(
             api_key=api_key,
-            http_options=types.HttpOptions(retry_options=types.HttpRetryOptions(attempts=1)),
+            http_options=types.HttpOptions(
+                retry_options=types.HttpRetryOptions(attempts=1),
+                # Sans délai maximal, une requête restée sans réponse bloquait tout le lancement.
+                timeout=REQUEST_TIMEOUT_MS,
+            ),
         )
         self.min_interval_s = min_interval_s
         self.last_call = 0.0
 
     def generate(self, system: str, user: str) -> Reply:
+        import httpx
         from google.genai import errors
 
         wait = self.min_interval_s - (time.monotonic() - self.last_call)
@@ -300,6 +306,8 @@ class GeminiModel:  # pragma: no cover - appelle l'API Gemini
                     f"service indisponible : {error.code} {error.status}"
                 ) from error
             raise
+        except httpx.TimeoutException as error:
+            raise UnavailableError(f"pas de réponse en {REQUEST_TIMEOUT_MS // 1000} s") from error
         seconds = round(time.perf_counter() - start, 3)
         usage = response.usage_metadata
         tokens_in = usage.prompt_token_count if usage else None
