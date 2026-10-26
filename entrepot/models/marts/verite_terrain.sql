@@ -27,8 +27,13 @@ select
     -- Le montant n'est comparé que pour un ISIN à document unique : un abondement change le total.
     coalesce(documents_par_isin.nb_documents, 0) = 1 as montant_comparable,
     -- Le rang n'est comparé que lorsque FIRDS le renseigne.
-    firds.rang is not null as rang_comparable
+    firds.rang is not null as rang_comparable,
+    -- Le couple n'entre dans la vérité terrain que si le document cite l'ISIN (ADR 0002).
+    -- Pas de valeur par défaut : un couple sans contrôle fait échouer le test not_null.
+    rattachement.isin_cite
 from {{ ref('stg_decoupage') }} as decoupage
 inner join {{ ref('stg_firds_titres') }} as firds on firds.isin = decoupage.isin
 left join {{ ref('emetteurs') }} as emetteurs on emetteurs.lei = firds.lei_emetteur
 left join documents_par_isin on documents_par_isin.isin = decoupage.isin
+left join {{ ref('stg_rattachement') }} as rattachement
+    on rattachement.document_id = decoupage.document_id and rattachement.isin = decoupage.isin

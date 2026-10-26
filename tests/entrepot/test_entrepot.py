@@ -120,12 +120,18 @@ def write_inputs(tmp: Path, test_date: str) -> dict[str, Path]:
         writer.writerow(["1", "developpement", "10", "a", "9", "9", "0", "False", ""])
         writer.writerow(["2", "test", "10", "b", "10", "1", "900", "True", ""])
         writer.writerow(["9", "test_nouveaux_emetteurs", "10", "c", "8", "0", "800", "True", ""])
+    rattachement = tmp / "rattachement.csv"
+    with rattachement.open("w", newline="", encoding="utf-8") as f:
+        writer = csv.writer(f, lineterminator="\n")
+        writer.writerow(["document_id", "isin", "jeu", "isin_cite"])
+        writer.writerows([(d, i, jeu, str(d != "9")) for d, i, _, _, jeu in rows])
     return {
         "firds": firds,
         "registre": registre,
         "cache": cache,
         "decoupage": decoupage,
         "controle": controle,
+        "rattachement": rattachement,
     }
 
 
@@ -137,6 +143,7 @@ def build(tmp: Path, test_date: str, monkeypatch: pytest.MonkeyPatch) -> tuple[b
         inputs["cache"],
         inputs["decoupage"],
         inputs["controle"],
+        inputs["rattachement"],
     )
     database = tmp / "entrepot.duckdb"
     load_duckdb(tables, database)
@@ -166,15 +173,16 @@ def test_warehouse_builds_and_applies_the_comparability_rules(
     # dbt garde sa connexion ouverte dans ce processus : même configuration, sinon DuckDB refuse.
     with duckdb.connect(str(database)) as connection:
         rows = connection.sql(
-            "select isin, jeu, emetteur, taux_fixe, montant_comparable"
+            "select isin, jeu, emetteur, taux_fixe, montant_comparable, isin_cite"
             " from verite_terrain order by isin"
         ).fetchall()
         scanned = connection.sql("select document_id from documents where scanne").fetchall()
     assert rows == [
-        ("FR0000000001", "developpement", "LVMH", 3.873, True),
+        ("FR0000000001", "developpement", "LVMH", 3.873, True, True),
         # Deux documents d'émission pour cet ISIN : le montant n'est pas comparable.
-        ("FR0000000002", "test", "LVMH", 3.873, False),
-        ("FR0000000009", "test_nouveaux_emetteurs", "autre émetteur", 3.873, True),
+        ("FR0000000002", "test", "LVMH", 3.873, False, True),
+        # Le document 9 ne cite pas son ISIN : anomalie de rattachement.
+        ("FR0000000009", "test_nouveaux_emetteurs", "autre émetteur", 3.873, True, False),
     ]
     assert scanned == [("1",)]
 

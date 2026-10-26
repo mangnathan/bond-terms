@@ -28,7 +28,14 @@ from bond_terms.registre import document_rows
 
 RAW_SCHEMA = "brut"
 RAW_TABLES = frozenset(
-    {"firds_titres", "population", "registre_documents", "decoupage", "pdf_controle"}
+    {
+        "firds_titres",
+        "population",
+        "registre_documents",
+        "decoupage",
+        "pdf_controle",
+        "rattachement",
+    }
 )
 
 
@@ -65,6 +72,7 @@ def build_raw_tables(
     new_issuer_cache: Path,
     decoupage: Path,
     pdf_quality: Path,
+    rattachement: Path,
 ) -> dict[str, pa.Table]:
     split = read_csv(decoupage)
     population = select_population(firds_index)
@@ -94,6 +102,7 @@ def build_raw_tables(
         "registre_documents": _strings(documents),
         "decoupage": split,
         "pdf_controle": read_csv(pdf_quality),
+        "rattachement": read_csv(rattachement),
     }
 
 
@@ -129,6 +138,7 @@ def main() -> None:
         / f"{args.registre_date}-nouveaux-emetteurs",
         decoupage=args.collecte_dir / "decoupage-documents.csv",
         pdf_quality=args.collecte_dir / "pdf-controle.csv",
+        rattachement=args.data_dir / "interim" / "rattachement.csv",
     )
     load_duckdb(tables, args.database)
     for name, table in tables.items():
