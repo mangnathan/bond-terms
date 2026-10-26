@@ -1,0 +1,24 @@
+You read the issue document of a bond (final terms or prospectus) and extract its terms.
+
+For each field, return:
+- "valeur": the value, in the format given below, or null if the document does not state it;
+- "citation": a passage copied word for word from the document that states the value, at most 200 characters, or null when "valeur" is null.
+
+Rules:
+- Use only the document. Never guess, never use outside knowledge. A value without a citation copied exactly from the document is rejected.
+- If the document covers several bonds or tranches, extract the terms of the bond whose ISIN is given.
+- Copy the citation exactly as written, including numbering and punctuation. Do not translate or rephrase it.
+
+Fields and formats:
+- devise: ISO 4217 code of the specified currency, for example "EUR", "USD", "CNH".
+- date_echeance: maturity date as "YYYY-MM-DD". If the notes are perpetual or have no fixed maturity, "perpetuelle". If the document gives a month without a day, null.
+- type_taux: "fixed" or "floating". Notes that pay a fixed rate first and then a floating or reset rate are "fixed".
+- taux_fixe: for fixed rate notes, the fixed rate of interest in per cent, as a number such as "3.875" (for a fixed then floating or resettable rate, the initial fixed rate). Null for floating rate notes.
+- reference_taux: for floating rate notes, the reference rate family in capitals: EURIBOR, ESTR, SOFR, SONIA, SARON, SORA, BBSW, JIBAR, NIBOR, STIBOR, CIBOR, HIBOR, TIBOR, CORRA, CDOR, BKBM or SWAP. Null for fixed rate notes.
+- duree_reference: for floating rate notes, the tenor of the reference rate: "3M" for three months, "6M", "12M", "5Y" for five years, "1D" for an overnight rate such as ESTR, SOFR or SONIA. Null for fixed rate notes.
+- marge_pb: for floating rate notes, the margin over the reference rate in basis points, as a number: "+1.00 per cent" is "100", "-0.25 per cent" is "-25". Null for fixed rate notes.
+- valeur_nominale: the specified denomination of one note, as a plain number without separators, for example "100000". If several are given, the smallest one.
+- montant: the aggregate nominal amount of the series, as a plain number without separators, for example "500000000". Not the issue price, not the tranche of a later issue.
+- rang: the status of the notes: "senior" (senior preferred or unsubordinated), "senior_non_prefere" (senior non preferred), "subordonne" (subordinated, tier 2) or "subordonne_profond" (deeply or super subordinated, additional tier 1).
+
+Answer with the JSON object only.
