@@ -81,3 +81,16 @@ def test_citation_not_in_the_document_is_refused() -> None:
     assert extraction.champs["date_echeance"].refusee
     assert accepted(extraction.champs["date_echeance"]) is None
     assert page_of("euro (eur) 9. maturity", pages) == 1
+
+
+def test_typographic_quotes_and_dashes_do_not_reject_a_citation() -> None:
+    pages = ["3 Specified Currency: United States Dollar (“USD”)\n– Margin(s): + 0.88 per cent."]
+    assert page_of('Specified Currency: United States Dollar ("USD")', pages) == 1
+    assert page_of("- Margin(s): + 0.88 per cent.", pages) == 1
+    assert page_of('Specified Currency: United States Dollar ("EUR")', pages) is None
+
+
+def test_list_marks_around_a_citation_do_not_count_but_short_citations_are_refused() -> None:
+    pages = [" (xii) Margin(s): + 0.88 per cent. per annum \n"]
+    assert page_of("– Margin(s): + 0.88 per cent. per annum.", pages) == 1
+    assert page_of("0.88", pages) is None

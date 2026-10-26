@@ -52,15 +52,26 @@ class Extraction:
         return asdict(self)
 
 
+# Une citation trop courte (« EUR », « 2027 ») se retrouverait n'importe où dans le document.
+MIN_CITATION = 8
+
+# Variantes typographiques d'un même signe : guillemets et tirets.
+_TYPOGRAPHY = str.maketrans(
+    {"“": '"', "”": '"', "„": '"', "«": '"', "»": '"', "–": "-", "—": "-", "‑": "-", "−": "-"}
+)
+
+
 def compact(text: str) -> str:
-    """Forme de comparaison : minuscules, sans accents ni espaces."""
-    return re.sub(r"\s+", "", normalize(text))
+    """Forme de comparaison : minuscules, sans accents ni espaces, guillemets et tirets unifiés.
+    Les mots et les chiffres doivent rester identiques."""
+    return re.sub(r"\s+", "", normalize(text).translate(_TYPOGRAPHY))
 
 
 def page_of(citation: str, pages: list[str]) -> int | None:
-    """Première page (numérotée à partir de 1) qui contient la citation, ou None."""
-    needle = compact(citation)
-    if not needle:
+    """Première page (numérotée à partir de 1) qui contient la citation, ou None. Les signes de
+    ponctuation en tête et en fin (tiret de liste, point final) ne comptent pas."""
+    needle = compact(citation).strip("-\"'•*·.,;:")
+    if len(needle) < MIN_CITATION:
         return None
     for number, text in enumerate(pages, start=1):
         if needle in compact(text):
