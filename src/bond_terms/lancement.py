@@ -21,6 +21,7 @@ from __future__ import annotations
 import argparse
 import json
 import os
+import random
 import statistics
 from collections import defaultdict
 from collections.abc import Callable, Iterable
@@ -70,6 +71,16 @@ def run(
     return extractions, stopped
 
 
+SAMPLE_SEED = 20261026
+
+
+def sample(documents: dict[str, list[str]], size: int) -> dict[str, list[str]]:
+    """Tirage fixe : le même échantillon pour tous les extracteurs comparés."""
+    rng = random.Random(SAMPLE_SEED)  # noqa: S311 - tirage reproductible, pas de la sécurité
+    chosen = rng.sample(sorted(documents), min(size, len(documents)))
+    return {document_id: documents[document_id] for document_id in sorted(chosen)}
+
+
 def score(extractions: dict[str, Extraction], truth: list[dict[str, Any]]) -> list[dict[str, Any]]:
     """Un verdict par couple document-ISIN et par champ."""
     rows = []
@@ -116,12 +127,14 @@ def costs(extractions: Iterable[Extraction]) -> dict[str, Any]:
 
 def llm_extractor(model_name: str, cache_dir: Path) -> tuple[Extract, str]:  # pragma: no cover
     key = os.environ.get("GEMINI_API_KEY")
-    per_day = os.environ.get("BOND_TERMS_LLM_MAX_JOUR")
-    if not key or not per_day:
-        raise SystemExit("GEMINI_API_KEY et BOND_TERMS_LLM_MAX_JOUR sont requis (.env.example)")
-    interval = float(os.environ.get("BOND_TERMS_LLM_INTERVALLE_S", "7"))
+    if not key:
+        raise SystemExit("GEMINI_API_KEY est requise (voir .env.example)")
+    limits = llm.LIMITS[model_name]
+    # `.env` peut durcir les plafonds du code, jamais les relâcher.
+    per_day = min(limits.per_day, int(os.environ.get("BOND_TERMS_LLM_MAX_JOUR") or limits.per_day))
+    interval = max(limits.min_interval_s, float(os.environ.get("BOND_TERMS_LLM_INTERVALLE_S") or 0))
     model = llm.GeminiModel(model_name, key, interval)
-    budget = llm.Budget(cache_dir / "quota", model_name, int(per_day))
+    budget = llm.Budget(cache_dir / "quota", model_name, per_day)
     extractor = llm.Extractor(model, cache_dir, budget)
     return extractor.extract, f"{model_name}/{llm.PROMPT_VERSION}"
 
@@ -134,6 +147,9 @@ def main() -> None:  # pragma: no cover - lit les vraies données
     parser.add_argument("--pages", type=Path, default=Path("data/interim/textes/pages.parquet"))
     parser.add_argument(
         "--ocr-pages", type=Path, default=Path("data/interim/textes/pages-ocr.parquet")
+    )
+    parser.add_argument(
+        "--echantillon", type=int, help="nombre de documents tirés au hasard (graine fixe)"
     )
     parser.add_argument("--llm-cache", type=Path, default=Path("data/interim/llm"))
     parser.add_argument("--output-dir", type=Path, default=Path("data/interim/extractions"))
@@ -157,6 +173,10 @@ def main() -> None:  # pragma: no cover - lit les vraies données
     documents: dict[str, list[str]] = defaultdict(list)
     for couple in truth:
         documents[couple["document_id"]].append(couple["isin"])
+    if args.echantillon:
+        documents = sample(documents, args.echantillon)
+        truth = [couple for couple in truth if couple["document_id"] in documents]
+        name = f"{name}-echantillon{args.echantillon}"
     pages = pages_by_document(pq.read_table(args.pages), pq.read_table(args.ocr_pages))
     extractions, stopped = run(documents, pages, extract)
 

@@ -24,7 +24,36 @@ PROMPT_VERSION = "extraction-v1"
 SYSTEM_PROMPT = (Path(__file__).parent / "prompts" / f"{PROMPT_VERSION}.txt").read_text(
     encoding="utf-8"
 )
-MODELS = ("gemini-3.8-flash", "gemini-3.5-flash-lite")
+
+
+@dataclass(frozen=True)
+class Limits:
+    """Plafonds locaux d'un modèle, fixés sous l'offre gratuite."""
+
+    per_day: int
+    min_interval_s: float
+
+
+# Offre gratuite relevée dans AI Studio le 26 octobre 2026 (250 000 jetons par minute pour les
+# deux) : gemini-3.8-flash 5 requêtes par minute et 20 par jour ; gemini-3.5-flash-lite 15 par
+# minute et 500 par jour. Les plafonds locaux restent en dessous ; `.env` peut les baisser,
+# jamais les relever.
+LIMITS = {
+    "gemini-3.8-flash": Limits(per_day=18, min_interval_s=13.0),
+    "gemini-3.5-flash-lite": Limits(per_day=450, min_interval_s=5.0),
+}
+MODELS = tuple(LIMITS)
+# Google remet les compteurs à zéro à minuit, heure du Pacifique : la journée du plafond local
+# suit l'heure de Los Angeles en hiver (UTC-8). En été, l'heure d'écart est couverte par l'arrêt
+# au premier refus.
+QUOTA_DAY_OFFSET = dt.timedelta(hours=-8)
+
+
+def quota_day(now: dt.datetime | None = None) -> dt.date:
+    moment = now or dt.datetime.now(dt.UTC)
+    return (moment + QUOTA_DAY_OFFSET).date()
+
+
 # L'échéance figure toujours dans les 27 000 premiers caractères sur le développement.
 MAX_CHARS = 40_000
 
@@ -81,7 +110,7 @@ class Budget:
     """Plafond local de requêtes par jour et par modèle, décompté avant l'appel."""
 
     def __init__(self, directory: Path, model: str, per_day: int, today: dt.date | None = None):
-        self.path = directory / f"{(today or dt.date.today()).isoformat()}-{model}.json"
+        self.path = directory / f"{(today or quota_day()).isoformat()}-{model}.json"
         self.per_day = per_day
 
     def used(self) -> int:

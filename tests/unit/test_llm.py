@@ -7,7 +7,7 @@ from pathlib import Path
 import pytest
 
 from bond_terms import llm
-from bond_terms.lancement import FALLBACK, costs, run
+from bond_terms.lancement import FALLBACK, costs, run, sample
 
 PAGES = ["2. Specified Currency: Euro (EUR)\n", "9. Maturity Date: 8 July 2027\n"]
 
@@ -108,3 +108,21 @@ def test_quota_refusal_switches_the_rest_to_the_rules(tmp_path: Path) -> None:
 
 def test_long_documents_are_truncated() -> None:
     assert len(llm.document_text(["x" * 100_000])) == llm.MAX_CHARS
+
+
+def test_sample_is_fixed_and_shared() -> None:
+    documents = {str(n): [f"FR{n}"] for n in range(50)}
+    first, second = sample(documents, 5), sample(documents, 5)
+    assert first == second and len(first) == 5
+
+
+def test_code_caps_stay_under_the_free_tier() -> None:
+    assert llm.LIMITS["gemini-3.8-flash"].per_day < 20
+    assert llm.LIMITS["gemini-3.5-flash-lite"].per_day < 500
+    assert 60 / llm.LIMITS["gemini-3.8-flash"].min_interval_s < 5
+    assert 60 / llm.LIMITS["gemini-3.5-flash-lite"].min_interval_s <= 12
+
+
+def test_quota_day_follows_pacific_time() -> None:
+    # 2 h du matin à Paris le 27 (1 h UTC) : encore le 26 pour Google.
+    assert llm.quota_day(dt.datetime(2026, 10, 27, 1, tzinfo=dt.UTC)) == dt.date(2026, 10, 26)
