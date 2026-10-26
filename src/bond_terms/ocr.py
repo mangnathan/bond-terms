@@ -78,8 +78,8 @@ def run(
     return pa.Table.from_pylist(rows, schema=schema), durations
 
 
-def merge_pages(pages: pa.Table, ocr_pages: pa.Table) -> dict[str, str]:
-    """Texte complet de chaque document, pages lues par OCR comprises, dans l'ordre des pages."""
+def pages_by_document(pages: pa.Table, ocr_pages: pa.Table) -> dict[str, list[str]]:
+    """Pages de chaque document dans l'ordre, celles lues par OCR remplaçant les pages vides."""
     by_page: dict[tuple[str, int], str] = {}
     for row in pages.select(["document_id", "page", "texte"]).to_pylist():
         by_page[(row["document_id"], int(row["page"]))] = row["texte"] or ""
@@ -88,7 +88,12 @@ def merge_pages(pages: pa.Table, ocr_pages: pa.Table) -> dict[str, str]:
     texts: dict[str, list[str]] = defaultdict(list)
     for document_id, page in sorted(by_page):
         texts[document_id].append(by_page[(document_id, page)])
-    return {document_id: "\n".join(parts) for document_id, parts in texts.items()}
+    return dict(texts)
+
+
+def merge_pages(pages: pa.Table, ocr_pages: pa.Table) -> dict[str, str]:
+    """Texte complet de chaque document, pages lues par OCR comprises, dans l'ordre des pages."""
+    return {doc: "\n".join(parts) for doc, parts in pages_by_document(pages, ocr_pages).items()}
 
 
 def summarize(

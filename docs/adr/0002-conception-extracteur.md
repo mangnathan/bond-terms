@@ -94,3 +94,11 @@ Sur le développement, chaque extracteur est décrit par son exactitude, sa late
 - Le groupe de dépendances `ocr` (RapidOCR, onnxruntime, pypdfium2) rejoint la chaîne de lecture des PDF.
 - La table `verite_terrain` gagne une colonne « ISIN cité dans le document », et les comptes d'anomalies de rattachement sont publiés pour les trois jeux.
 - Ces décisions sont prises sur le développement, avant toute extraction. Le test n'est ouvert qu'une fois les extracteurs figés.
+
+## Conventions de comparaison précisées pendant le développement de l'extracteur à règles
+
+Ajoutées le 26 octobre 2026. Elles ont été mesurées sur le seul développement, avant l'écriture de l'extracteur LLM et avant toute ouverture des tests. Elles sont codées dans `bond_terms.comparaison`.
+
+- **Rang « senior non préférée ».** Quand le document indique « Senior Non Preferred », FIRDS déclare SBOD dans 33 cas et SNDB dans 11 cas : les déclarants ne classent pas cette catégorie intermédiaire de la même façon. Une lecture « senior non préférée » est juste si FIRDS indique SNDB ou SBOD. Une lecture « senior » n'est juste que pour SNDB, une lecture « subordonnée » que pour SBOD ou JUND.
+- **Yuan offshore.** Le document écrit CNH ; FIRDS, qui suit la norme ISO 4217, déclare CNY. Les deux sont équivalents.
+- **Taux fixe puis variable, ou révisable.** FIRDS code ces titres tantôt en taux fixe, tantôt en taux variable : 31 contre 6 pour « fixed/floating », 4 contre 3 pour « resettable » sur le développement. La règle de comparaison ne change pas ; les extracteurs suivent la convention majoritaire (taux fixe, avec le taux initial) et les cas minoritaires restent comptés faux. Le rapport les signale comme une incohérence de FIRDS.
