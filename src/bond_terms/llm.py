@@ -33,6 +33,8 @@ class Limits:
 
     per_day: int
     min_interval_s: float
+    # Niveau de réflexion le plus bas accepté par le modèle : la réflexion consomme des jetons.
+    thinking: str = "MINIMAL"
 
 
 # Offre gratuite relevée dans AI Studio le 26 octobre 2026 (250 000 jetons par minute pour les
@@ -40,7 +42,8 @@ class Limits:
 # minute et 500 par jour. Les plafonds locaux restent en dessous ; `.env` peut les baisser,
 # jamais les relever.
 LIMITS = {
-    "gemini-3.8-flash": Limits(per_day=18, min_interval_s=13.0),
+    # « MINIMAL » est refusé par ce modèle (erreur 400 constatée le 26 octobre 2026).
+    "gemini-3.8-flash": Limits(per_day=18, min_interval_s=13.0, thinking="LOW"),
     "gemini-3.5-flash-lite": Limits(per_day=450, min_interval_s=5.0),
 }
 MODELS = tuple(LIMITS)
@@ -280,7 +283,7 @@ class GeminiModel:  # pragma: no cover - appelle l'API Gemini
             response_mime_type="application/json",
             response_json_schema=SCHEMA,
             thinking_config=self.types.ThinkingConfig(
-                thinking_level=self.types.ThinkingLevel.MINIMAL
+                thinking_level=self.types.ThinkingLevel(LIMITS[self.name].thinking)
             ),
         )
         start = time.perf_counter()
