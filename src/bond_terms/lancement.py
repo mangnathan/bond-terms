@@ -54,19 +54,23 @@ order by document_id, isin
 def run(
     documents: dict[str, list[str]], pages: dict[str, list[str]], extract: Extract
 ) -> tuple[dict[str, Extraction], str]:
-    """Extrait chaque document ; au premier refus pour quota, le reste passe par les règles."""
+    """Extrait chaque document. Au premier refus pour quota, tous les documents restants passent
+    par les règles ; si le service reste indisponible, seul le document concerné y passe."""
     extractions: dict[str, Extraction] = {}
     stopped = ""
     for document_id in sorted(documents):
         isins = documents[document_id]
+        reason = stopped
         if not stopped:
             try:
                 extractions[document_id] = extract(document_id, pages[document_id], isins)
                 continue
             except llm.QuotaError as error:
-                stopped = str(error)
+                stopped = reason = str(error)
+            except llm.UnavailableError as error:
+                reason = str(error)
         fallback = regles.extract(document_id, pages[document_id])
-        fallback.remarque = f"{FALLBACK} : {stopped}"
+        fallback.remarque = f"{FALLBACK} : {reason}"
         extractions[document_id] = fallback
     return extractions, stopped
 

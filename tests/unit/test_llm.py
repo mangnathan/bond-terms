@@ -126,3 +126,44 @@ def test_code_caps_stay_under_the_free_tier() -> None:
 def test_quota_day_follows_pacific_time() -> None:
     # 2 h du matin à Paris le 27 (1 h UTC) : encore le 26 pour Google.
     assert llm.quota_day(dt.datetime(2026, 10, 27, 1, tzinfo=dt.UTC)) == dt.date(2026, 10, 26)
+
+
+class FlakyModel(FakeModel):
+    """Indisponible pour les `failures` premiers appels."""
+
+    def __init__(self, failures: int):
+        super().__init__()
+        self.failures = failures
+        self.attempts = 0
+
+    def generate(self, system: str, user: str) -> llm.Reply:
+        self.attempts += 1
+        if self.attempts <= self.failures:
+            raise llm.UnavailableError("service indisponible : 503 UNAVAILABLE")
+        return super().generate(system, user)
+
+
+def flaky_extractor(tmp: Path, model: FakeModel, waits: list[float]) -> llm.Extractor:
+    budget = llm.Budget(tmp / "quota", model.name, 10, today=dt.date(2026, 10, 26))
+    return llm.Extractor(model, tmp / "cache", budget, sleep=waits.append)
+
+
+def test_temporary_unavailability_is_retried_and_counted(tmp_path: Path) -> None:
+    waits: list[float] = []
+    model = FlakyModel(failures=2)
+    extractor = flaky_extractor(tmp_path, model, waits)
+    extraction = extractor.extract("1", PAGES, ["X"])
+    assert extraction.extracteur == "llm"
+    assert waits == [llm.UNAVAILABLE_WAIT_S, llm.UNAVAILABLE_WAIT_S]
+    assert extractor.budget.used() == 3
+
+
+def test_lasting_unavailability_sends_only_that_document_to_the_rules(tmp_path: Path) -> None:
+    model = FlakyModel(failures=3)
+    extractor = flaky_extractor(tmp_path, model, [])
+    documents = {"1": ["X"], "2": ["Y"]}
+    extractions, stopped = run(documents, dict.fromkeys(documents, PAGES), extractor.extract)
+    assert stopped == ""
+    assert extractions["1"].extracteur == "regles"
+    assert "indisponible" in extractions["1"].remarque
+    assert extractions["2"].extracteur == "llm"

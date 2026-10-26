@@ -14,6 +14,7 @@ import hashlib
 import json
 import re
 import time
+from collections.abc import Callable
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Any, Protocol
@@ -90,6 +91,14 @@ FORMATS = {
 
 class QuotaError(RuntimeError):
     """Refus pour quota, ou plafond local atteint : plus aucun appel ce jour-là."""
+
+
+class UnavailableError(RuntimeError):
+    """Surcharge passagère du service (erreur 5xx) : le document passe par les règles."""
+
+
+UNAVAILABLE_ATTEMPTS = 3
+UNAVAILABLE_WAIT_S = 30.0
 
 
 @dataclass
@@ -181,12 +190,32 @@ def parse(text: str) -> tuple[dict[str, Value], str]:
 
 
 class Extractor:
-    def __init__(self, model: Model, cache_dir: Path, budget: Budget):
+    def __init__(
+        self,
+        model: Model,
+        cache_dir: Path,
+        budget: Budget,
+        sleep: Callable[[float], None] = time.sleep,
+    ):
         self.model = model
         self.cache_dir = cache_dir / model.name / PROMPT_VERSION
         self.budget = budget
+        self.sleep = sleep
         self.calls = 0
         self.cache_hits = 0
+
+    def generate(self, user: str) -> Reply:
+        """Appel au modèle ; une surcharge passagère est retentée deux fois, 30 s plus tard,
+        chaque essai étant décompté du plafond. Un refus pour quota n'est jamais retenté."""
+        for attempt in range(UNAVAILABLE_ATTEMPTS):
+            self.budget.take()
+            try:
+                return self.model.generate(SYSTEM_PROMPT, user)
+            except UnavailableError:
+                if attempt == UNAVAILABLE_ATTEMPTS - 1:
+                    raise
+                self.sleep(UNAVAILABLE_WAIT_S)
+        raise UnavailableError("aucun essai")  # inaccessible : la boucle renvoie ou lève
 
     def reply(self, document_id: str, user: str) -> Reply:
         key = cache_key(self.model.name, user)
@@ -198,8 +227,7 @@ class Extractor:
                 return Reply(
                     data["reponse"], data["jetons_entree"], data["jetons_sortie"], data["secondes"]
                 )
-        self.budget.take()
-        reply = self.model.generate(SYSTEM_PROMPT, user)
+        reply = self.generate(user)
         self.calls += 1
         self.cache_dir.mkdir(parents=True, exist_ok=True)
         record = {
@@ -264,6 +292,10 @@ class GeminiModel:  # pragma: no cover - appelle l'API Gemini
         except errors.APIError as error:
             if error.code == 429 or error.status == "RESOURCE_EXHAUSTED":
                 raise QuotaError(f"refus de l'API pour quota : {error.status}") from error
+            if error.code is not None and error.code >= 500:
+                raise UnavailableError(
+                    f"service indisponible : {error.code} {error.status}"
+                ) from error
             raise
         seconds = round(time.perf_counter() - start, 3)
         usage = response.usage_metadata
