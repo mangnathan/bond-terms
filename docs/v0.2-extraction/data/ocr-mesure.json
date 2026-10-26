@@ -1,0 +1,64 @@
+{
+  "jeu": "developpement",
+  "moteur": "rapidocr 3.10 (onnxruntime), rendu à 200 points par pouce",
+  "scans": 10,
+  "pages_ocr": 89,
+  "secondes_par_page_mediane": 3.25,
+  "secondes_ocr_total": 292.9,
+  "texte_du_pdf": {
+    "couples": 342,
+    "documents": 341,
+    "code_isin": {
+      "trouves": 332,
+      "compares": 342
+    },
+    "echeance": {
+      "trouves": 325,
+      "compares": 342
+    },
+    "devise": {
+      "trouves": 334,
+      "compares": 342
+    },
+    "taux_fixe": {
+      "trouves": 284,
+      "compares": 294
+    },
+    "valeur_nominale": {
+      "trouves": 338,
+      "compares": 342
+    },
+    "montant": {
+      "trouves": 286,
+      "compares": 326
+    }
+  },
+  "ocr": {
+    "couples": 10,
+    "documents": 10,
+    "code_isin": {
+      "trouves": 9,
+      "compares": 10
+    },
+    "echeance": {
+      "trouves": 9,
+      "compares": 10
+    },
+    "devise": {
+      "trouves": 10,
+      "compares": 10
+    },
+    "taux_fixe": {
+      "trouves": 9,
+      "compares": 9
+    },
+    "valeur_nominale": {
+      "trouves": 9,
+      "compares": 10
+    },
+    "montant": {
+      "trouves": 6,
+      "compares": 6
+    }
+  }
+}
