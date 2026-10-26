@@ -12,6 +12,7 @@ dont la limite de stockage vaut pour toute la vie du projet.
 from __future__ import annotations
 
 import argparse
+import csv
 import json
 from pathlib import Path
 
@@ -37,9 +38,14 @@ def _strings(table: pa.Table) -> pa.Table:
 
 
 def read_csv(path: Path) -> pa.Table:
-    options = pacsv.ConvertOptions(strings_can_be_null=False, column_types={})
-    table = pacsv.read_csv(path, convert_options=options)
-    return _strings(table)
+    """Chaque colonne est lue comme du texte, sans deviner son type : deviner puis reconvertir
+    changerait « True » en « true », « 007 » en « 7 » ou « 3.8730 » en « 3.873 »."""
+    with path.open(encoding="utf-8", newline="") as f:
+        header = next(csv.reader(f))
+    options = pacsv.ConvertOptions(
+        strings_can_be_null=False, column_types=dict.fromkeys(header, pa.string())
+    )
+    return pacsv.read_csv(path, convert_options=options)
 
 
 def new_issuer_documents(cache_dir: Path, isins: set[str]) -> list[dict[str, str]]:
