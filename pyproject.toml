@@ -31,6 +31,10 @@ ocr = [
     "pypdfium2>=5",
     "rapidocr>=3.10",
 ]
+# API Gemini en offre gratuite (ADR 0002) : installée à la demande, jamais en CI.
+llm = [
+    "google-genai>=2.29.0,<2.30",
+]
 # Bac à sable BigQuery : installé à la demande (--group bigquery), jamais en CI.
 bigquery = [
     "dbt-bigquery>=1.12",
@@ -39,6 +43,9 @@ bigquery = [
 [tool.uv]
 # L'entrepôt est installé sur le poste et en CI, pour que mypy et les tests le vérifient aussi.
 default-groups = ["dev", "entrepot"]
+# dbt-bigquery impose google-genai 1.x par le client Vertex AI ; le groupe llm utilise la 2.x.
+# Les deux ne servent jamais ensemble : uv les résout séparément.
+conflicts = [[{ group = "bigquery" }, { group = "llm" }]]
 
 [build-system]
 requires = ["uv_build>=0.13,<0.14"]
@@ -80,9 +87,10 @@ ignore_missing_imports = true
 module = ["rapidocr", "rapidocr.*", "pypdfium2", "pypdfium2.*"]
 ignore_missing_imports = true
 
-# Le client BigQuery n'est pas installé en CI : ses imports n'y sont pas vérifiés.
+# Les clients BigQuery et Gemini (et httpx, qu'apporte ce dernier) ne sont pas installés en CI :
+# leurs imports n'y sont pas vérifiés.
 [[tool.mypy.overrides]]
-module = ["google", "google.*"]
+module = ["google", "google.*", "httpx"]
 ignore_missing_imports = true
 
 [tool.pytest.ini_options]

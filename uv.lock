@@ -2,19 +2,28 @@ version = 1
 revision = 5
 requires-python = ">=3.12"
 resolution-markers = [
-    "python_full_version >= '3.15' and sys_platform == 'win32'",
-    "python_full_version >= '3.15' and sys_platform == 'emscripten'",
-    "python_full_version >= '3.15' and sys_platform != 'emscripten' and sys_platform != 'win32'",
-    "python_full_version == '3.14.*' and sys_platform == 'win32'",
-    "python_full_version == '3.14.*' and sys_platform == 'emscripten'",
-    "python_full_version == '3.14.*' and sys_platform != 'emscripten' and sys_platform != 'win32'",
-    "python_full_version == '3.13.*' and sys_platform == 'win32'",
-    "python_full_version == '3.13.*' and sys_platform == 'emscripten'",
-    "python_full_version == '3.13.*' and sys_platform != 'emscripten' and sys_platform != 'win32'",
-    "python_full_version < '3.13' and sys_platform == 'win32'",
-    "python_full_version < '3.13' and sys_platform == 'emscripten'",
-    "python_full_version < '3.13' and sys_platform != 'emscripten' and sys_platform != 'win32'",
+    "python_full_version >= '3.15' and extra != 'group-10-bond-terms-bigquery' and extra == 'group-10-bond-terms-llm'",
+    "python_full_version == '3.14.*' and extra != 'group-10-bond-terms-bigquery' and extra == 'group-10-bond-terms-llm'",
+    "python_full_version < '3.14' and extra != 'group-10-bond-terms-bigquery' and extra == 'group-10-bond-terms-llm'",
+    "python_full_version >= '3.15' and sys_platform == 'win32' and extra == 'group-10-bond-terms-bigquery' and extra != 'group-10-bond-terms-llm'",
+    "python_full_version >= '3.15' and sys_platform == 'emscripten' and extra == 'group-10-bond-terms-bigquery' and extra != 'group-10-bond-terms-llm'",
+    "python_full_version >= '3.15' and sys_platform != 'emscripten' and sys_platform != 'win32' and extra == 'group-10-bond-terms-bigquery' and extra != 'group-10-bond-terms-llm'",
+    "python_full_version == '3.14.*' and sys_platform == 'win32' and extra == 'group-10-bond-terms-bigquery' and extra != 'group-10-bond-terms-llm'",
+    "python_full_version == '3.14.*' and sys_platform == 'emscripten' and extra == 'group-10-bond-terms-bigquery' and extra != 'group-10-bond-terms-llm'",
+    "python_full_version == '3.14.*' and sys_platform != 'emscripten' and sys_platform != 'win32' and extra == 'group-10-bond-terms-bigquery' and extra != 'group-10-bond-terms-llm'",
+    "python_full_version == '3.13.*' and sys_platform == 'win32' and extra == 'group-10-bond-terms-bigquery' and extra != 'group-10-bond-terms-llm'",
+    "python_full_version == '3.13.*' and sys_platform == 'emscripten' and extra == 'group-10-bond-terms-bigquery' and extra != 'group-10-bond-terms-llm'",
+    "python_full_version == '3.13.*' and sys_platform != 'emscripten' and sys_platform != 'win32' and extra == 'group-10-bond-terms-bigquery' and extra != 'group-10-bond-terms-llm'",
+    "python_full_version < '3.13' and sys_platform == 'win32' and extra == 'group-10-bond-terms-bigquery' and extra != 'group-10-bond-terms-llm'",
+    "python_full_version < '3.13' and sys_platform == 'emscripten' and extra == 'group-10-bond-terms-bigquery' and extra != 'group-10-bond-terms-llm'",
+    "python_full_version < '3.13' and sys_platform != 'emscripten' and sys_platform != 'win32' and extra == 'group-10-bond-terms-bigquery' and extra != 'group-10-bond-terms-llm'",
+    "python_full_version >= '3.15' and extra != 'group-10-bond-terms-bigquery' and extra != 'group-10-bond-terms-llm'",
+    "python_full_version < '3.15' and extra != 'group-10-bond-terms-bigquery' and extra != 'group-10-bond-terms-llm'",
 ]
+conflicts = [[
+    { package = "bond-terms", group = "bigquery" },
+    { package = "bond-terms", group = "llm" },
+]]
 
 [[package]]
 name = "agate"
@@ -27,7 +36,7 @@ dependencies = [
     { name = "parsedatetime" },
     { name = "python-slugify" },
     { name = "pytimeparse" },
-    { name = "tzdata", marker = "sys_platform == 'win32'" },
+    { name = "tzdata", marker = "sys_platform == 'win32' or (extra == 'group-10-bond-terms-bigquery' and extra == 'group-10-bond-terms-llm')" },
 ]
 sdist = { url = "https://files.pythonhosted.org/packages/29/77/6f5df1c68bf056f5fdefc60ccc616303c6211e71cd6033c830c12735f605/agate-1.9.1.tar.gz", hash = "sha256:bc60880c2ee59636a2a80cd8603d63f995be64526abf3cbba12f00767bcd5b3d", size = 202303, upload-time = "2023-12-21T20:05:24.316Z" }
 wheels = [
@@ -165,6 +174,9 @@ entrepot = [
     { name = "dbt-core" },
     { name = "dbt-duckdb" },
 ]
+llm = [
+    { name = "google-genai", version = "2.29.0", source = { registry = "https://pypi.org/simple" } },
+]
 ocr = [
     { name = "onnxruntime" },
     { name = "pypdfium2" },
@@ -192,6 +204,7 @@ entrepot = [
     { name = "dbt-core", specifier = ">=1.10" },
     { name = "dbt-duckdb", specifier = ">=1.10" },
 ]
+llm = [{ name = "google-genai", specifier = ">=2.29.0,<2.30" }]
 ocr = [
     { name = "onnxruntime", specifier = ">=1.20" },
     { name = "pypdfium2", specifier = ">=5" },
@@ -212,7 +225,7 @@ name = "cffi"
 version = "2.1.1"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
-    { name = "pycparser", marker = "implementation_name != 'PyPy'" },
+    { name = "pycparser", marker = "implementation_name != 'PyPy' or (extra == 'group-10-bond-terms-bigquery' and extra == 'group-10-bond-terms-llm')" },
 ]
 sdist = { url = "https://files.pythonhosted.org/packages/9e/ef/008a1939e372c06329a3fce4279c02f328488f3526744906eeec3da7ad5f/cffi-2.1.1.tar.gz", hash = "sha256:dd31f52ea1086513bb9df30f8fcee9b8918323ae067a3d5b78bc826a000712be", size = 530807, upload-time = "2026-08-03T21:21:18.939Z" }
 wheels = [
@@ -455,7 +468,7 @@ name = "colorlog"
 version = "6.12.0"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
-    { name = "colorama", marker = "sys_platform == 'win32'" },
+    { name = "colorama", marker = "sys_platform == 'win32' or (extra == 'group-10-bond-terms-bigquery' and extra == 'group-10-bond-terms-llm')" },
 ]
 sdist = { url = "https://files.pythonhosted.org/packages/8c/55/ba79756cb90c8d69d599d57785398ac87bba7b19c80e87f4e8a562197c93/colorlog-6.12.0.tar.gz", hash = "sha256:2a7924c1dadf18b22a0eb8b06d1c7b01d5341707ec1641eb6fcc4fde0c3e8e5f", size = 18151, upload-time = "2026-07-23T13:40:40.71Z" }
 wheels = [
@@ -467,7 +480,7 @@ name = "cryptography"
 version = "50.0.2"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
-    { name = "cffi", marker = "platform_python_implementation != 'PyPy'" },
+    { name = "cffi", marker = "platform_python_implementation != 'PyPy' or (extra == 'group-10-bond-terms-bigquery' and extra == 'group-10-bond-terms-llm')" },
 ]
 sdist = { url = "https://files.pythonhosted.org/packages/9d/af/182eb91b0df3fe75c4d9f26fe70684569566745f6ba7e5c9c73a862c5252/cryptography-50.0.2.tar.gz", hash = "sha256:7b46165bb56eb4704e2eaaf86f3c940d19154535d9b0ca7d6d590b04060e00d5", size = 880623, upload-time = "2026-09-30T15:30:04.884Z" }
 wheels = [
@@ -578,7 +591,7 @@ dependencies = [
     { name = "google-api-core" },
     { name = "google-auth" },
     { name = "google-cloud-aiplatform" },
-    { name = "google-cloud-bigquery", extra = ["pandas"] },
+    { name = "google-cloud-bigquery", extra = ["pandas"], marker = "extra == 'group-10-bond-terms-bigquery'" },
     { name = "google-cloud-dataproc" },
     { name = "google-cloud-storage" },
     { name = "nbformat" },
@@ -857,12 +870,12 @@ version = "1.148.1"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "docstring-parser" },
-    { name = "google-api-core", extra = ["grpc"] },
+    { name = "google-api-core", extra = ["grpc"], marker = "extra == 'group-10-bond-terms-bigquery'" },
     { name = "google-auth" },
     { name = "google-cloud-bigquery" },
     { name = "google-cloud-resource-manager" },
     { name = "google-cloud-storage" },
-    { name = "google-genai" },
+    { name = "google-genai", version = "1.75.0", source = { registry = "https://pypi.org/simple" } },
     { name = "packaging" },
     { name = "proto-plus" },
     { name = "protobuf" },
@@ -879,8 +892,8 @@ name = "google-cloud-bigquery"
 version = "3.46.2"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
-    { name = "google-api-core", extra = ["grpc"] },
-    { name = "google-auth", extra = ["pyopenssl"] },
+    { name = "google-api-core", extra = ["grpc"], marker = "extra == 'group-10-bond-terms-bigquery'" },
+    { name = "google-auth", extra = ["pyopenssl"], marker = "extra == 'group-10-bond-terms-bigquery'" },
     { name = "google-cloud-core" },
     { name = "google-resumable-media" },
     { name = "packaging" },
@@ -919,7 +932,7 @@ name = "google-cloud-dataproc"
 version = "5.32.0"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
-    { name = "google-api-core", extra = ["grpc"] },
+    { name = "google-api-core", extra = ["grpc"], marker = "extra == 'group-10-bond-terms-bigquery'" },
     { name = "google-auth" },
     { name = "grpc-google-iam-v1" },
     { name = "grpcio" },
@@ -936,7 +949,7 @@ name = "google-cloud-resource-manager"
 version = "1.19.0"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
-    { name = "google-api-core", extra = ["grpc"] },
+    { name = "google-api-core", extra = ["grpc"], marker = "extra == 'group-10-bond-terms-bigquery'" },
     { name = "google-auth" },
     { name = "grpc-google-iam-v1" },
     { name = "grpcio" },
@@ -997,10 +1010,24 @@ wheels = [
 name = "google-genai"
 version = "1.75.0"
 source = { registry = "https://pypi.org/simple" }
+resolution-markers = [
+    "python_full_version >= '3.15' and sys_platform == 'win32'",
+    "python_full_version >= '3.15' and sys_platform == 'emscripten'",
+    "python_full_version >= '3.15' and sys_platform != 'emscripten' and sys_platform != 'win32'",
+    "python_full_version == '3.14.*' and sys_platform == 'win32'",
+    "python_full_version == '3.14.*' and sys_platform == 'emscripten'",
+    "python_full_version == '3.14.*' and sys_platform != 'emscripten' and sys_platform != 'win32'",
+    "python_full_version == '3.13.*' and sys_platform == 'win32'",
+    "python_full_version == '3.13.*' and sys_platform == 'emscripten'",
+    "python_full_version == '3.13.*' and sys_platform != 'emscripten' and sys_platform != 'win32'",
+    "python_full_version < '3.13' and sys_platform == 'win32'",
+    "python_full_version < '3.13' and sys_platform == 'emscripten'",
+    "python_full_version < '3.13' and sys_platform != 'emscripten' and sys_platform != 'win32'",
+]
 dependencies = [
     { name = "anyio" },
     { name = "distro" },
-    { name = "google-auth", extra = ["requests"] },
+    { name = "google-auth", extra = ["requests"], marker = "extra == 'group-10-bond-terms-bigquery'" },
     { name = "httpx" },
     { name = "pydantic" },
     { name = "requests" },
@@ -1012,6 +1039,32 @@ dependencies = [
 sdist = { url = "https://files.pythonhosted.org/packages/9d/59/3ed61240ef20b3ae6ed54e82c6f8b6d1f194947bc6679679dd6cdb037594/google_genai-1.75.0.tar.gz", hash = "sha256:56bac3991b311c93f980c0a2abcd287b672146905df1fbd71c92ed633d5a07cf", size = 539039, upload-time = "2026-05-04T22:48:54.857Z" }
 wheels = [
     { url = "https://files.pythonhosted.org/packages/2d/b6/552d40e96da22921eb1fead7c14b00b5b5473a20e45959488660fab35ee2/google_genai-1.75.0-py3-none-any.whl", hash = "sha256:8dc4c096e7d6288c3087f6893f582fe52468932464781edb8193bd92b9fefb2c", size = 793726, upload-time = "2026-05-04T22:48:53.033Z" },
+]
+
+[[package]]
+name = "google-genai"
+version = "2.29.0"
+source = { registry = "https://pypi.org/simple" }
+resolution-markers = [
+    "python_full_version >= '3.15'",
+    "python_full_version == '3.14.*'",
+    "python_full_version < '3.14'",
+]
+dependencies = [
+    { name = "anyio" },
+    { name = "distro" },
+    { name = "google-auth", extra = ["requests"], marker = "extra == 'group-10-bond-terms-llm'" },
+    { name = "httpx" },
+    { name = "pydantic" },
+    { name = "requests" },
+    { name = "sniffio" },
+    { name = "tenacity" },
+    { name = "typing-extensions" },
+    { name = "websockets" },
+]
+sdist = { url = "https://files.pythonhosted.org/packages/21/2b/977616ef350e51d3d263eb43be23a91be793544cd937b51c0fac313be233/google_genai-2.29.0.tar.gz", hash = "sha256:124d3eef9ff6b9e4ea548f95ff5b7721683e7990c0a936b006d9e2ab61ea897d", size = 706902, upload-time = "2026-10-07T22:22:57.153Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/b8/27/a3dede4a1deb21f7fde6a171daa039bf0ea149a5e7826a785e8f109a6e13/google_genai-2.29.0-py3-none-any.whl", hash = "sha256:7adda55cb6746fb46d38ad3202c3372840b96eede964b5fb3df1469cd4998570", size = 1167603, upload-time = "2026-10-07T22:22:55.215Z" },
 ]
 
 [[package]]
@@ -1048,7 +1101,7 @@ name = "grpc-google-iam-v1"
 version = "0.14.6"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
-    { name = "googleapis-common-protos", extra = ["grpc"] },
+    { name = "googleapis-common-protos", extra = ["grpc"], marker = "extra == 'group-10-bond-terms-bigquery'" },
     { name = "grpcio" },
     { name = "protobuf" },
 ]
@@ -1614,7 +1667,7 @@ version = "2.4.0"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "ast-serialize" },
-    { name = "librt", marker = "platform_python_implementation != 'PyPy'" },
+    { name = "librt", marker = "platform_python_implementation != 'PyPy' or (extra == 'group-10-bond-terms-bigquery' and extra == 'group-10-bond-terms-llm')" },
     { name = "mypy-extensions" },
     { name = "pathspec" },
     { name = "typing-extensions" },
@@ -2445,7 +2498,7 @@ name = "pytest"
 version = "9.1.1"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
-    { name = "colorama", marker = "sys_platform == 'win32'" },
+    { name = "colorama", marker = "sys_platform == 'win32' or (extra == 'group-10-bond-terms-bigquery' and extra == 'group-10-bond-terms-llm')" },
     { name = "iniconfig" },
     { name = "packaging" },
     { name = "pluggy" },
@@ -2683,7 +2736,7 @@ source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "attrs" },
     { name = "rpds-py" },
-    { name = "typing-extensions", marker = "python_full_version < '3.13'" },
+    { name = "typing-extensions", marker = "python_full_version < '3.13' or (extra == 'group-10-bond-terms-bigquery' and extra == 'group-10-bond-terms-llm')" },
 ]
 sdist = { url = "https://files.pythonhosted.org/packages/22/f5/df4e9027acead3ecc63e50fe1e36aca1523e1719559c499951bb4b53188f/referencing-0.37.0.tar.gz", hash = "sha256:44aefc3142c5b842538163acb373e24cce6632bd54bdb01b21ad5863489f50d8", size = 78036, upload-time = "2025-10-13T15:30:48.871Z" }
 wheels = [
@@ -3006,7 +3059,7 @@ name = "tqdm"
 version = "4.70.1"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
-    { name = "colorama", marker = "sys_platform == 'win32'" },
+    { name = "colorama", marker = "sys_platform == 'win32' or (extra == 'group-10-bond-terms-bigquery' and extra == 'group-10-bond-terms-llm')" },
 ]
 sdist = { url = "https://files.pythonhosted.org/packages/0d/ea/b2a5bd54b28a324dae8211928b2d730b6547500342c7e6c6dea08bd0a485/tqdm-4.70.1.tar.gz", hash = "sha256:cefd0eca11b2a37a3aee776544d4f4ae913f02688135b5556b8788dfa474afc4", size = 171846, upload-time = "2026-09-11T07:25:16.601Z" }
 wheels = [
