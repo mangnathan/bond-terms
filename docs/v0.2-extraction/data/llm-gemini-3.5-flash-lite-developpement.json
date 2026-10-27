@@ -20,7 +20,7 @@
       "compares": 341
     },
     "date_echeance": {
-      "justes": 328,
+      "justes": 334,
       "compares": 341
     },
     "type_taux": {
@@ -28,7 +28,7 @@
       "compares": 341
     },
     "taux_fixe": {
-      "justes": 283,
+      "justes": 287,
       "compares": 294
     },
     "reference_taux": {
