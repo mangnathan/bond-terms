@@ -1,0 +1,59 @@
+{
+  "extracteur": "llm-gemini-3.8-flash-echantillon18",
+  "version": "gemini-3.8-flash/extraction-v2",
+  "jeu": "developpement",
+  "documents": 18,
+  "couples": 18,
+  "arret": "plafond local atteint : 18 requêtes sur 18",
+  "couts": {
+    "latence_mediane_s": 0.011,
+    "latence_p95_s": 0.393,
+    "jetons_entree_moyenne": null,
+    "jetons_sortie_moyenne": null,
+    "documents_en_repli": 18,
+    "formats_refuses": 0,
+    "cout_euros": 0
+  },
+  "champs": {
+    "devise": {
+      "justes": 16,
+      "compares": 18
+    },
+    "date_echeance": {
+      "justes": 16,
+      "compares": 18
+    },
+    "type_taux": {
+      "justes": 16,
+      "compares": 18
+    },
+    "taux_fixe": {
+      "justes": 15,
+      "compares": 17
+    },
+    "reference_taux": {
+      "justes": 1,
+      "compares": 1
+    },
+    "duree_reference": {
+      "justes": 1,
+      "compares": 1
+    },
+    "marge_pb": {
+      "justes": 1,
+      "compares": 1
+    },
+    "valeur_nominale": {
+      "justes": 16,
+      "compares": 18
+    },
+    "montant": {
+      "justes": 14,
+      "compares": 17
+    },
+    "rang": {
+      "justes": 11,
+      "compares": 15
+    }
+  }
+}
