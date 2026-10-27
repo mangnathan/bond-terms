@@ -67,10 +67,22 @@ def compact(text: str) -> str:
     return re.sub(r"\s+", "", normalize(text).translate(_TYPOGRAPHY))
 
 
+# Numérotation de rubrique en tête de citation : « 24. (i) », « (ix) », « (9) (i) ». Seulement
+# entre parenthèses, ou un nombre suivi d'un point puis d'une lettre ou d'une parenthèse : un
+# mot qui commence par « i », une date (« 15 March ») ou un taux (« 3.625 ») ne sont pas touchés.
+_LEADING_NUMBERING = re.compile(
+    r"^(?:\(\s*(?:\d{1,2}|[ivx]{1,5})\s*\)\s*|\d{1,2}\s*\.\s*(?=[a-z(]))+"
+)
+
+
 def page_of(citation: str, pages: list[str]) -> int | None:
     """Première page (numérotée à partir de 1) qui contient la citation, ou None. Les signes de
-    ponctuation en tête et en fin (tiret de liste, point final) ne comptent pas."""
-    needle = compact(citation).strip("-\"'•*·.,;:")
+    ponctuation en tête et en fin (tiret de liste, point final) ne comptent pas, ni la
+    numérotation de rubrique en tête, que le modèle recopie parfois mal ; le reste doit figurer
+    tel quel dans le document."""
+    head = normalize(citation).translate(_TYPOGRAPHY).strip().strip("-\"'•*·.,;: ")
+    head = _LEADING_NUMBERING.sub("", head)
+    needle = compact(head).strip("-\"'•*·.,;:")
     if len(needle) < MIN_CITATION:
         return None
     for number, text in enumerate(pages, start=1):

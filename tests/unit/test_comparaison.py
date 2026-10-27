@@ -1,6 +1,8 @@
 import datetime as dt
 from typing import Any
 
+import pytest
+
 from bond_terms.comparaison import compare, firds_reference, firds_term
 from bond_terms.extraction import PERPETUAL, Extraction, Value, accepted, page_of, verify
 
@@ -94,3 +96,36 @@ def test_list_marks_around_a_citation_do_not_count_but_short_citations_are_refus
     pages = [" (xii) Margin(s): + 0.88 per cent. per annum \n"]
     assert page_of("– Margin(s): + 0.88 per cent. per annum.", pages) == 1
     assert page_of("0.88", pages) is None
+
+
+@pytest.mark.parametrize(
+    ("citation", "page"),
+    [
+        ("(ix) Maturity Date: 5 August 2027", "9. (i) Maturity Date: 5 August 2027"),
+        (
+            "24. (i) Fixed Rate(s) of Interest: 4.105 per cent.",
+            "(i) Fixed Rate(s) of Interest: 4.105 per cent.",
+        ),
+        ("(9) (i) Maturity Date: 18 August 2029", "9. (i) Maturity Date: 18 August 2029"),
+    ],
+)
+def test_rubric_numbering_copied_wrongly_does_not_reject_a_citation(
+    citation: str, page: str
+) -> None:
+    assert page_of(citation, [page]) == 1
+
+
+@pytest.mark.parametrize(
+    ("citation", "page"),
+    [
+        # Le jour d'une date et le début d'un taux font partie de la valeur : ils restent vérifiés.
+        ("15 March 2030 (Maturity)", "Maturity Date: 16 March 2030 (Maturity)"),
+        (
+            "3.625 per cent. per annum payable",
+            "Rate of Interest: 4.625 per cent. per annum payable",
+        ),
+        ("(ix) Maturity Date: 6 August 2027", "9. (i) Maturity Date: 5 August 2027"),
+    ],
+)
+def test_values_at_the_start_of_a_citation_are_still_checked(citation: str, page: str) -> None:
+    assert page_of(citation, [page]) is None
