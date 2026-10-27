@@ -1,0 +1,34 @@
+{
+  "modele": "gemini-3.5-flash-lite",
+  "test": {
+    "paires_comparees": 1061,
+    "exactitude_avec_verification": 0.9076,
+    "valeurs_justes_avant_verification": 0.935,
+    "valeurs_justes_refusees_par_champ": {
+      "rang": 2,
+      "taux_fixe": 20,
+      "devise": 2,
+      "duree_reference": 1,
+      "valeur_nominale": 2,
+      "date_echeance": 1,
+      "type_taux": 1
+    },
+    "erreurs_de_type_de_taux": {
+      "fixe puis variable": 18,
+      "révisable": 6,
+      "autre": 1
+    }
+  },
+  "test_nouveaux_emetteurs": {
+    "paires_comparees": 685,
+    "exactitude_avec_verification": 0.9314,
+    "valeurs_justes_avant_verification": 0.9445,
+    "valeurs_justes_refusees_par_champ": {
+      "date_echeance": 1,
+      "rang": 8
+    },
+    "erreurs_de_type_de_taux": {
+      "autre": 4
+    }
+  }
+}
