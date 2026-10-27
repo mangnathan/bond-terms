@@ -87,9 +87,10 @@ ignore_missing_imports = true
 module = ["rapidocr", "rapidocr.*", "pypdfium2", "pypdfium2.*"]
 ignore_missing_imports = true
 
-# Le client BigQuery n'est pas installé en CI : ses imports n'y sont pas vérifiés.
+# Les clients BigQuery et Gemini (et httpx, qu'apporte ce dernier) ne sont pas installés en CI :
+# leurs imports n'y sont pas vérifiés.
 [[tool.mypy.overrides]]
-module = ["google", "google.*"]
+module = ["google", "google.*", "httpx"]
 ignore_missing_imports = true
 
 [tool.pytest.ini_options]
