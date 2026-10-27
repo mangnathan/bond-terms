@@ -116,3 +116,16 @@ L'offre gratuite relevée dans AI Studio le 26 octobre limite `gemini-3.8-flash`
 | `gemini-3.8-flash` | 0 sur 18 | – | – |
 
 `gemini-3.8-flash` n'a donné aucune réponse utilisable : le 26 octobre, une requête est restée sans réponse ; le 27 octobre, les 18 requêtes du plafond local ont toutes reçu une erreur 503 ou 504 (service surchargé). Un modèle qui ne répond pas sur l'offre gratuite ne peut pas servir à une chaîne de production à coût nul. **Le modèle retenu est `gemini-3.5-flash-lite`.** Sur tout le développement, il est juste à environ 95 % des paires document-champ, contre environ 88 % pour les règles ; la décision entre les deux suit la règle de l'ADR 0001, sur le test.
+
+## Extracteurs figés avant l'ouverture du test
+
+Ajouté le 27 octobre 2026. À partir de l'ouverture des deux jeux de test, rien de ce qui suit ne change pour la v0.2 ; le commit exact est consigné automatiquement dans `docs/v0.2-extraction/data/ouverture-du-test.json` au moment de l'ouverture, avant toute extraction.
+
+- **Extracteur à règles** : `bond_terms.regles`, version `regles-1`.
+- **Extracteur LLM** : `gemini-3.5-flash-lite`, prompt `extraction-v2`, température 0, sortie JSON imposée par un schéma, 40 000 premiers caractères du document.
+- **Vérification des citations** : citation retrouvée dans le document, sans tenir compte de la casse, des accents, des espaces, des variantes de guillemets et de tirets, de la ponctuation en tête et en fin, ni de la numérotation de rubrique en tête ; au moins 8 caractères.
+- **Comparaison** : `bond_terms.comparaison`, avec les conventions ci-dessus.
+- **Évaluation** : `bond_terms.evaluation` ; exactitude par champ jugée sur l'estimation avec son intervalle à 95 % ; exactitude globale sur toutes les paires qui ont une valeur dans FIRDS, montant compris ; le LLM est retenu s'il dépasse les règles d'au moins 2 points avec une borne basse de l'écart au-dessus de zéro, sur le test principal.
+- **Documents non lus par le LLM** : si le quota ou une indisponibilité du service empêche le LLM de lire un document, aucun résultat n'est écrit ; l'ouverture reprend plus tard pour ces seuls documents, le cache évitant tout second envoi des autres.
+
+Sur le développement, le LLM fait 95,9 % d'exactitude globale contre 88,4 % pour les règles (écart de 7,5 points, intervalle de 5,2 à 10,1). Ces chiffres ont servi au réglage ; seuls ceux du test comptent pour la décision.
