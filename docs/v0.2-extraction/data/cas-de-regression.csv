@@ -1,0 +1,36 @@
+document_id,champ,categorie
+18374034,date_echeance,numérotation de rubrique recopiée
+23145327,date_echeance,numérotation de rubrique recopiée
+24483478,date_echeance,numérotation de rubrique recopiée
+30431234,date_echeance,numérotation de rubrique recopiée
+18374035,taux_fixe,numérotation de rubrique recopiée
+21008784,taux_fixe,numérotation de rubrique recopiée
+30431234,taux_fixe,numérotation de rubrique recopiée
+23442722,type_taux,"taux fixe puis variable, FIRDS en variable"
+25148214,type_taux,"taux fixe puis variable, FIRDS en variable"
+25917012,type_taux,"taux fixe puis variable, FIRDS en variable"
+26836282,type_taux,"taux fixe puis variable, FIRDS en variable"
+27920489,type_taux,"taux fixe puis variable, FIRDS en variable"
+15334651,type_taux,"taux révisable, FIRDS en variable"
+16070441,type_taux,"taux révisable, FIRDS en variable"
+17832164,type_taux,"taux révisable, FIRDS en variable"
+15334658,reference_taux,Bank Bill Swap Rate (BBSW) lu comme un swap
+23273385,reference_taux,Bank Bill Swap Rate (BBSW) lu comme un swap
+20953605,date_echeance,obligation perpétuelle
+18777825,date_echeance,obligation perpétuelle
+20930857,date_echeance,obligation perpétuelle
+21789972,date_echeance,obligation perpétuelle
+16896774,taux_fixe,prospectus autonome rédigé en prose
+18777825,taux_fixe,prospectus autonome rédigé en prose
+20930857,taux_fixe,prospectus autonome rédigé en prose
+21789972,taux_fixe,prospectus autonome rédigé en prose
+24863225,date_echeance,écart réel entre FIRDS et le document
+27920489,date_echeance,année mal recopiée
+17832164,date_echeance,texte espacé par l'extraction du PDF
+14565511,taux_fixe,titre nommé Float mais fixe dans FIRDS
+10283864,rang,rang écrit seulement dans le titre de l'émission
+13938086,rang,rang écrit seulement dans le titre de l'émission
+14819098,rang,rang écrit seulement dans le titre de l'émission
+15365338,rang,rang écrit seulement dans le titre de l'émission
+16418435,devise,devise CNH déclarée CNY dans FIRDS
+20494469,devise,devise CNH déclarée CNY dans FIRDS
