@@ -146,3 +146,7 @@ def main() -> None:  # pragma: no cover - ouvre les vrais jeux de test
     )
     main_test = summary["test"]["comparaison"]
     print(json.dumps(_rounded(main_test), ensure_ascii=False))
+
+
+if __name__ == "__main__":
+    main()
