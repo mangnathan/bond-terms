@@ -11,7 +11,7 @@ import datetime as dt
 from collections.abc import Mapping
 from typing import Any
 
-from bond_terms.extraction import PERPETUAL
+from bond_terms.extraction import HYBRID, PERPETUAL
 
 FIRDS_PERPETUAL = dt.date(9999, 12, 31)
 
@@ -87,7 +87,10 @@ def compare(values: Mapping[str, str | None], truth: Mapping[str, Any]) -> dict[
     verdict: dict[str, bool | None] = {
         "devise": CURRENCY_EQUIVALENTS.get(currency or "", currency) == truth["devise"],
         "date_echeance": values.get("date_echeance") == expected_maturity,
-        "type_taux": values.get("type_taux") == truth["type_taux"],
+        # Un taux fixe puis variable, ou révisable, est déclaré tantôt fixe, tantôt variable par
+        # FIRDS (ADR 0003) : la lecture « fixe puis variable » est juste dans les deux cas.
+        "type_taux": values.get("type_taux") == truth["type_taux"]
+        or (values.get("type_taux") == HYBRID and truth["type_taux"] in ("fixed", "floating")),
         "taux_fixe": None,
         "reference_taux": None,
         "duree_reference": None,

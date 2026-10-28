@@ -4,7 +4,16 @@ from typing import Any
 import pytest
 
 from bond_terms.comparaison import compare, firds_reference, firds_term
-from bond_terms.extraction import PERPETUAL, Extraction, Value, accepted, page_of, verify
+from bond_terms.extraction import (
+    HYBRID,
+    PERPETUAL,
+    Extraction,
+    Value,
+    accepted,
+    page_of,
+    two_part_page,
+    verify,
+)
 
 TRUTH: dict[str, Any] = {
     "devise": "CNY",
@@ -129,3 +138,43 @@ def test_rubric_numbering_copied_wrongly_does_not_reject_a_citation(
 )
 def test_values_at_the_start_of_a_citation_are_still_checked(citation: str, page: str) -> None:
     assert page_of(citation, [page]) is None
+
+
+def test_hybrid_rate_type_is_right_whatever_firds_declares() -> None:
+    hybrid = {"type_taux": HYBRID, "taux_fixe": "3.75", "reference_taux": "SWAP"}
+    as_fixed = compare(hybrid, TRUTH | {"type_taux": "fixed", "taux_fixe": 3.75})
+    assert as_fixed["type_taux"] and as_fixed["taux_fixe"]
+    assert as_fixed["reference_taux"] is None
+    as_floating = compare(hybrid, TRUTH | {"reference_taux_variable": "SWAP 5Y"})
+    assert as_floating["type_taux"] and as_floating["reference_taux"]
+    assert as_floating["taux_fixe"] is None
+    assert compare({"type_taux": "fixed"}, TRUTH)["type_taux"] is False
+
+
+def test_two_part_citation_on_a_two_column_layout() -> None:
+    pages = [
+        "(i) Fixed Rate(s) of Interest:\n(ii) Interest Payment Date(s):\n"
+        "2.56 per cent. per annum payable annually\n12 October in each year"
+    ]
+    extraction = Extraction(
+        "x",
+        "llm",
+        "v",
+        {
+            "taux_fixe": Value("2.56", "Fixed Rate(s) of Interest: 2.56 per cent. per annum"),
+            "rang": Value("senior", "Status of the Notes: Senior Preferred"),
+        },
+    )
+    verify(extraction, pages)
+    assert not extraction.champs["taux_fixe"].refusee
+    assert extraction.champs["taux_fixe"].deux_morceaux
+    assert extraction.champs["rang"].refusee
+    verify(extraction, pages, two_parts=False)
+    assert extraction.champs["taux_fixe"].refusee
+
+
+def test_two_parts_need_the_label_shortly_before_the_value() -> None:
+    far = "Fixed Rate(s) of Interest:" + " filler" * 100 + " 2.56 per cent. per annum payable"
+    assert two_part_page("Fixed Rate(s) of Interest: 2.56 per cent. per annum", [far]) is None
+    wrong = "Fixed Rate(s) of Interest: 2.65 per cent. per annum payable"
+    assert two_part_page("Fixed Rate(s) of Interest: 2.56 per cent. per annum", [wrong]) is None
