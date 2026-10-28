@@ -37,6 +37,9 @@ from bond_terms.extraction import FIELDS, Extraction, accepted
 from bond_terms.ocr import pages_by_document
 
 DEVELOPMENT = "developpement"
+# Jeux déjà ouverts, devenus le développement de la v0.3 (ADR 0003). Le nouveau test n'en fait
+# pas partie : seule la commande d'ouverture peut le lire.
+KNOWN_SETS = (DEVELOPMENT, "test", "test_nouveaux_emetteurs")
 FALLBACK = "repli sur les règles"
 # Extracteur : identifiant du document, ses pages et les ISIN qu'il couvre.
 Extract = Callable[[str, list[str], list[str]], Extraction]
@@ -147,6 +150,7 @@ def main() -> None:  # pragma: no cover - lit les vraies données
     parser = argparse.ArgumentParser(description=__doc__.splitlines()[0])
     parser.add_argument("--extracteur", choices=["regles", "llm"], required=True)
     parser.add_argument("--modele", choices=llm.MODELS)
+    parser.add_argument("--jeu", choices=KNOWN_SETS, default=DEVELOPMENT)
     parser.add_argument("--database", type=Path, default=Path("data/entrepot/bond_terms.duckdb"))
     parser.add_argument("--pages", type=Path, default=Path("data/interim/textes/pages.parquet"))
     parser.add_argument(
@@ -157,23 +161,24 @@ def main() -> None:  # pragma: no cover - lit les vraies données
     )
     parser.add_argument("--llm-cache", type=Path, default=Path("data/interim/llm"))
     parser.add_argument("--output-dir", type=Path, default=Path("data/interim/extractions"))
-    parser.add_argument("--summary-dir", type=Path, default=Path("docs/v0.2-extraction/data"))
+    parser.add_argument("--summary-dir", type=Path, default=Path("docs/v0.3-revue/data"))
     args = parser.parse_args()
 
     if args.extracteur == "llm":
         if not args.modele:
             raise SystemExit("--modele est requis pour l'extracteur llm")
         extract, version = llm_extractor(args.modele, args.llm_cache)
-        name = f"llm-{args.modele}"
+        # La version du prompt figure dans le nom : les sorties de la v0.2 ne sont pas écrasées.
+        name = f"llm-{args.modele}-{llm.PROMPT_VERSION}"
     else:
 
         def extract(document_id: str, pages: list[str], isins: list[str]) -> Extraction:
             return regles.extract(document_id, pages)
 
-        version, name = regles.VERSION, "regles"
+        version, name = regles.VERSION, regles.VERSION
 
     with duckdb.connect(str(args.database), read_only=True) as connection:
-        truth = connection.sql(TRUTH_SQL, params=[DEVELOPMENT]).to_arrow_table().to_pylist()
+        truth = connection.sql(TRUTH_SQL, params=[args.jeu]).to_arrow_table().to_pylist()
     documents: dict[str, list[str]] = defaultdict(list)
     for couple in truth:
         documents[couple["document_id"]].append(couple["isin"])
@@ -185,7 +190,7 @@ def main() -> None:  # pragma: no cover - lit les vraies données
     extractions, stopped = run(documents, pages, extract)
 
     args.output_dir.mkdir(parents=True, exist_ok=True)
-    output = args.output_dir / f"{name}-{DEVELOPMENT}.jsonl"
+    output = args.output_dir / f"{name}-{args.jeu}.jsonl"
     with output.open("w", encoding="utf-8", newline="\n") as f:
         for document_id in sorted(extractions):
             f.write(json.dumps(extractions[document_id].to_dict(), ensure_ascii=False) + "\n")
@@ -194,14 +199,15 @@ def main() -> None:  # pragma: no cover - lit les vraies données
     summary: dict[str, Any] = {
         "extracteur": name,
         "version": version,
-        "jeu": DEVELOPMENT,
+        "jeu": args.jeu,
         "documents": len(extractions),
         "couples": len(rows),
         "arret": stopped,
         "couts": costs(extractions.values()),
         "champs": summarize(rows),
     }
-    target = args.summary_dir / f"{name}-{DEVELOPMENT}.json"
+    args.summary_dir.mkdir(parents=True, exist_ok=True)
+    target = args.summary_dir / f"{name}-{args.jeu}.json"
     target.write_bytes((json.dumps(summary, ensure_ascii=False, indent=2) + "\n").encode("utf-8"))
     for field, counts in summary["champs"].items():
         share = counts["justes"] / counts["compares"] if counts["compares"] else 0
