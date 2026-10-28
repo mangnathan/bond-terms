@@ -1,0 +1,10 @@
+{
+  "graine": 20261028,
+  "collecte_le": "2026-10-28",
+  "vivier_obligations": 4405,
+  "obligations_exclues": 300,
+  "obligations_tirees": 450,
+  "obligations_avec_document": 224,
+  "documents_trouves": 244,
+  "documents_gardes": 150
+}
