@@ -147,7 +147,11 @@ def summarize(quality: list[dict[str, Any]]) -> dict[str, Any]:
 
 
 def collect(
-    client: PoliteClient, split_csv: Path, data_dir: Path, output_dir: Path
+    client: PoliteClient,
+    split_csv: Path,
+    data_dir: Path,
+    output_dir: Path,
+    pages_file: Path | None = None,
 ) -> dict[str, Any]:
     logging.getLogger("pypdf").setLevel(logging.ERROR)
     pdf_dir = data_dir / "raw" / "pdf"
@@ -164,7 +168,8 @@ def collect(
         if position % 50 == 0:
             print(f"{position}/{len(documents)} documents", flush=True)
 
-    texts = data_dir / "interim" / "textes" / "pages.parquet"
+    # Un nouveau jeu écrit ses textes à part, sans écraser ceux des jeux déjà traités.
+    texts = pages_file or data_dir / "interim" / "textes" / "pages.parquet"
     texts.parent.mkdir(parents=True, exist_ok=True)
     schema = pa.schema(
         [("document_id", pa.string()), ("page", pa.string()), ("texte", pa.string())]
@@ -190,8 +195,11 @@ def main() -> None:
     )
     parser.add_argument("--data-dir", type=Path, default=Path("data"))
     parser.add_argument("--output-dir", type=Path, default=Path("docs/v0.1-collecte/data"))
+    parser.add_argument(
+        "--pages", type=Path, help="fichier des textes (par défaut, celui de la v0.1)"
+    )
     args = parser.parse_args()
-    summary = collect(PoliteClient(), args.split, args.data_dir, args.output_dir)
+    summary = collect(PoliteClient(), args.split, args.data_dir, args.output_dir, args.pages)
     print(json.dumps(summary, ensure_ascii=False, indent=2))
 
 
