@@ -19,9 +19,9 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Any, Protocol
 
-from bond_terms.extraction import FIELDS, PERPETUAL, Extraction, Value, verify
+from bond_terms.extraction import FIELDS, HYBRID, PERPETUAL, Extraction, Value, verify
 
-PROMPT_VERSION = "extraction-v2"
+PROMPT_VERSION = "extraction-v3"
 SYSTEM_PROMPT = (Path(__file__).parent / "prompts" / f"{PROMPT_VERSION}.txt").read_text(
     encoding="utf-8"
 )
@@ -81,7 +81,7 @@ _NUMBER = re.compile(r"[+-]?\d+(?:\.\d+)?")
 FORMATS = {
     "devise": re.compile(r"[A-Z]{3}"),
     "date_echeance": re.compile(rf"\d{{4}}-\d{{2}}-\d{{2}}|{PERPETUAL}"),
-    "type_taux": re.compile(r"fixed|floating"),
+    "type_taux": re.compile(rf"fixed|floating|{HYBRID}"),
     "taux_fixe": _NUMBER,
     "reference_taux": re.compile(r"[A-Z]{3,8}"),
     "duree_reference": re.compile(r"\d{1,2}[DWMY]"),
