@@ -1,0 +1,11 @@
+{
+  "test_v03": {
+    "documents": 150,
+    "lus": 150,
+    "erreurs": {},
+    "pages_mediane": 17.0,
+    "documents_avec_pages_sans_texte": 15,
+    "documents_sans_texte": 10,
+    "documents_sans_rubrique_echeance": 22
+  }
+}
