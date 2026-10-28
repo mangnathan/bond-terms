@@ -14,10 +14,10 @@ import time
 from collections.abc import Iterable
 
 from bond_terms.documents import normalize
-from bond_terms.extraction import PERPETUAL, Extraction, Value, verify
+from bond_terms.extraction import HYBRID, PERPETUAL, Extraction, Value, verify
 from bond_terms.valeurs import MONTHS_EN, MONTHS_FR
 
-VERSION = "regles-1"
+VERSION = "regles-2"
 
 MONTHS = {name: number for number, name in enumerate(MONTHS_EN, start=1)} | {
     name: number for number, name in enumerate(MONTHS_FR, start=1)
@@ -120,7 +120,9 @@ LABELS = {
     "montant": [r"aggregate nominal amount", r"montant nominal total"],
     "rang": [r"status of the notes", r"rang (?:des titres|de credit|des obligations)", r"status"],
 }
-_FIXED = re.compile(r"fixed\s?rate|taux fixe|fixe?\s?d\s?/\s?floating|fixed to floating|resettable")
+_FIXED = re.compile(r"fixed\s?rate|taux fixe")
+# Taux fixe puis variable ou révisable : « fixed/floating », « fixed to floating », « resettable ».
+_HYBRID = re.compile(r"fixe?\s?d\s?(?:/|to)\s?float|resettable|reset rate|taux revisable")
 # Début de la rubrique numérotée suivante (« 9. », « 12 . (i) »).
 _NEXT_RUBRIC = re.compile(r" \d{1,2} ?\. (?:\([ivx]+\) )?[a-z]")
 
@@ -295,25 +297,26 @@ def interest(flat: str) -> dict[str, Value]:
     if found:
         start, value_start, window = found
         head = until_next_rubric(window)
-        # Un taux fixe puis variable, ou révisable, est un taux fixe pour FIRDS dans la majorité
-        # des cas mesurés sur le développement : le type retenu est « fixed », avec le taux initial.
+        # Un taux fixe puis variable, ou révisable, reçoit le type « fixe puis variable »
+        # (ADR 0003), avec son taux initial et la référence de sa seconde période.
+        hybrid = _HYBRID.search(head)
         fixed = _FIXED.search(head)
         floating = re.search(r"floating|variable", head) or _REFERENCE.search(head)
-        marker = fixed or floating
+        marker = hybrid or fixed or floating
         if marker:
-            rate_type = "fixed" if fixed else "floating"
+            rate_type = HYBRID if hybrid else "fixed" if fixed else "floating"
             values["type_taux"] = Value(rate_type, _cite(flat, start, value_start + marker.end()))
-        if fixed and (read := coupon(head)):
+        if (hybrid or fixed) and (read := coupon(head)):
             values["taux_fixe"] = Value(
                 _number_text(read[0]), _cite(flat, start, value_start + read[1])
             )
-    if values["taux_fixe"].valeur is None and values["type_taux"].valeur == "fixed":
+    if values["taux_fixe"].valeur is None and values["type_taux"].valeur in ("fixed", HYBRID):
         found = rubric(flat, LABELS["taux"], 70)
         if found and (read := coupon(found[2])):
             values["taux_fixe"] = Value(
                 _number_text(read[0]), _cite(flat, found[0], found[1] + read[1])
             )
-    if values["type_taux"].valeur == "floating":
+    if values["type_taux"].valeur in ("floating", HYBRID):
         values |= reference(flat)
     return values
 
