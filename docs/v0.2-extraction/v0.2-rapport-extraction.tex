@@ -1,0 +1,192 @@
+\documentclass[11pt,a4paper]{article}
+
+\newcommand{\rapporttitre}{Rapport d'extraction}
+\newcommand{\rapportversion}{v0.2}
+\input{../latex/preambule}
+\usepackage{needspace}
+\usepackage{amsmath}
+\usepackage{etoolbox}
+% Un titre de section ne reste jamais seul en bas de page.
+\pretocmd{\section}{\needspace{10\baselineskip}}{}{}
+
+\begin{document}
+
+\pagedegarde{Extraction des conditions des obligations à partir des documents de l'ESMA}{28 octobre 2026}{Version 0.2, règles contre LLM, test ouvert une seule fois}
+
+\setcounter{tocdepth}{1}
+\tableofcontents
+\newpage
+
+\section*{Synthèse}
+\addcontentsline{toc}{section}{Synthèse}
+
+La version 0.2 répond à la question posée au cadrage : un modèle de langage lit-il les conditions des obligations mieux qu'un extracteur à règles, sur des documents qu'il n'a jamais vus ? Les deux extracteurs ont été construits et réglés sur le seul développement, puis figés, puis mesurés une seule fois sur les deux jeux de test.
+
+\begin{itemize}
+  \item \textbf{Le LLM est retenu.} Sur le test principal (148 documents), il est juste sur 90,8~\% des paires document--champ, contre 83,3~\% pour les règles. L'écart, 7,5 points, a un intervalle à 95~\% de 3,9 à 11,0 points : la règle fixée à l'avance (au moins 2 points, borne basse au-dessus de zéro) est remplie.
+  \item \textbf{Il généralise.} Sur 99 documents d'émetteurs jamais vus, le LLM tient 93,1~\% quand les règles tombent à 61,5~\%.
+  \item \textbf{Les seuils ne sont presque pas atteints.} Seule la valeur nominale atteint son seuil sans réserve ; le rang l'atteint avec une marge statistique insuffisante.
+  \item \textbf{La baisse est expliquée.} Vingt taux justes sont refusés par une vérification des citations trop stricte pour certaines mises en page, et FIRDS a changé sa façon de coder les titres à taux fixe puis variable. Ces deux points orientent la v0.3.
+  \item \textbf{Coût nul.} 629 requêtes à l'offre gratuite de l'API Gemini en tout, sous des plafonds inscrits dans le code, sans aucune facturation liée.
+\end{itemize}
+
+\section{Ce que la version devait livrer}
+
+La version a été menée comme un sprint, du 26 au 28 octobre 2026, pour une échéance fixée au 6 novembre. Chaque tâche est une issue, livrée par une pull request que la CI valide avant la fusion.
+
+\begin{table}[H]
+\small
+\begin{tabularx}{\linewidth}{lYl}
+\toprule
+\textbf{Issue} & \textbf{Livrable} & \textbf{Pull request} \\
+\midrule
+\#19 & ADR 0002 : lecture des scans et conception des extracteurs & \#26 \\
+\#20 & OCR des pages sans texte et contrôle du rattachement & \#27 \\
+\#21 & Extracteur à règles, sortie commune, comparaison avec FIRDS & \#28 \\
+\#22 & Extracteur LLM sous plafonds stricts & \#29 \\
+\#23 & Évaluation sur le développement & \#30 \\
+\#24 & Gel des extracteurs et ouverture unique du test & \#31 à \#33 \\
+\#25 & Clôture : rapport, CHANGELOG, tag v0.2 & ce rapport \\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+\section{Avant d'extraire : ce que la vérité terrain permet de mesurer}
+
+L'ADR 0002 a été écrite avant tout extracteur, à partir de mesures sur le seul développement. Pour chaque couple document--ISIN, le script \texttt{scripts/adr0002/mesure\_ocr.py} cherche dans le texte les valeurs publiées par FIRDS. Une valeur absente du document est une erreur qu'aucun extracteur ne peut éviter.
+
+\subsection{Les scans}
+
+Huit documents du test étaient des scans sans texte, ce qui aurait limité un extracteur à environ 95~\%. Une reconnaissance de caractères locale et gratuite (RapidOCR) lit les 10 scans du développement aussi bien que le texte natif des PDF, en 3,3 secondes par page. Les pages sans texte des trois jeux, 300 en tout, sont donc lues par OCR ; les 9 qui restent vides sont des pages blanches, vérifiées par leurs pixels. Les seuils ne changent pas.
+
+\subsection{Trois limites de FIRDS}
+
+\begin{itemize}
+  \item \textbf{Rattachements erronés.} Le registre rattache parfois un document à un ISIN qu'il ne cite pas : 11 couples sur 352 en développement, 3 sur 151 dans le test, 1 sur 100 chez les émetteurs jamais vus. Un couple n'entre dans la vérité terrain que si le document cite l'ISIN ; le contrôle ne regarde que l'identifiant, jamais les valeurs.
+  \item \textbf{Montant.} FIRDS publie l'encours, le document le montant de son émission. Même parfaitement lu, le montant ne serait juste que dans 89,7~\% des cas en développement. Il est mesuré et publié, sans seuil.
+  \item \textbf{Conventions.} Une obligation perpétuelle a dans FIRDS l'échéance du 31 décembre 9999 ; le yuan offshore (CNH) y est déclaré CNY ; une dette « senior non préférée » y est déclarée tantôt senior, tantôt subordonnée selon le déclarant (11 contre 33 cas). Ces équivalences sont codées dans la comparaison.
+\end{itemize}
+
+\aretenir{Avant de mesurer un modèle, mesurer ce que la vérité terrain permet de mesurer. Sans ce travail, l'extracteur aurait été jugé sur des erreurs du registre et sur une grandeur que le document ne donne pas.}
+
+\section{Deux extracteurs, une même sortie}
+
+\subsection{La sortie et sa vérification}
+
+Pour chaque champ, un extracteur rend une valeur, la citation du document qui la justifie et sa page. Le code vérifie que la citation se trouve dans le document ; sinon la valeur est refusée et comptée fausse. La comparaison ignore la casse, les accents, les espaces, les variantes de guillemets et de tirets, la ponctuation en tête et en fin, et la numérotation de rubrique en tête. Les mots et les chiffres doivent rester identiques, et une citation de moins de 8 caractères est refusée.
+
+\subsection{L'extracteur à règles}
+
+Il lit les rubriques numérotées des conditions définitives, en anglais et en français : « Specified Currency », « Maturity Date », « Interest Basis »... Le réglage sur le développement a appris quelques pièges : des nombres coupés par l'extraction de texte (« 1,0 00,000 »), une rubrique citée dans une autre (« Business Day Convention for Maturity Date »), un prix de 100~\% pris pour un coupon, le rang écrit seulement dans le titre de l'émission chez Société Générale.
+
+\subsection{L'extracteur LLM}
+
+Il envoie à Gemini un prompt versionné, l'ISIN visé et les 40\,000 premiers caractères du document (l'échéance y figure toujours en développement). La réponse, en JSON imposé par un schéma à température 0, est traitée comme une entrée non fiable : une valeur hors format est écartée avant même la vérification des citations.
+
+Le coût nul tient à cinq protections : aucun moyen de paiement lié au projet Google ; des plafonds de requêtes par jour inscrits dans le code, sous l'offre gratuite, que le fichier \texttt{.env} peut baisser mais pas relever ; un cache qui interdit tout second envoi d'un même document ; l'arrêt au premier refus pour quota, avec repli sur les règles ; un faux modèle dans la CI.
+
+\subsection{Le choix du modèle}
+
+L'offre gratuite, relevée dans AI Studio le 26 octobre, limite \texttt{gemini-3.8-flash} à 20 requêtes par jour et \texttt{gemini-3.5-flash-lite} à 500. Sur un échantillon fixe de 18 documents, le premier n'a donné aucune réponse : ses 18 requêtes ont reçu une erreur de surcharge (503 ou 504). Un modèle qui ne répond pas ne peut pas servir une chaîne à coût nul : \texttt{gemini-3.5-flash-lite} est retenu.
+
+\section{Résultats sur le développement}
+
+Sur les 341 couples du développement, le LLM est juste sur 95,9~\% des paires document--champ [94,9 ; 97,0], les règles sur 88,4~\% [85,3 ; 91,4]. Ces chiffres ont servi au réglage : ils sont optimistes par construction, et seuls ceux du test comptent pour la décision. Trente-cinq cas de régression, tirés des erreurs observées, sont listés par identifiant et par catégorie dans \texttt{cas-de-regression.csv}. Ils montrent que les deux extracteurs se complètent : les règles lisent mieux le taux BBSW et ne se trompent pas d'année ; le LLM lit mieux les obligations perpétuelles et les prospectus rédigés en prose.
+
+\section{L'ouverture unique du test}
+
+\subsection{Le protocole}
+
+Avant l'ouverture, l'ADR 0002 a consigné ce qui ne change plus : les deux extracteurs, la vérification, la comparaison, l'évaluation et la règle de décision. L'ouverture a eu lieu le 27 octobre 2026 à 16~h~30 UTC, depuis le commit \texttt{7bbdbe3} de la branche principale, consigné dans un registre écrit avant toute extraction. La commande refuse une seconde ouverture et n'écrit aucun résultat tant que le LLM n'a pas lu tous les documents.
+
+\subsection{Le test principal}
+
+\begin{table}[H]
+\small
+\begin{tabularx}{\linewidth}{Yrrrl}
+\toprule
+\textbf{Champ} & \textbf{Seuil} & \textbf{Règles} & \textbf{LLM [IC 95~\%]} & \textbf{Verdict du LLM} \\
+\midrule
+Devise & 98~\% & 95,3~\% & 97,3~\% [94,6 ; 99,3] & non atteint \\
+Échéance & 98~\% & 95,9~\% & 97,3~\% [94,6 ; 99,3] & non atteint \\
+Type de taux & 98~\% & 73,6~\% & 83,1~\% [77,0 ; 88,5] & non atteint \\
+Taux fixe & 98~\% & 87,6~\% & 82,3~\% [75,0 ; 89,1] & non atteint \\
+Référence du taux variable & 95~\% & 28,6~\% & 80,0~\% [65,8 ; 92,3] & non atteint \\
+Durée de la référence & 95~\% & 28,6~\% & 77,1~\% [63,3 ; 90,9] & non atteint \\
+Marge & 95~\% & 28,6~\% & 82,9~\% [69,6 ; 94,6] & non atteint \\
+Valeur nominale & 95~\% & 96,6~\% & 98,6~\% [96,6 ; 100] & atteint \\
+Rang & 95~\% & 94,8~\% & 97,4~\% [94,3 ; 100] & atteint, marge insuffisante \\
+Montant (indicatif) & -- & 81,5~\% & 85,9~\% [80,2 ; 91,8] & mesuré sans seuil \\
+\midrule
+Exactitude globale & -- & 83,3~\% & 90,8~\% [88,5 ; 92,8] & \\
+\bottomrule
+\end{tabularx}
+\caption{Test principal, 148 documents (\texttt{evaluation-test.json}). Les taux variables ne concernent que 35 titres.}
+\end{table}
+
+L'écart entre le LLM et les règles est de 7,5 points [3,9 ; 11,0] : \textbf{le LLM est retenu}.
+
+\subsection{Les émetteurs jamais vus}
+
+Sur 99 documents d'autres émetteurs, tirés au hasard avant toute extraction, le LLM est juste sur 93,1~\% des paires [90,8 ; 95,2], les règles sur 61,5~\% [55,7 ; 67,3]. Les règles, réglées sur huit émetteurs, ne reconnaissent pas les autres mises en page ; le LLM, si. C'est l'argument le plus fort en faveur du modèle pour une équipe référentiel titres, qui reçoit chaque jour des documents d'émetteurs nouveaux.
+
+\section{Pourquoi le test fait moins bien que le développement}
+
+L'analyse qui suit a été faite après l'ouverture, avec \texttt{scripts/v0.2/analyse\_erreurs\_test.py}. Elle ne change ni les extracteurs ni la décision.
+
+\begin{itemize}
+  \item \textbf{Des valeurs justes refusées.} Avant la vérification des citations, 93,5~\% des valeurs du LLM sont justes ; après, 90,8~\%. Vingt de ces refus portent sur le taux fixe : dans les conditions définitives récentes de BNP Paribas, mises en page sur deux colonnes, l'intitulé et la valeur sont séparés dans le texte extrait du PDF. La citation du modèle les recolle, et la règle stricte la refuse. C'est ce qui place le LLM sous les règles pour le taux fixe.
+  \item \textbf{Une convention de FIRDS qui a changé.} Vingt-quatre des 25 erreurs de type de taux portent sur des obligations à taux fixe puis variable (18) ou révisable (6). Sur le développement, FIRDS les déclarait en taux fixe 31 fois sur 37 ; sur les émissions récentes du test, il les déclare en taux variable. Les extracteurs ont appliqué la convention fixée à l'avance. Seul un découpage dans le temps pouvait faire apparaître cette dérive.
+\end{itemize}
+
+\aretenir{Un écart entre le développement et le test n'est pas forcément un défaut du modèle. Ici, il vient d'une vérification trop stricte pour une mise en page et d'une vérité terrain qui change avec le temps : deux causes qu'une évaluation sans découpage par date n'aurait pas montrées.}
+
+\section{Coûts et compromis}
+
+\begin{table}[H]
+\small
+\begin{tabularx}{\linewidth}{Yrrrr}
+\toprule
+\textbf{Extracteur} & \textbf{Exactitude (test)} & \textbf{Latence médiane} & \textbf{Jetons en entrée} & \textbf{Coût} \\
+\midrule
+Règles & 83,3~\% & moins de 0,01 s & -- & 0 \\
+\texttt{gemini-3.5-flash-lite} & 90,8~\% & 7 s (95\textsuperscript{e} centile : 21 s) & 6\,500 par document & 0 \\
+\texttt{gemini-3.8-flash} & non mesuré & aucune réponse & -- & 0 \\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+Sur le développement, la latence médiane du LLM était de 21 s : le service Gemini était alors surchargé. Les règles restent utiles comme solution de secours quand le quota gratuit est atteint, avec une exactitude plus faible que le rapport signale document par document.
+
+\section{Business case}
+
+Le cadrage a fixé une formule dont les termes sont mesurés, pas supposés :
+\[
+\text{gain} = N \times (t_{\text{manuel}} - t_{\text{revue}}) + N \times (e_{\text{manuel}} - e_{\text{outil}}) \times c_{\text{erreur}}
+\]
+La saisie manuelle chronométrée donne $t_{\text{manuel}} = 3$ minutes et 82~\% de champs justes. Sur le test, l'outil donne 90,8~\% de champs justes, en 7 secondes par document. Le temps de revue humaine, $t_{\text{revue}}$, n'est pas encore mesuré : la file de revue arrive en v0.3. Le business case reste donc partiel, et le coût d'une erreur, $c_{\text{erreur}}$, reste un paramètre explicite.
+
+\section{Revue de sprint et rétrospective}
+
+Les six issues de développement ont été livrées en trois jours. Le nombre de tests est passé de 59 à 150.
+
+\textbf{Ce qui a bien marché.} Les décisions qui pouvaient influencer le résultat (vérité terrain, conventions, gel des extracteurs) ont été écrites avant l'ouverture du test. Chaque correction de la vérification a été appliquée aux deux extracteurs et recalculée depuis le cache, sans nouvelle requête. Les plafonds de coût ont tenu face à chaque incident.
+
+\textbf{Ce qui a moins bien marché.}
+\begin{itemize}
+  \item Le service Gemini a renvoyé des erreurs de surcharge, puis une requête est restée 15 minutes sans réponse : il a fallu ajouter une reprise bornée et un délai maximal par requête.
+  \item Deux commits ont dû être refaits : un fichier non suivi importait une fonction encore absente du commit, et des fichiers indexés plus tôt étaient partis dans le mauvais commit.
+  \item La CI a échoué sur un import présent sur le poste mais absent en CI. La règle est désormais de reproduire l'environnement de la CI avant chaque pull request.
+  \item La première ouverture du test n'a rien fait : il manquait l'appel à la fonction principale. Rien n'a été ouvert ni consommé ; un test lance désormais chaque commande du projet.
+  \item Le lecteur CSV de l'entrepôt changeait « True » en « true » depuis la v0.1, ce qui faussait une colonne du mart \texttt{documents}. Aucun chiffre publié n'en dépendait.
+\end{itemize}
+
+\textbf{Pour la suite.} Vérifier une commande de bout en bout sur un jeu factice avant de la lancer sur un jeu qui ne s'ouvre qu'une fois.
+
+\section{Suite du projet}
+
+La v0.3 portera sur la revue humaine et le rapport d'exceptions, et sur les deux limites mesurées ici. Une citation pourra être faite de deux morceaux, l'intitulé et la valeur, pour les mises en page sur deux colonnes. Les titres à taux hybride seront traités à part, puisque FIRDS ne les code pas de façon stable. Ces changements seront décidés dans une nouvelle ADR et mesurés sur un nouveau jeu de test, le test de la v0.2 étant désormais connu.
+
+Les décisions de cette version sont consignées dans l'ADR 0002, dans le dossier \texttt{docs/adr} du dépôt.
+
+\end{document}

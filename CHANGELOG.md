@@ -4,6 +4,25 @@ Les évolutions notables du projet sont notées ici, selon le format [Keep a Cha
 
 ## [Non publié]
 
+## [v0.2] - 2026-10-28
+
+Bilan ([ADR 0002](docs/adr/0002-conception-extracteur.md)) : sur le test principal, ouvert une seule fois, le LLM (`gemini-3.5-flash-lite`) est juste sur 90,8 % des paires document-champ contre 83,3 % pour l'extracteur à règles, un écart de 7,5 points [3,9 ; 11,0] : il est retenu. Sur les émetteurs jamais vus, 93,1 % contre 61,5 %. La valeur nominale atteint son seuil, le rang avec une marge statistique insuffisante, les autres champs non.
+
+### Ajouté
+- ADR 0002, décidée sur le développement avant toute extraction : OCR des pages sans texte, rattachement document-ISIN vérifié, montant sans seuil, conventions de comparaison, choix du modèle, gel des extracteurs.
+- OCR locale des pages sans texte (`bond_terms.ocr`, RapidOCR) et contrôle du rattachement (`bond_terms.rattachement`), versé dans l'entrepôt.
+- Sortie commune des extracteurs avec citation vérifiée dans le document (`bond_terms.extraction`) et comparaison avec FIRDS (`bond_terms.comparaison`).
+- Extracteur à règles (`bond_terms.regles`), en anglais et en français.
+- Extracteur LLM (`bond_terms.llm`) : prompt versionné, sortie JSON imposée, plafonds de l'offre gratuite inscrits dans le code, cache, arrêt au premier refus pour quota avec repli sur les règles, reprise bornée des surcharges, délai maximal par requête.
+- Évaluation (`bond_terms.evaluation`) : intervalles à 95 % par tirage de documents, écart apparié entre les extracteurs, 35 cas de régression.
+- Ouverture unique des jeux de test (`bond_terms.ouverture`), avec registre daté écrit avant toute extraction.
+- Analyse des erreurs sur le test, après ouverture (`scripts/v0.2`).
+- Rapport d'extraction en LaTeX et en PDF.
+- Test qui lance chaque commande du projet avec `--help`.
+
+### Corrigé
+- Le lecteur CSV de l'entrepôt devinait les types : « True » devenait « true », si bien que `rubrique_echeance` valait faux pour tous les documents du mart `documents`. Aucun chiffre publié n'en dépendait.
+- La commande d'ouverture du test ne lançait pas sa fonction principale ; le premier lancement n'a rien ouvert.
 ## [v0.1] - 2026-10-25
 
 Bilan : les données de développement et de test sont rassemblées et le découpage est figé avant toute extraction. 502 documents d'émission couvrent 486 des 838 obligations ; la coupure du 27 septembre 2024 laisse 351 documents au développement et 151 au test, plus 100 documents d'émetteurs jamais vus. Les 602 PDF sont lus ; les 8 scans du test devront être traités par OCR (ADR 0002, avant la v0.2).

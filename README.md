@@ -10,7 +10,7 @@ L'utilisateur visé est l'équipe « référentiel titres » d'une banque ou d'u
 |---|---|---|
 | v0.0 | Cadrage : population, vérité terrain, seuils fixés avant toute extraction, référence humaine | Terminé |
 | v0.1 | Collecte (FIRDS, registre, PDF), date de coupure du test, entrepôt de données | Terminé |
-| v0.2 | Extracteur à règles contre LLM sur les champs vérifiables, test ouvert une seule fois | À venir |
+| v0.2 | Extracteur à règles contre LLM sur les champs vérifiables, test ouvert une seule fois | Terminé |
 | v0.3 | Clauses littérales, file de revue humaine, rapport d'exceptions | À venir |
 | v0.4 | API, collecte planifiée, surveillance de la qualité des données | À venir |
 | v1.0 | Démonstration publique, note de synthèse, business case mesuré | À venir |
@@ -34,17 +34,30 @@ Détails : [rapport de cadrage (PDF)](docs/pdf/bond-terms_v0.0_Rapport-de-cadrag
 
 Détails : [rapport de collecte (PDF)](docs/pdf/bond-terms_v0.1_Rapport-de-collecte.pdf).
 
+## Résultats de l'extraction (v0.2)
+
+- **Le LLM est retenu.** Sur le test principal (148 documents, ouvert une seule fois), `gemini-3.5-flash-lite` est juste sur 90,8 % des paires document-champ, contre 83,3 % pour l'extracteur à règles : écart de 7,5 points [3,9 ; 11,0], au-dessus des 2 points exigés.
+- **Il généralise.** Sur 99 documents d'émetteurs jamais vus, 93,1 % contre 61,5 % pour les règles.
+- **Seuils.** La valeur nominale atteint son seuil (98,6 %) ; le rang l'atteint avec une marge statistique insuffisante (97,4 %) ; devise et échéance restent à 97,3 % pour 98 % exigés.
+- **Baisse expliquée.** 20 taux justes sont refusés par la vérification des citations sur une mise en page à deux colonnes, et FIRDS code désormais en taux variable les titres à taux fixe puis variable qu'il codait en taux fixe.
+- **Coût nul.** 629 requêtes à l'offre gratuite de l'API Gemini, sous des plafonds inscrits dans le code ; chaque valeur est appuyée sur une citation retrouvée dans le document.
+
+Détails : [rapport d'extraction (PDF)](docs/pdf/bond-terms_v0.2_Rapport-extraction.pdf) et [ADR 0002](docs/adr/0002-conception-extracteur.md).
+
 ## Structure du dépôt
 
 ```
-src/bond_terms/       code du projet : collecte (FIRDS, registre, PDF), découpage, entrepôt
+src/bond_terms/       code du projet : collecte, découpage, entrepôt, OCR, extracteurs, évaluation
 entrepot/             projet dbt : modèles, tests de données, profils DuckDB et BigQuery
 scripts/feasibility/  scripts de l'étude de faisabilité et de la saisie chronométrée
+scripts/adr0002/      mesure de l'OCR et de la présence des valeurs de FIRDS (ADR 0002)
+scripts/v0.2/         analyse des erreurs sur le test, après son ouverture
 scripts/docs/         compilation des rapports LaTeX
 tests/                tests unitaires et construction de l'entrepôt sur des données fabriquées
 docs/adr/             décisions d'architecture
 docs/v0.0-cadrage/    rapport de cadrage et chiffres produits par les scripts
 docs/v0.1-collecte/   rapport de collecte et chiffres produits par la collecte
+docs/v0.2-extraction/ rapport d'extraction, résultats et registre d'ouverture du test
 docs/pdf/             rapports compilés
 ```
 
@@ -75,6 +88,21 @@ uv run python -m bond_terms.documents                                # environ 6
 uv run python -m bond_terms.entrepot --firds-date 2026-10-17 --registre-date 2026-10-23
 uv run dbt build --project-dir entrepot --profiles-dir entrepot
 ```
+
+### Extraction et évaluation (v0.2)
+
+```bash
+# OCR des pages sans texte, puis contrôle « le document cite l'ISIN »
+uv run --group ocr python -m bond_terms.ocr                         # environ 300 pages
+uv run python -m bond_terms.rattachement
+
+# Extracteurs sur le développement, puis évaluation (aucune requête : tout sort du cache)
+uv run python -m bond_terms.lancement --extracteur regles
+uv run --group llm --env-file .env python -m bond_terms.lancement --extracteur llm --modele gemini-3.5-flash-lite
+uv run python -m bond_terms.evaluation
+```
+
+L'extracteur LLM demande une clé de l'API Gemini, créée dans AI Studio sur un projet sans facturation liée, dans `.env` (voir `.env.example`). Les jeux de test ont été ouverts une seule fois, le 27 octobre 2026 ; la commande `bond_terms.ouverture` refuse une seconde ouverture.
 
 Le découpage et ses chiffres sont versionnés dans `docs/v0.1-collecte/data` : relancer la collecte un autre jour donnerait un autre registre, mais ne doit pas remplacer le découpage figé.
 
