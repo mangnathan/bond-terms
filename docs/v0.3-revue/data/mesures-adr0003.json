@@ -1,0 +1,66 @@
+{
+  "citation_en_deux_morceaux": {
+    "juste toujours refusée": 33,
+    "juste récupérée": 29,
+    "fausse toujours refusée": 2
+  },
+  "hybrides_type_firds_par_annee": {
+    "2020": {
+      "fixed": 1
+    },
+    "2021": {
+      "fixed": 13
+    },
+    "2022": {
+      "fixed": 17,
+      "floating": 3
+    },
+    "2023": {
+      "fixed": 17,
+      "floating": 3
+    },
+    "2024": {
+      "floating": 3,
+      "fixed": 13
+    },
+    "2025": {
+      "fixed": 18,
+      "floating": 12
+    },
+    "2026": {
+      "fixed": 8,
+      "floating": 10
+    }
+  },
+  "file_de_revue": {
+    "developpement": {
+      "documents": 341,
+      "envoyes_en_revue": 25,
+      "documents_errones": 70,
+      "errones_attrapes": 22
+    },
+    "test": {
+      "documents": 148,
+      "envoyes_en_revue": 27,
+      "documents_errones": 68,
+      "errones_attrapes": 27
+    },
+    "test_nouveaux_emetteurs": {
+      "documents": 99,
+      "envoyes_en_revue": 26,
+      "documents_errones": 36,
+      "errones_attrapes": 18
+    }
+  },
+  "exceptions_par_champ": {
+    "taux_fixe": 12,
+    "date_echeance": 8,
+    "montant": 51,
+    "valeur_nominale": 4,
+    "type_taux": 39,
+    "reference_taux": 3,
+    "devise": 4,
+    "rang": 3,
+    "duree_reference": 2
+  }
+}
