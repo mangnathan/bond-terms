@@ -130,6 +130,29 @@ def write_sheet(rows: list[dict[str, Any]], path: Path) -> None:
         writer.writerows(rows)
 
 
+def read_verdicts(sheet: Path) -> list[dict[str, Any]]:
+    """Fiche remplie par le relecteur ; « vrai ecart » et « Vrai écart » valent « vrai écart »."""
+    with sheet.open(encoding="utf-8-sig", newline="") as f:
+        rows = list(csv.DictReader(f, delimiter=";"))
+    labels = {normalize(TRUE_GAP): TRUE_GAP, normalize(WRONG_READING): WRONG_READING}
+    for row in rows:
+        row["verdict"] = labels.get(normalize(row.get("verdict") or "").strip(), "")
+    return rows
+
+
+def main_verdicts() -> None:  # pragma: no cover - lit la fiche remplie
+    """Part de vrais écarts d'après la fiche remplie par le relecteur."""
+    parser = argparse.ArgumentParser(description="Part de vrais écarts d'après la fiche remplie.")
+    parser.add_argument("fiche", type=Path)
+    parser.add_argument("sortie", type=Path)
+    args = parser.parse_args()
+    summary = summarize(read_verdicts(args.fiche))
+    args.sortie.write_bytes(
+        (json.dumps(summary, ensure_ascii=False, indent=2) + "\n").encode("utf-8")
+    )
+    print(json.dumps(summary, ensure_ascii=False, indent=2))
+
+
 def main() -> None:  # pragma: no cover - lit les vraies données
     parser = argparse.ArgumentParser(description=__doc__.splitlines()[0])
     parser.add_argument("--database", type=Path, default=Path("data/entrepot/bond_terms.duckdb"))
