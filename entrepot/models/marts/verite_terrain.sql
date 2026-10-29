@@ -30,7 +30,9 @@ select
     firds.rang is not null as rang_comparable,
     -- Le couple n'entre dans la vérité terrain que si le document cite l'ISIN (ADR 0002).
     -- Pas de valeur par défaut : un couple sans contrôle fait échouer le test not_null.
-    rattachement.isin_cite
+    rattachement.isin_cite,
+    -- Produit structuré que FIRDS déclare comme une obligation classique (ADR 0003).
+    rattachement.produit_structure
 from {{ ref('stg_decoupage') }} as decoupage
 inner join {{ ref('stg_firds_titres') }} as firds on firds.isin = decoupage.isin
 left join {{ ref('emetteurs') }} as emetteurs on emetteurs.lei = firds.lei_emetteur

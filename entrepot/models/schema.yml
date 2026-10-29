@@ -42,6 +42,8 @@ models:
     columns:
       - name: isin_cite
         data_tests: [not_null]
+      - name: produit_structure
+        data_tests: [not_null]
       - name: devise
         data_tests: [not_null]
       - name: date_echeance

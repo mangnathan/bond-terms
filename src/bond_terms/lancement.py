@@ -49,7 +49,7 @@ select document_id, isin, devise, date_echeance, type_taux, taux_fixe, reference
        duree_reference, marge_points_de_base, valeur_nominale, montant_nominal_total,
        montant_comparable, rang
 from verite_terrain
-where jeu = ? and isin_cite
+where jeu = ? and isin_cite and not produit_structure
 order by document_id, isin
 """
 
