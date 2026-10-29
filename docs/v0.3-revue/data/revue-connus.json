@@ -1,0 +1,29 @@
+{
+  "developpement": {
+    "documents": 340,
+    "envoyes_en_revue": 7,
+    "part_en_revue": 0.0206,
+    "sous_le_plafond": true,
+    "documents_errones": 25,
+    "errones_attrapes": 7,
+    "part_des_errones_attrapes": 0.28
+  },
+  "test": {
+    "documents": 148,
+    "envoyes_en_revue": 1,
+    "part_en_revue": 0.0068,
+    "sous_le_plafond": true,
+    "documents_errones": 10,
+    "errones_attrapes": 1,
+    "part_des_errones_attrapes": 0.1
+  },
+  "test_nouveaux_emetteurs": {
+    "documents": 78,
+    "envoyes_en_revue": 14,
+    "part_en_revue": 0.1795,
+    "sous_le_plafond": true,
+    "documents_errones": 18,
+    "errones_attrapes": 14,
+    "part_des_errones_attrapes": 0.7778
+  }
+}

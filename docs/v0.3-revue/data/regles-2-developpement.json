@@ -6,8 +6,8 @@
   "couples": 341,
   "arret": "",
   "couts": {
-    "latence_mediane_s": 0.006,
-    "latence_p95_s": 0.13,
+    "latence_mediane_s": 0.004,
+    "latence_p95_s": 0.105,
     "jetons_entree_moyenne": null,
     "jetons_sortie_moyenne": null,
     "documents_en_repli": 0,

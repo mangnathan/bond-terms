@@ -1,0 +1,20 @@
+{
+  "developpement": {
+    "couples": 352,
+    "isin_cite": 341,
+    "anomalies_de_rattachement": 11,
+    "produits_structures": 0
+  },
+  "test": {
+    "couples": 151,
+    "isin_cite": 148,
+    "anomalies_de_rattachement": 3,
+    "produits_structures": 0
+  },
+  "test_nouveaux_emetteurs": {
+    "couples": 100,
+    "isin_cite": 99,
+    "anomalies_de_rattachement": 1,
+    "produits_structures": 21
+  }
+}

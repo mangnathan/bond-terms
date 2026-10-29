@@ -2,6 +2,7 @@
   "test_v03": {
     "couples": 150,
     "isin_cite": 150,
-    "anomalies_de_rattachement": 0
+    "anomalies_de_rattachement": 0,
+    "produits_structures": 19
   }
 }

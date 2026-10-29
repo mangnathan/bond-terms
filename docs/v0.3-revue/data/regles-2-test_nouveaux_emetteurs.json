@@ -2,12 +2,12 @@
   "extracteur": "regles-2",
   "version": "regles-2",
   "jeu": "test_nouveaux_emetteurs",
-  "documents": 99,
-  "couples": 99,
+  "documents": 78,
+  "couples": 78,
   "arret": "",
   "couts": {
-    "latence_mediane_s": 0.007,
-    "latence_p95_s": 0.024,
+    "latence_mediane_s": 0.005,
+    "latence_p95_s": 0.029,
     "jetons_entree_moyenne": null,
     "jetons_sortie_moyenne": null,
     "documents_en_repli": 0,
@@ -16,44 +16,44 @@
   },
   "champs": {
     "devise": {
-      "justes": 69,
-      "compares": 99
+      "justes": 66,
+      "compares": 78
     },
     "date_echeance": {
-      "justes": 89,
-      "compares": 99
+      "justes": 68,
+      "compares": 78
     },
     "type_taux": {
       "justes": 60,
-      "compares": 99
+      "compares": 78
     },
     "taux_fixe": {
       "justes": 50,
-      "compares": 85
+      "compares": 66
     },
     "reference_taux": {
       "justes": 3,
-      "compares": 14
+      "compares": 12
     },
     "duree_reference": {
       "justes": 3,
-      "compares": 14
+      "compares": 12
     },
     "marge_pb": {
       "justes": 8,
-      "compares": 14
+      "compares": 12
     },
     "valeur_nominale": {
-      "justes": 82,
-      "compares": 99
+      "justes": 61,
+      "compares": 78
     },
     "montant": {
       "justes": 35,
-      "compares": 79
+      "compares": 62
     },
     "rang": {
       "justes": 22,
-      "compares": 83
+      "compares": 62
     }
   }
 }

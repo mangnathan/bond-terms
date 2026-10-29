@@ -2,58 +2,58 @@
   "extracteur": "llm-gemini-3.5-flash-lite-extraction-v3",
   "version": "gemini-3.5-flash-lite/extraction-v3",
   "jeu": "test_nouveaux_emetteurs",
-  "documents": 99,
-  "couples": 99,
+  "documents": 78,
+  "couples": 78,
   "arret": "",
   "couts": {
-    "latence_mediane_s": 13.965,
+    "latence_mediane_s": 13.961,
     "latence_p95_s": 23.756,
-    "jetons_entree_moyenne": 9053,
-    "jetons_sortie_moyenne": 455,
+    "jetons_entree_moyenne": 7482,
+    "jetons_sortie_moyenne": 451,
     "documents_en_repli": 0,
     "formats_refuses": 0,
     "cout_euros": 0
   },
   "champs": {
     "devise": {
-      "justes": 97,
-      "compares": 99
+      "justes": 76,
+      "compares": 78
     },
     "date_echeance": {
-      "justes": 98,
-      "compares": 99
+      "justes": 77,
+      "compares": 78
     },
     "type_taux": {
-      "justes": 81,
-      "compares": 99
+      "justes": 75,
+      "compares": 78
     },
     "taux_fixe": {
-      "justes": 64,
-      "compares": 85
+      "justes": 63,
+      "compares": 66
     },
     "reference_taux": {
-      "justes": 12,
-      "compares": 14
+      "justes": 11,
+      "compares": 12
     },
     "duree_reference": {
-      "justes": 12,
-      "compares": 14
+      "justes": 10,
+      "compares": 12
     },
     "marge_pb": {
       "justes": 11,
-      "compares": 14
+      "compares": 12
     },
     "valeur_nominale": {
-      "justes": 98,
-      "compares": 99
+      "justes": 77,
+      "compares": 78
     },
     "montant": {
-      "justes": 76,
-      "compares": 79
+      "justes": 59,
+      "compares": 62
     },
     "rang": {
-      "justes": 75,
-      "compares": 83
+      "justes": 54,
+      "compares": 62
     }
   }
 }
