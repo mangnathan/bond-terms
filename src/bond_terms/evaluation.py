@@ -26,8 +26,9 @@ from typing import Any
 
 import duckdb
 
+from bond_terms import llm, regles
 from bond_terms.extraction import FIELDS, Extraction, Value
-from bond_terms.lancement import DEVELOPMENT, TRUTH_SQL, score
+from bond_terms.lancement import KNOWN_SETS, TRUTH_SQL, score
 
 THRESHOLDS: dict[str, float | None] = {
     "devise": 0.98,
@@ -236,19 +237,36 @@ def main() -> None:  # pragma: no cover - lit les vraies données
     parser = argparse.ArgumentParser(description=__doc__.splitlines()[0])
     parser.add_argument("--database", type=Path, default=Path("data/entrepot/bond_terms.duckdb"))
     parser.add_argument("--extractions", type=Path, default=Path("data/interim/extractions"))
-    parser.add_argument("--modele", default="gemini-3.5-flash-lite")
-    parser.add_argument("--summary-dir", type=Path, default=Path("docs/v0.2-extraction/data"))
+    # Par défaut, la v0.3 : les trois jeux connus réunis, règles v2 et prompt v3. La v0.2 se
+    # rejoue avec --jeux developpement --regles regles --llm llm-gemini-3.5-flash-lite.
+    parser.add_argument("--jeux", nargs="+", default=list(KNOWN_SETS), choices=KNOWN_SETS)
+    parser.add_argument("--regles", default=regles.VERSION, help="préfixe des sorties des règles")
+    parser.add_argument(
+        "--llm",
+        default=f"llm-gemini-3.5-flash-lite-{llm.PROMPT_VERSION}",
+        help="préfixe des sorties du LLM",
+    )
+    parser.add_argument(
+        "--cas", type=Path, default=Path("docs/v0.2-extraction/data/cas-de-regression.csv")
+    )
+    parser.add_argument("--nom", default="connus-v03", help="nom du fichier de résultats")
+    parser.add_argument("--summary-dir", type=Path, default=Path("docs/v0.3-revue/data"))
     args = parser.parse_args()
 
+    truth: Rows = []
+    rules: dict[str, Extraction] = {}
+    model: dict[str, Extraction] = {}
     with duckdb.connect(str(args.database), read_only=True) as connection:
-        truth = connection.sql(TRUTH_SQL, params=[DEVELOPMENT]).to_arrow_table().to_pylist()
-    rules = load_extractions(args.extractions / f"regles-{DEVELOPMENT}.jsonl")
-    model = load_extractions(args.extractions / f"llm-{args.modele}-{DEVELOPMENT}.jsonl")
-    with (args.summary_dir / "cas-de-regression.csv").open(encoding="utf-8", newline="") as f:
+        for name in args.jeux:
+            truth += connection.sql(TRUTH_SQL, params=[name]).to_arrow_table().to_pylist()
+            rules |= load_extractions(args.extractions / f"{args.regles}-{name}.jsonl")
+            model |= load_extractions(args.extractions / f"{args.llm}-{name}.jsonl")
+    with args.cas.open(encoding="utf-8", newline="") as f:
         cases = list(csv.DictReader(f))
     evaluation = evaluate(truth, rules, model, cases)
-    result = _rounded({"jeu": DEVELOPMENT, "modele": args.modele, **evaluation})
-    target = args.summary_dir / f"evaluation-{DEVELOPMENT}.json"
+    result = _rounded({"jeux": args.jeux, "regles": args.regles, "llm": args.llm} | evaluation)
+    args.summary_dir.mkdir(parents=True, exist_ok=True)
+    target = args.summary_dir / f"evaluation-{args.nom}.json"
     target.write_bytes((json.dumps(result, ensure_ascii=False, indent=2) + "\n").encode("utf-8"))
 
     for name in FIELDS:
@@ -258,14 +276,8 @@ def main() -> None:  # pragma: no cover - lit les vraies données
         print(f"{name:16} règles {r['exactitude']:.1%}  llm {m['exactitude']:.1%} {interval}")
         print(f"{'':16} {m['verdict']}")
     for label in ("global", "global_sans_montant"):
-        print(
-            label,
-            "règles",
-            result["regles"][label]["exactitude"],
-            "llm",
-            result["llm"][label]["exactitude"],
-            result["llm"][label]["intervalle_95"],
-        )
+        r, m = result["regles"][label], result["llm"][label]
+        print(label, "règles", r["exactitude"], "llm", m["exactitude"], m["intervalle_95"])
     print("comparaison", result["comparaison"])
 
 
