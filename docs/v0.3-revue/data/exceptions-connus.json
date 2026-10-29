@@ -1,0 +1,53 @@
+{
+  "developpement": {
+    "exceptions": 51,
+    "documents": 46,
+    "par_champ": {
+      "montant": 32,
+      "date_echeance": 5,
+      "taux_fixe": 4,
+      "valeur_nominale": 3,
+      "type_taux": 3,
+      "rang": 2,
+      "reference_taux": 1,
+      "devise": 1
+    },
+    "verifiees": 0,
+    "vrais_ecarts": 0,
+    "part_de_vrais_ecarts": null,
+    "seuil_atteint": null
+  },
+  "test": {
+    "exceptions": 30,
+    "documents": 25,
+    "par_champ": {
+      "montant": 18,
+      "reference_taux": 4,
+      "duree_reference": 4,
+      "devise": 2,
+      "rang": 1,
+      "date_echeance": 1
+    },
+    "verifiees": 0,
+    "vrais_ecarts": 0,
+    "part_de_vrais_ecarts": null,
+    "seuil_atteint": null
+  },
+  "test_nouveaux_emetteurs": {
+    "exceptions": 8,
+    "documents": 8,
+    "par_champ": {
+      "montant": 2,
+      "valeur_nominale": 1,
+      "duree_reference": 1,
+      "taux_fixe": 1,
+      "devise": 1,
+      "date_echeance": 1,
+      "type_taux": 1
+    },
+    "verifiees": 0,
+    "vrais_ecarts": 0,
+    "part_de_vrais_ecarts": null,
+    "seuil_atteint": null
+  }
+}
