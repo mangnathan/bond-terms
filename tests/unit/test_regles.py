@@ -1,6 +1,6 @@
 """Extracteur à règles sur des conditions définitives fabriquées, avec les pièges observés."""
 
-from bond_terms.extraction import PERPETUAL, Value
+from bond_terms.extraction import HYBRID, PERPETUAL, Value
 from bond_terms.regles import extract, glue_number
 
 FIXED = [
@@ -80,7 +80,7 @@ def test_floating_rate_notes() -> None:
 def test_perpetual_resettable_notes() -> None:
     found = values(PERPETUAL_DOC)
     assert found["date_echeance"] == PERPETUAL
-    assert found["type_taux"] == "fixed"
+    assert found["type_taux"] == HYBRID
     assert found["taux_fixe"] == "6.875"
     assert found["rang"] == "subordonne_profond"
 

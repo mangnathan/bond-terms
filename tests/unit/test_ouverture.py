@@ -34,5 +34,5 @@ def test_documents_not_read_by_the_llm_block_the_results() -> None:
 def test_opening_record_names_the_frozen_extractors() -> None:
     record = opening_record("abc123", dt.datetime(2026, 10, 27, 12, tzinfo=dt.UTC))
     assert record["commit"] == "abc123"
-    assert record["llm"] == "gemini-3.5-flash-lite/extraction-v2"
+    assert record["llm"] == "gemini-3.5-flash-lite/extraction-v3"
     assert record["jeux"] == ["test", "test_nouveaux_emetteurs"]

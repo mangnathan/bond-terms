@@ -27,6 +27,8 @@ FIELDS = (
     "rang",
 )
 PERPETUAL = "perpetuelle"
+# Type de taux d'un titre à taux fixe puis variable, ou révisable (ADR 0003).
+HYBRID = "fixe_puis_variable"
 
 
 @dataclass
@@ -35,6 +37,8 @@ class Value:
     citation: str | None = None
     page: int | None = None
     refusee: bool = False
+    # Vrai si la citation n'a été retrouvée qu'en deux morceaux, intitulé et valeur (ADR 0003).
+    deux_morceaux: bool = False
 
 
 @dataclass
@@ -61,10 +65,17 @@ _TYPOGRAPHY = str.maketrans(
 )
 
 
+# Guillemets, et tirets qui ne précèdent pas un chiffre : ils ne portent aucune valeur, et le
+# modèle les remplace parfois l'un par l'autre (« Euro (‐ EUR‐) » pour « Euro (“EUR”) »). Un
+# tiret devant un chiffre reste : c'est le signe d'une marge ou le séparateur d'une date ISO.
+_NEUTRAL_MARKS = re.compile("[\"'`\u2010\u2012\u2015-](?!\\d)|[\"'`]")
+
+
 def compact(text: str) -> str:
-    """Forme de comparaison : minuscules, sans accents ni espaces, guillemets et tirets unifiés.
-    Les mots et les chiffres doivent rester identiques."""
-    return re.sub(r"\s+", "", normalize(text).translate(_TYPOGRAPHY))
+    """Forme de comparaison : minuscules, sans accents ni espaces ; guillemets et tirets sans
+    valeur ignorés. Les mots, les chiffres et le signe d'un nombre doivent rester identiques."""
+    unified = normalize(text).translate(_TYPOGRAPHY)
+    return re.sub(r"\s+", "", _NEUTRAL_MARKS.sub("", unified))
 
 
 # Numérotation de rubrique en tête de citation : « 24. (i) », « (ix) », « (9) (i) ». Seulement
@@ -95,12 +106,45 @@ def page_of(citation: str, pages: list[str]) -> int | None:
     return None
 
 
-def verify(extraction: Extraction, pages: list[str]) -> Extraction:
-    """Refuse toute valeur sans citation retrouvée ; renseigne la page des autres."""
+# Citation en deux morceaux (ADR 0003) : l'intitulé précède la valeur sur la même page.
+TWO_PART_WINDOW = 400
+MIN_LABEL = 6
+
+
+def two_part_page(citation: str, pages: list[str]) -> int | None:
+    """Page où l'intitulé (avant le premier deux-points, au moins 6 caractères) précède la
+    valeur (au moins 8 caractères) de moins de 400 caractères, ou None. Mesuré sur les jeux
+    connus : 29 valeurs justes récupérées, aucune valeur fausse acceptée."""
+    if ":" not in citation:
+        return None
+    label, value = citation.split(":", 1)
+    head = compact(_LEADING_NUMBERING.sub("", normalize(label).strip()))
+    head = head.strip("-\"'.,;:()")
+    tail = compact(value).strip("-\"'•*·.,;:")
+    if len(head) < MIN_LABEL or len(tail) < MIN_CITATION:
+        return None
+    for number, page in enumerate(pages, start=1):
+        text = compact(page)
+        position = text.find(tail)
+        while position >= 0:
+            if text.rfind(head, max(0, position - TWO_PART_WINDOW), position) >= 0:
+                return number
+            position = text.find(tail, position + 1)
+    return None
+
+
+def verify(extraction: Extraction, pages: list[str], two_parts: bool = True) -> Extraction:
+    """Refuse toute valeur sans citation retrouvée ; renseigne la page des autres. Avec
+    `two_parts`, une citation peut être retrouvée en deux morceaux (vérification v2, ADR 0003) ;
+    sans, c'est la vérification de la v0.2."""
     for value in extraction.champs.values():
+        value.refusee, value.page, value.deux_morceaux = False, None, False
         if value.valeur is None:
             continue
         page = page_of(value.citation or "", pages)
+        if page is None and two_parts:
+            page = two_part_page(value.citation or "", pages)
+            value.deux_morceaux = page is not None
         if page is None:
             value.refusee = True
         else:

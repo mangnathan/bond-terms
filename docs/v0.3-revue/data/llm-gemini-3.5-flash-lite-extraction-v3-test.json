@@ -1,0 +1,59 @@
+{
+  "extracteur": "llm-gemini-3.5-flash-lite-extraction-v3",
+  "version": "gemini-3.5-flash-lite/extraction-v3",
+  "jeu": "test",
+  "documents": 148,
+  "couples": 148,
+  "arret": "",
+  "couts": {
+    "latence_mediane_s": 12.596,
+    "latence_p95_s": 24.5,
+    "jetons_entree_moyenne": 6599,
+    "jetons_sortie_moyenne": 447,
+    "documents_en_repli": 0,
+    "formats_refuses": 0,
+    "cout_euros": 0
+  },
+  "champs": {
+    "devise": {
+      "justes": 146,
+      "compares": 148
+    },
+    "date_echeance": {
+      "justes": 146,
+      "compares": 148
+    },
+    "type_taux": {
+      "justes": 148,
+      "compares": 148
+    },
+    "taux_fixe": {
+      "justes": 113,
+      "compares": 113
+    },
+    "reference_taux": {
+      "justes": 31,
+      "compares": 35
+    },
+    "duree_reference": {
+      "justes": 31,
+      "compares": 35
+    },
+    "marge_pb": {
+      "justes": 34,
+      "compares": 35
+    },
+    "valeur_nominale": {
+      "justes": 148,
+      "compares": 148
+    },
+    "montant": {
+      "justes": 116,
+      "compares": 135
+    },
+    "rang": {
+      "justes": 115,
+      "compares": 116
+    }
+  }
+}
