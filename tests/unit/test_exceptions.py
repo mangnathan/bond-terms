@@ -79,8 +79,8 @@ def test_verdicts_are_read_whatever_the_accents_and_case(tmp_path: Path) -> None
 
     sheet = tmp_path / "fiche.csv"
     sheet.write_text(
-        "numero;champ;verdict\n1;montant;Vrai ecart\n2;rang;lecture fausse\n"
-        "3;devise;\n4;x;peut-être\n",
+        "numero;document_id;champ;verdict\n1;a;montant;Vrai ecart\n2;b;rang;lecture fausse\n"
+        "3;c;devise;\n4;d;x;peut-être\n",
         encoding="utf-8-sig",
     )
     rows = read_verdicts(sheet)
