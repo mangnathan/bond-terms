@@ -1,0 +1,344 @@
+{
+  "jeux": [
+    "developpement",
+    "test",
+    "test_nouveaux_emetteurs"
+  ],
+  "regles": {
+    "champs": {
+      "devise": {
+        "justes": 522,
+        "compares": 588,
+        "exactitude": 0.8878,
+        "intervalle_95": [
+          0.8608,
+          0.9131
+        ],
+        "seuil": 0.98,
+        "verdict": "seuil non atteint"
+      },
+      "date_echeance": {
+        "justes": 545,
+        "compares": 588,
+        "exactitude": 0.9269,
+        "intervalle_95": [
+          0.9049,
+          0.9472
+        ],
+        "seuil": 0.98,
+        "verdict": "seuil non atteint"
+      },
+      "type_taux": {
+        "justes": 489,
+        "compares": 588,
+        "exactitude": 0.8316,
+        "intervalle_95": [
+          0.7997,
+          0.862
+        ],
+        "seuil": 0.98,
+        "verdict": "seuil non atteint"
+      },
+      "taux_fixe": {
+        "justes": 411,
+        "compares": 492,
+        "exactitude": 0.8354,
+        "intervalle_95": [
+          0.8,
+          0.8682
+        ],
+        "seuil": 0.98,
+        "verdict": "seuil non atteint"
+      },
+      "reference_taux": {
+        "justes": 62,
+        "compares": 96,
+        "exactitude": 0.6458,
+        "intervalle_95": [
+          0.5446,
+          0.7444
+        ],
+        "seuil": 0.95,
+        "verdict": "seuil non atteint"
+      },
+      "duree_reference": {
+        "justes": 51,
+        "compares": 96,
+        "exactitude": 0.5312,
+        "intervalle_95": [
+          0.4286,
+          0.6286
+        ],
+        "seuil": 0.95,
+        "verdict": "seuil non atteint"
+      },
+      "marge_pb": {
+        "justes": 73,
+        "compares": 96,
+        "exactitude": 0.7604,
+        "intervalle_95": [
+          0.6703,
+          0.8476
+        ],
+        "seuil": 0.95,
+        "verdict": "seuil non atteint"
+      },
+      "valeur_nominale": {
+        "justes": 536,
+        "compares": 588,
+        "exactitude": 0.9116,
+        "intervalle_95": [
+          0.8879,
+          0.9337
+        ],
+        "seuil": 0.95,
+        "verdict": "seuil non atteint"
+      },
+      "montant": {
+        "justes": 418,
+        "compares": 535,
+        "exactitude": 0.7813,
+        "intervalle_95": [
+          0.7448,
+          0.815
+        ],
+        "seuil": null,
+        "verdict": "mesuré sans seuil"
+      },
+      "rang": {
+        "justes": 390,
+        "compares": 491,
+        "exactitude": 0.7943,
+        "intervalle_95": [
+          0.7561,
+          0.831
+        ],
+        "seuil": 0.95,
+        "verdict": "seuil non atteint"
+      }
+    },
+    "global": {
+      "justes": 3497,
+      "compares": 4158,
+      "exactitude": 0.841,
+      "intervalle_95": [
+        0.8184,
+        0.8635
+      ]
+    },
+    "global_sans_montant": {
+      "justes": 3079,
+      "compares": 3623,
+      "exactitude": 0.8498,
+      "intervalle_95": [
+        0.8273,
+        0.8726
+      ]
+    }
+  },
+  "llm": {
+    "champs": {
+      "devise": {
+        "justes": 583,
+        "compares": 588,
+        "exactitude": 0.9915,
+        "intervalle_95": [
+          0.983,
+          0.9983
+        ],
+        "seuil": 0.98,
+        "verdict": "seuil atteint"
+      },
+      "date_echeance": {
+        "justes": 579,
+        "compares": 588,
+        "exactitude": 0.9847,
+        "intervalle_95": [
+          0.9729,
+          0.9932
+        ],
+        "seuil": 0.98,
+        "verdict": "seuil atteint, marge statistique insuffisante"
+      },
+      "type_taux": {
+        "justes": 567,
+        "compares": 588,
+        "exactitude": 0.9643,
+        "intervalle_95": [
+          0.9489,
+          0.978
+        ],
+        "seuil": 0.98,
+        "verdict": "seuil non atteint"
+      },
+      "taux_fixe": {
+        "justes": 464,
+        "compares": 492,
+        "exactitude": 0.9431,
+        "intervalle_95": [
+          0.9206,
+          0.9633
+        ],
+        "seuil": 0.98,
+        "verdict": "seuil non atteint"
+      },
+      "reference_taux": {
+        "justes": 87,
+        "compares": 96,
+        "exactitude": 0.9062,
+        "intervalle_95": [
+          0.8416,
+          0.9604
+        ],
+        "seuil": 0.95,
+        "verdict": "seuil non atteint"
+      },
+      "duree_reference": {
+        "justes": 84,
+        "compares": 96,
+        "exactitude": 0.875,
+        "intervalle_95": [
+          0.8041,
+          0.9364
+        ],
+        "seuil": 0.95,
+        "verdict": "seuil non atteint"
+      },
+      "marge_pb": {
+        "justes": 89,
+        "compares": 96,
+        "exactitude": 0.9271,
+        "intervalle_95": [
+          0.8706,
+          0.9767
+        ],
+        "seuil": 0.95,
+        "verdict": "seuil non atteint"
+      },
+      "valeur_nominale": {
+        "justes": 582,
+        "compares": 588,
+        "exactitude": 0.9898,
+        "intervalle_95": [
+          0.9796,
+          0.9983
+        ],
+        "seuil": 0.95,
+        "verdict": "seuil atteint"
+      },
+      "montant": {
+        "justes": 478,
+        "compares": 535,
+        "exactitude": 0.8935,
+        "intervalle_95": [
+          0.8669,
+          0.9187
+        ],
+        "seuil": null,
+        "verdict": "mesuré sans seuil"
+      },
+      "rang": {
+        "justes": 477,
+        "compares": 491,
+        "exactitude": 0.9715,
+        "intervalle_95": [
+          0.9565,
+          0.9853
+        ],
+        "seuil": 0.95,
+        "verdict": "seuil atteint"
+      }
+    },
+    "global": {
+      "justes": 3990,
+      "compares": 4158,
+      "exactitude": 0.9596,
+      "intervalle_95": [
+        0.9522,
+        0.9666
+      ]
+    },
+    "global_sans_montant": {
+      "justes": 3512,
+      "compares": 3623,
+      "exactitude": 0.9694,
+      "intervalle_95": [
+        0.962,
+        0.9765
+      ]
+    }
+  },
+  "documents": 587,
+  "couples": 588,
+  "comparaison": {
+    "ecart": 0.1186,
+    "intervalle_95": [
+      0.0995,
+      0.1378
+    ],
+    "marge_exigee": 0.02,
+    "llm_retenu": true
+  },
+  "cas_de_regression": {
+    "numérotation de rubrique recopiée": {
+      "cas": 7,
+      "regles": 7,
+      "llm": 7
+    },
+    "taux fixe puis variable, FIRDS en variable": {
+      "cas": 5,
+      "regles": 3,
+      "llm": 5
+    },
+    "taux révisable, FIRDS en variable": {
+      "cas": 3,
+      "regles": 3,
+      "llm": 3
+    },
+    "Bank Bill Swap Rate (BBSW) lu comme un swap": {
+      "cas": 2,
+      "regles": 2,
+      "llm": 2
+    },
+    "obligation perpétuelle": {
+      "cas": 4,
+      "regles": 1,
+      "llm": 4
+    },
+    "prospectus autonome rédigé en prose": {
+      "cas": 4,
+      "regles": 0,
+      "llm": 1
+    },
+    "écart réel entre FIRDS et le document": {
+      "cas": 1,
+      "regles": 0,
+      "llm": 0
+    },
+    "année mal recopiée": {
+      "cas": 1,
+      "regles": 1,
+      "llm": 1
+    },
+    "texte espacé par l'extraction du PDF": {
+      "cas": 1,
+      "regles": 1,
+      "llm": 1
+    },
+    "titre nommé Float mais fixe dans FIRDS": {
+      "cas": 1,
+      "regles": 0,
+      "llm": 0
+    },
+    "rang écrit seulement dans le titre de l'émission": {
+      "cas": 4,
+      "regles": 4,
+      "llm": 4
+    },
+    "devise CNH déclarée CNY dans FIRDS": {
+      "cas": 2,
+      "regles": 2,
+      "llm": 2
+    }
+  }
+}
