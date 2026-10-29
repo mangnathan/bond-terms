@@ -99,3 +99,18 @@ Ajoutées le 29 octobre 2026, après la nouvelle extraction des jeux connus (rè
 
 - **Produits structurés mal classés par FIRDS.** Sur les émetteurs jamais vus de la v0.2, 21 documents sur 99 sont des produits structurés (titres à coupon indexé de Crédit Agricole CIB et de Natixis) que FIRDS déclare comme des obligations à taux fixe : la règle « obligation classique » de l'ADR 0001, qui ne regarde que FIRDS, les a laissés passer. Le LLM les lit correctement comme indexés et était compté faux. Un contrôle automatique sur le libellé du document (titre « Titres à Coupon Indexé », rubrique « Coupon Indexé : Applicable »...) les écarte de la vérité terrain, comme le contrôle de l'ISIN ; il ne regarde que le type de document. Sur les jeux connus, il touche ces 21 documents et aucun autre ; il est appliqué au nouveau test avant toute extraction (19 documents sur 150), et les documents écartés sont publiés comme tels.
 - **Règle de revue.** Une fois ces documents écartés, la règle de la décision 4 envoyait 30,8 % des documents des émetteurs jamais vus en revue, au-dessus du plafond de 30 %, alors que le nouveau test n'est fait que de ce genre de documents. Les désaccords avec l'extracteur à règles en étaient la cause : sur les jeux connus, ils ajoutaient 52 revues pour attraper 7 documents erronés de plus. Un document part désormais en revue seulement si le LLM n'a pas justifié une valeur clé ; les désaccords restent affichés au relecteur, à titre d'information. Sur les jeux connus : 22 documents en revue sur 566 (4 %, 18 % chez les émetteurs jamais vus), tous erronés, soit 42 % des documents erronés attrapés.
+
+## Extracteurs et critères figés avant l'ouverture du nouveau test
+
+Ajouté le 29 octobre 2026. À partir de l'ouverture du nouveau test, rien de ce qui suit ne change pour la v0.3 ; le commit exact est consigné automatiquement dans `docs/v0.3-revue/data/ouverture-du-test.json`, avant toute extraction.
+
+- **Extracteurs** : règles `regles-2` ; LLM `gemini-3.5-flash-lite`, prompt `extraction-v3`, température 0, 40 000 premiers caractères du document.
+- **Vérification v2** : citation d'un seul tenant ou en deux morceaux (intitulé puis valeur sur la même page, à moins de 400 caractères) ; casse, accents, espaces, guillemets et tirets sans valeur ignorés, signe d'un nombre vérifié ; au moins 8 caractères.
+- **Vérité terrain** : couples dont le document cite l'ISIN et n'est pas un produit structuré ; type « fixe puis variable » juste que FIRDS déclare fixe ou variable.
+- **Critères, sur le nouveau test** :
+  - exactitude par champ jugée sur l'estimation, avec son intervalle à 95 %, contre les seuils de l'ADR 0001 ; exactitude globale publiée à côté de celle des règles ;
+  - la vérification v2 est gardée si elle n'accepte pas plus de valeurs fausses que la vérification de la v0.2, calculée sur les mêmes sorties ;
+  - file de revue : au plus 30 % des documents ; part des documents erronés attrapés publiée ;
+  - rapport d'exceptions : au moins 80 % de vrais écarts, d'après la vérification humaine de chaque exception.
+
+Une répétition de la commande d'ouverture sur un jeu connu, depuis le cache et sans requête, a produit tous les résultats attendus avant l'ouverture réelle.

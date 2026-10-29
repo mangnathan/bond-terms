@@ -35,7 +35,7 @@ models:
           - not_null
           - accepted_values:
               arguments:
-                values: [developpement, test, test_nouveaux_emetteurs, exclu_chronometre]
+                values: [developpement, test, test_nouveaux_emetteurs, exclu_chronometre, test_v03]
 
   - name: verite_terrain
     description: Valeurs officielles de FIRDS pour chaque couple document-ISIN du découpage.
