@@ -14,6 +14,8 @@ from __future__ import annotations
 import argparse
 import csv
 import json
+from collections.abc import Sequence
+from dataclasses import dataclass
 from pathlib import Path
 
 import duckdb
@@ -66,6 +68,17 @@ def new_issuer_documents(cache_dir: Path, isins: set[str]) -> list[dict[str, str
     return rows
 
 
+@dataclass(frozen=True)
+class ExtraSet:
+    """Jeu ajouté après la v0.1 (nouveau test de la v0.3) : sa liste figée, son contrôle de
+    lecture, son rattachement et le cache du registre collecté pour lui."""
+
+    decoupage: Path
+    pdf_quality: Path
+    rattachement: Path
+    registre_cache: Path
+
+
 def build_raw_tables(
     firds_index: Path,
     registre: Path,
@@ -73,8 +86,9 @@ def build_raw_tables(
     decoupage: Path,
     pdf_quality: Path,
     rattachement: Path,
+    extra: Sequence[ExtraSet] = (),
 ) -> dict[str, pa.Table]:
-    split = read_csv(decoupage)
+    split = pa.concat_tables([read_csv(decoupage), *(read_csv(e.decoupage) for e in extra)])
     population = select_population(firds_index)
     useful = {row["isin"] for row in population} | set(split.column("isin").to_pylist())
     firds = pq.read_table(firds_index)
@@ -85,6 +99,9 @@ def build_raw_tables(
         split.filter(pc.equal(split["jeu"], "test_nouveaux_emetteurs")).column("isin").to_pylist()
     )
     new_rows = new_issuer_documents(new_issuer_cache, new_isins)
+    for added in extra:
+        isins = set(read_csv(added.decoupage).column("isin").to_pylist())
+        new_rows += new_issuer_documents(added.registre_cache, isins)
     lei_by_isin = dict(zip(firds["isin"].to_pylist(), firds["issuer_lei"].to_pylist(), strict=True))
     for row in new_rows:
         row["issuer_lei"] = lei_by_isin.get(row["isin"], "")
@@ -101,8 +118,12 @@ def build_raw_tables(
         ),
         "registre_documents": _strings(documents),
         "decoupage": split,
-        "pdf_controle": read_csv(pdf_quality),
-        "rattachement": read_csv(rattachement),
+        "pdf_controle": pa.concat_tables(
+            [read_csv(pdf_quality), *(read_csv(e.pdf_quality) for e in extra)]
+        ),
+        "rattachement": pa.concat_tables(
+            [read_csv(rattachement), *(read_csv(e.rattachement) for e in extra)]
+        ),
     }
 
 
@@ -119,6 +140,20 @@ def load_duckdb(tables: dict[str, pa.Table], database: Path) -> None:
             sql = f"create or replace table {RAW_SCHEMA}.{name} as select * from source_table"  # noqa: S608
             connection.execute(sql)
             connection.unregister("source_table")
+
+
+def extra_sets(data_dir: Path) -> list[ExtraSet]:
+    """Le nouveau test de la v0.3, s'il a été tiré et lu."""
+    folder = Path("docs/v0.3-revue/data")
+    v03 = ExtraSet(
+        decoupage=folder / "nouveau-test-documents.csv",
+        pdf_quality=folder / "pdf-controle.csv",
+        rattachement=data_dir / "interim" / "rattachement-v03.csv",
+        registre_cache=data_dir / "raw" / "registre" / "2026-10-28-nouveau-test",
+    )
+    return (
+        [v03] if all(p.exists() for p in (v03.decoupage, v03.pdf_quality, v03.rattachement)) else []
+    )
 
 
 def main() -> None:
@@ -139,6 +174,7 @@ def main() -> None:
         decoupage=args.collecte_dir / "decoupage-documents.csv",
         pdf_quality=args.collecte_dir / "pdf-controle.csv",
         rattachement=args.data_dir / "interim" / "rattachement.csv",
+        extra=extra_sets(args.data_dir),
     )
     load_duckdb(tables, args.database)
     for name, table in tables.items():
