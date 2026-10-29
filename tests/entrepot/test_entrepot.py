@@ -123,8 +123,8 @@ def write_inputs(tmp: Path, test_date: str) -> dict[str, Path]:
     rattachement = tmp / "rattachement.csv"
     with rattachement.open("w", newline="", encoding="utf-8") as f:
         writer = csv.writer(f, lineterminator="\n")
-        writer.writerow(["document_id", "isin", "jeu", "isin_cite"])
-        writer.writerows([(d, i, jeu, str(d != "9")) for d, i, _, _, jeu in rows])
+        writer.writerow(["document_id", "isin", "jeu", "isin_cite", "produit_structure"])
+        writer.writerows([(d, i, jeu, str(d != "9"), "False") for d, i, _, _, jeu in rows])
     return {
         "firds": firds,
         "registre": registre,

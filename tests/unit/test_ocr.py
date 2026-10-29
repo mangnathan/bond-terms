@@ -67,6 +67,27 @@ def test_link_check_keeps_only_documents_that_cite_the_isin() -> None:
     rows = check(couples, {"1": "ISIN : FR0000 000001"})
     assert [r["isin_cite"] for r in rows] == ["True", "False", "False"]
     assert summarize_links(rows) == {
-        "developpement": {"couples": 2, "isin_cite": 1, "anomalies_de_rattachement": 1},
-        "test": {"couples": 1, "isin_cite": 0, "anomalies_de_rattachement": 1},
+        "developpement": {
+            "couples": 2,
+            "isin_cite": 1,
+            "anomalies_de_rattachement": 1,
+            "produits_structures": 0,
+        },
+        "test": {
+            "couples": 1,
+            "isin_cite": 0,
+            "anomalies_de_rattachement": 1,
+            "produits_structures": 0,
+        },
     }
+
+
+def test_structured_notes_declared_as_plain_bonds_are_detected() -> None:
+    from bond_terms.rattachement import is_structured
+
+    assert is_structured("emission d'eur 30.000.000 de titres a coupon et a remboursement indexe")
+    assert is_structured("15 titres a coupon indexe : applicable - titres a coupon indexe sur taux")
+    assert not is_structured(
+        "15 titres a coupon indexe : sans objet\n16 titres a taux fixe : applicable"
+    )
+    assert not is_structured("index linked interest note provisions: not applicable")
