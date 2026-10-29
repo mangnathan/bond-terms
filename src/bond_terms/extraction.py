@@ -65,10 +65,17 @@ _TYPOGRAPHY = str.maketrans(
 )
 
 
+# Guillemets, et tirets qui ne précèdent pas un chiffre : ils ne portent aucune valeur, et le
+# modèle les remplace parfois l'un par l'autre (« Euro (‐ EUR‐) » pour « Euro (“EUR”) »). Un
+# tiret devant un chiffre reste : c'est le signe d'une marge ou le séparateur d'une date ISO.
+_NEUTRAL_MARKS = re.compile("[\"'`\u2010\u2012\u2015-](?!\\d)|[\"'`]")
+
+
 def compact(text: str) -> str:
-    """Forme de comparaison : minuscules, sans accents ni espaces, guillemets et tirets unifiés.
-    Les mots et les chiffres doivent rester identiques."""
-    return re.sub(r"\s+", "", normalize(text).translate(_TYPOGRAPHY))
+    """Forme de comparaison : minuscules, sans accents ni espaces ; guillemets et tirets sans
+    valeur ignorés. Les mots, les chiffres et le signe d'un nombre doivent rester identiques."""
+    unified = normalize(text).translate(_TYPOGRAPHY)
+    return re.sub(r"\s+", "", _NEUTRAL_MARKS.sub("", unified))
 
 
 # Numérotation de rubrique en tête de citation : « 24. (i) », « (ix) », « (9) (i) ». Seulement

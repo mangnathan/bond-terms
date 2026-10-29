@@ -178,3 +178,12 @@ def test_two_parts_need_the_label_shortly_before_the_value() -> None:
     assert two_part_page("Fixed Rate(s) of Interest: 2.56 per cent. per annum", [far]) is None
     wrong = "Fixed Rate(s) of Interest: 2.65 per cent. per annum payable"
     assert two_part_page("Fixed Rate(s) of Interest: 2.56 per cent. per annum", [wrong]) is None
+
+
+def test_quotes_and_dashes_without_value_are_ignored_but_signs_are_checked() -> None:
+    page = [
+        "3 Specified Currency or Currencies: Euro (\u201cEUR\u201d)\nMargin(s): +0.25 per cent."
+    ]
+    assert page_of("Specified Currency or Currencies: Euro (\u2010 EUR\u2010)", page) == 1
+    assert page_of("Margin(s): -0.25 per cent.", page) is None
+    assert page_of("Margin(s): +0.25 per cent.", page) == 1
