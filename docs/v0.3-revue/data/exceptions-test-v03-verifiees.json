@@ -1,0 +1,27 @@
+{
+  "exceptions": 34,
+  "documents": 28,
+  "par_champ": {
+    "montant": 20,
+    "date_echeance": 4,
+    "duree_reference": 3,
+    "taux_fixe": 3,
+    "valeur_nominale": 1,
+    "marge_pb": 1,
+    "type_taux": 1,
+    "reference_taux": 1
+  },
+  "verifiees": 32,
+  "vrais_ecarts": 25,
+  "part_de_vrais_ecarts": 0.7812,
+  "seuil_atteint": false,
+  "ecarts_de_forme": 3,
+  "vrais_ecarts_de_fond": 22,
+  "part_de_vrais_ecarts_de_fond": 0.7586,
+  "lectures_fausses_par_cause": {
+    "obligation voisine dans un prospectus à plusieurs titres": 5,
+    "décimales à la française": 1,
+    "fourchette lue comme montant": 1
+  },
+  "relecteur": "Nathan Mang, avec des explications sur la règle"
+}
