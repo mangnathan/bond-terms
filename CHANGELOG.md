@@ -4,6 +4,11 @@ Les évolutions notables du projet sont notées ici, selon le format [Keep a Cha
 
 ## [Non publié]
 
+### Ajouté
+- Nouveau test de la v0.4 ouvert une seule fois : le LLM est juste sur 91,1 % des paires contre 67,1 % pour les règles ; exceptions vérifiées à la main, 63,0 % de vrais écarts.
+- Instantané des conditions extraites (`bond_terms.instantane`) : pour chaque ISIN, valeurs, citations, statut de revue et exceptions, et indicateurs de surveillance par jeu.
+- API en lecture seule (`bond_terms.api`, FastAPI) : ISIN vérifié avec sa clé de contrôle, nombre d'appels limité, instantané validé au démarrage.
+
 ## [v0.3] - 2026-11-10
 
 Bilan ([ADR 0003](docs/adr/0003-revue-et-exceptions.md)) : sur un nouveau test de 131 documents d'émetteurs jamais vus, ouvert une seule fois, le LLM est juste sur 92,2 % des paires document-champ contre 60,9 % pour les règles. Devise et valeur nominale atteignent leur seuil avec une marge statistique insuffisante. La file de revue prend 17,6 % des documents (plafond : 30 %). Le rapport d'exceptions compte 78,1 % de vrais écarts, sous le seuil de 80 %.

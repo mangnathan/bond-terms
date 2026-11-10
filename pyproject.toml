@@ -20,6 +20,8 @@ dev = [
     "pytest>=8.4",
     "pre-commit>=4.3",
     "types-defusedxml>=0.7.0.20260504",
+    # Client de test de l'API.
+    "httpx2>=2.16,<2.17",
 ]
 entrepot = [
     "dbt-core>=1.10",
@@ -39,10 +41,17 @@ llm = [
 bigquery = [
     "dbt-bigquery>=1.12",
 ]
+# API en lecture seule (ADR 0004). Versions publiées depuis au moins deux semaines : une
+# version du jour n'a pas encore eu le temps d'être corrigée ou retirée.
+api = [
+    "fastapi>=0.162.0,<0.162.1",
+    "uvicorn>=0.54,<0.55",
+]
 
 [tool.uv]
-# L'entrepôt est installé sur le poste et en CI, pour que mypy et les tests le vérifient aussi.
-default-groups = ["dev", "entrepot"]
+# L'entrepôt et l'API sont installés sur le poste et en CI, pour que mypy et les tests les
+# vérifient aussi.
+default-groups = ["dev", "entrepot", "api"]
 # dbt-bigquery impose google-genai 1.x par le client Vertex AI ; le groupe llm utilise la 2.x.
 # Les deux ne servent jamais ensemble : uv les résout séparément.
 conflicts = [[{ group = "bigquery" }, { group = "llm" }]]
