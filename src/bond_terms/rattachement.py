@@ -40,6 +40,11 @@ STRUCTURED = re.compile(
     r"|base d'interet\s*:\s*coupon indexe"
     r"|index[- ]linked interest[^:]{0,60}:\s*applicable"
     r"|emission d.{0,40}de titres a coupon (?:et a remboursement )?indexe"
+    # Libellés anglais (ADR 0004) : aucun document des huit émetteurs touché sur les jeux connus.
+    r"|autocallable|equity linked (?:securities|notes)|digital \(?rate linked"
+    r"|linked to (?:a basket|the [a-z ]{0,30}index|[a-z0-9 .]{2,40} (?:sa|se|nv|plc|ag)\b)"
+    r"|(?:rate|index|equity|inflation) linked interest(?: note)? provisions\s*:\s*applicable"
+    r"|structured securities programme"
 )
 # Le titre et les rubriques d'intérêt figurent au début du document.
 STRUCTURED_SCOPE = 60_000
