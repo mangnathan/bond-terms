@@ -84,3 +84,64 @@ def contains_isin(text: str, isin: str) -> bool:
 
 def contains(pattern: re.Pattern[str], text: str) -> bool:
     return pattern.search(text) is not None
+
+
+# Nombre écrit avec séparateurs : « 1,000,000 », « 1.000.000,00 », « 1 000 000,000 ».
+_NUMBER_TOKEN = re.compile(r"\d{1,3}(?:[ \u00a0\u202f,.']\d{3})+(?:[.,]\d+)?|\d+(?:[.,]\d+)?")
+_RANGE = re.compile(r"\bbetween\b.{0,40}\band\b|\bentre\b.{0,40}\bet\b|\bfrom\b.{0,30}\bto\b")
+
+
+def numbers_in(text: str) -> set[float]:
+    """Toutes les lectures plausibles des nombres d'un texte, en notation anglaise
+    (« 1,000,000.00 »), européenne (« 1.000.000,00 ») ou française à espaces (« 1 000 000,000 »,
+    où la virgule est décimale : un million)."""
+    found: set[float] = set()
+    # Variante recollée : l'extraction de texte coupe parfois un nombre (« 1,0 00,000,000 »).
+    glued = re.sub(r"(?<=[\d,.]) (?=[\d,.])", "", text)
+    for token in _NUMBER_TOKEN.findall(text) + _NUMBER_TOKEN.findall(glued):
+        compact = re.sub(r"[ \u00a0\u202f']", "", token)
+        if re.fullmatch(r"\d{1,3}(?:,\d{3})+(?:\.\d+)?", compact):
+            found.add(float(compact.replace(",", "")))
+        if re.fullmatch(r"\d{1,3}(?:\.\d{3})+(?:,\d+)?", compact):
+            found.add(float(compact.replace(".", "").replace(",", ".")))
+        if re.fullmatch(r"\d+(?:[.,]\d+)?", compact):
+            found.add(float(compact.replace(",", ".")))
+        # « 1 000 000,000 » : groupes séparés par des espaces, puis des décimales après la virgule.
+        if re.fullmatch(r"\d{1,3}(?:[ \u00a0\u202f]\d{3})+,\d+", token):
+            found.add(float(compact.replace(",", ".")))
+    return found
+
+
+# Groupes séparés par des espaces puis trois chiffres après une virgule : « 750 000,000 » vaut
+# 750 millions (virgule des milliers) et « 1 000 000,000 » un million (virgule décimale) dans les
+# documents mesurés. L'écriture ne permet pas de trancher : le montant part en revue.
+_AMBIGUOUS = re.compile(r"\d{1,3}(?:[   ]\d{3})+,\d{3}(?!\d)")
+# Montant écrit en lettres : « une valeur nominale d'un euro ».
+_ONE_IN_WORDS = re.compile(r"\b(?:un|une|one)\s+(?:euro|eur|dollar|pound|livre)")
+
+
+def amount_matches_citation(value: float, citation: str) -> bool:
+    """Un montant n'est accepté que si sa citation l'écrit sans ambiguïté, et ne donne pas une
+    fourchette."""
+    lowered = citation.lower()
+    if _RANGE.search(lowered) or _AMBIGUOUS.search(lowered):
+        return False
+    if abs(value - 1) < 0.5 and _ONE_IN_WORDS.search(lowered):
+        return True
+    return any(abs(number - value) < 0.5 for number in numbers_in(citation))
+
+
+# Titre d'émission en tête de document, par exemple « €500,000,000 3.625 per cent. Bonds
+# due 13 December 2026 ».
+_ISSUE_TITLE = re.compile(
+    r"(?:€|eur|usd|\$|£|gbp|chf)\s?\d[\d,. ]{4,}\d\s.{0,80}?(?:notes|bonds|obligations)\s+due\s+"
+    r"(?:\d{1,2}\s+)?([a-z]+\s+\d{4})"
+)
+TITLE_SCOPE = 4_000
+
+
+def several_bonds(normalized: str) -> bool:
+    """Vrai si le début du document annonce des obligations d'échéances différentes : le
+    prospectus décrit plusieurs titres, et le modèle risque de lire le voisin."""
+    head = re.sub(r"\s+", " ", normalized)[:TITLE_SCOPE]
+    return len({match.group(1) for match in _ISSUE_TITLE.finditer(head)}) >= 2
