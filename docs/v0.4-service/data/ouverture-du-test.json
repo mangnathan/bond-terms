@@ -1,0 +1,10 @@
+{
+  "ouvert_le": "2026-11-10T16:07:50+00:00",
+  "commit": "41af63474899ac529beb837dfd9f1d485bc4bf2e",
+  "regles": "regles-2",
+  "llm": "gemini-3.5-flash-lite/extraction-v3",
+  "verification": "v3 (citation en deux morceaux, montants \u00e9crits sans ambigu\u00eft\u00e9)",
+  "jeux": [
+    "test_v04"
+  ]
+}
