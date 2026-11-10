@@ -18,6 +18,7 @@ import csv
 import json
 import random
 from collections.abc import Callable, Iterable
+from dataclasses import dataclass
 from pathlib import Path
 from typing import Any
 
@@ -32,6 +33,21 @@ SEED = 20261028
 BONDS = 450
 DOCUMENTS = 150
 SET_NAME = "test_v03"
+
+
+@dataclass(frozen=True)
+class Draw:
+    """Un tirage de nouveau jeu de test : graine, nom du jeu et dossier de sortie."""
+
+    seed: int
+    set_name: str
+    output_dir: Path
+
+
+DRAWS = {
+    "v03": Draw(SEED, SET_NAME, Path("docs/v0.3-revue/data")),
+    "v04": Draw(20261110, "test_v04", Path("docs/v0.4-service/data")),
+}
 COLUMNS = (
     "document_id",
     "isin",
@@ -53,13 +69,22 @@ def drawn_in_v01(pool: list[dict[str, str]]) -> set[str]:
     return {bond["isin"] for bond in rng.sample(pool, min(NEW_ISSUER_BONDS, len(pool)))}
 
 
+def drawn_bonds(pool: list[dict[str, str]], excluded_isins: set[str], seed: int) -> set[str]:
+    """Obligations tirées par un tirage précédent, retrouvées en le rejouant à l'identique."""
+    rng = random.Random(seed)  # noqa: S311 - tirage reproductible, pas de la sécurité
+    remaining = [bond for bond in pool if bond["isin"] not in excluded_isins]
+    return {bond["isin"] for bond in rng.sample(remaining, min(BONDS, len(remaining)))}
+
+
 def draw(
     pool: list[dict[str, str]],
     excluded_isins: set[str],
     known_documents: set[str],
     fetch: Fetch,
+    seed: int = SEED,
+    set_name: str = SET_NAME,
 ) -> tuple[dict[str, int], list[dict[str, str]]]:
-    rng = random.Random(SEED)  # noqa: S311 - tirage reproductible, pas de la sécurité
+    rng = random.Random(seed)  # noqa: S311 - tirage reproductible, pas de la sécurité
     remaining = [bond for bond in pool if bond["isin"] not in excluded_isins]
     bonds = rng.sample(remaining, min(BONDS, len(remaining)))
     rows: list[dict[str, str]] = []
@@ -80,7 +105,7 @@ def draw(
         "documents_trouves": len(document_ids),
         "documents_gardes": len(kept),
     }
-    chosen = [row | {"jeu": SET_NAME} for row in rows if row["document_id"] in kept]
+    chosen = [row | {"jeu": set_name} for row in rows if row["document_id"] in kept]
     return stats, chosen
 
 
@@ -100,26 +125,37 @@ def main() -> None:  # pragma: no cover - interroge le registre
     parser.add_argument(
         "--split-v01", type=Path, default=Path("docs/v0.1-collecte/data/decoupage-documents.csv")
     )
-    parser.add_argument("--output-dir", type=Path, default=Path("docs/v0.3-revue/data"))
+    parser.add_argument("--version", choices=sorted(DRAWS), default="v04")
     args = parser.parse_args()
 
-    target = args.output_dir / "nouveau-test-documents.csv"
+    chosen = DRAWS[args.version]
+    target = chosen.output_dir / "nouveau-test-documents.csv"
     if target.exists():
         raise SystemExit(f"Le nouveau jeu de test est déjà figé : {target}")
     firds_index = args.data_dir / "interim" / "firds" / f"dette-{args.firds_date}.parquet"
     pool = select_other_issuers_bonds(firds_index)
     known = read_csv(args.split_v01).to_pylist()
     excluded = drawn_in_v01(pool) | {row["isin"] for row in known}
+    # Chaque tirage exclut aussi les obligations et les documents des tirages précédents.
+    for earlier in sorted(DRAWS):
+        previous = DRAWS[earlier]
+        if previous == chosen:
+            break
+        excluded |= drawn_bonds(pool, set(excluded), previous.seed)
+        earlier_split = read_csv(previous.output_dir / "nouveau-test-documents.csv").to_pylist()
+        excluded |= {row["isin"] for row in earlier_split}
+        known += earlier_split
     cache = args.data_dir / "raw" / "registre" / f"{args.collecte_le}-nouveau-test"
     client = PoliteClient()
 
     def fetch(isin: str) -> list[dict[str, Any]]:
         return fetch_documents(client, isin, cache)
 
-    stats, rows = draw(pool, excluded, {row["document_id"] for row in known}, fetch)
+    known_documents = {row["document_id"] for row in known}
+    stats, rows = draw(pool, excluded, known_documents, fetch, chosen.seed, chosen.set_name)
     write_split(rows, target)
-    summary = {"graine": SEED, "collecte_le": args.collecte_le, **stats}
-    (args.output_dir / "nouveau-test-resume.json").write_bytes(
+    summary = {"graine": chosen.seed, "collecte_le": args.collecte_le, **stats}
+    (chosen.output_dir / "nouveau-test-resume.json").write_bytes(
         (json.dumps(summary, ensure_ascii=False, indent=2) + "\n").encode("utf-8")
     )
     print(json.dumps(summary, ensure_ascii=False, indent=2))
