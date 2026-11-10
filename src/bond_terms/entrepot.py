@@ -143,17 +143,21 @@ def load_duckdb(tables: dict[str, pa.Table], database: Path) -> None:
 
 
 def extra_sets(data_dir: Path) -> list[ExtraSet]:
-    """Le nouveau test de la v0.3, s'il a été tiré et lu."""
-    folder = Path("docs/v0.3-revue/data")
-    v03 = ExtraSet(
-        decoupage=folder / "nouveau-test-documents.csv",
-        pdf_quality=folder / "pdf-controle.csv",
-        rattachement=data_dir / "interim" / "rattachement-v03.csv",
-        registre_cache=data_dir / "raw" / "registre" / "2026-10-28-nouveau-test",
-    )
-    return (
-        [v03] if all(p.exists() for p in (v03.decoupage, v03.pdf_quality, v03.rattachement)) else []
-    )
+    """Les nouveaux tests des versions suivantes, s'ils ont été tirés et lus."""
+    found = []
+    for folder, version, collected in (
+        (Path("docs/v0.3-revue/data"), "v03", "2026-10-28"),
+        (Path("docs/v0.4-service/data"), "v04", "2026-11-10"),
+    ):
+        added = ExtraSet(
+            decoupage=folder / "nouveau-test-documents.csv",
+            pdf_quality=folder / "pdf-controle.csv",
+            rattachement=data_dir / "interim" / f"rattachement-{version}.csv",
+            registre_cache=data_dir / "raw" / "registre" / f"{collected}-nouveau-test",
+        )
+        if all(p.exists() for p in (added.decoupage, added.pdf_quality, added.rattachement)):
+            found.append(added)
+    return found
 
 
 def main() -> None:

@@ -39,7 +39,27 @@ from bond_terms.ocr import pages_by_document
 DEVELOPMENT = "developpement"
 # Jeux déjà ouverts, devenus le développement de la v0.3 (ADR 0003). Le nouveau test n'en fait
 # pas partie : seule la commande d'ouverture peut le lire.
-KNOWN_SETS = (DEVELOPMENT, "test", "test_nouveaux_emetteurs")
+KNOWN_SETS = (DEVELOPMENT, "test", "test_nouveaux_emetteurs", "test_v03")
+# Textes des jeux connus : ceux de la v0.1 et du test de la v0.3, désormais ouvert.
+PAGE_FILES = (
+    (Path("data/interim/textes/pages.parquet"), Path("data/interim/textes/pages-ocr.parquet")),
+    (
+        Path("data/interim/textes/pages-v03.parquet"),
+        Path("data/interim/textes/pages-ocr-v03.parquet"),
+    ),
+)
+# Sorties de la v0.4 à part : celles de la v0.3 restent reproductibles.
+RUN_DIR = Path("data/interim/extractions/v0.4")
+
+
+def known_pages() -> dict[str, list[str]]:
+    import pyarrow as pa
+
+    texts = pa.concat_tables([pq.read_table(p) for p, _ in PAGE_FILES if p.exists()])
+    ocr = pa.concat_tables([pq.read_table(o) for _, o in PAGE_FILES if o.exists()])
+    return pages_by_document(texts, ocr)
+
+
 FALLBACK = "repli sur les règles"
 # Extracteur : identifiant du document, ses pages et les ISIN qu'il couvre.
 Extract = Callable[[str, list[str], list[str]], Extraction]
@@ -152,16 +172,12 @@ def main() -> None:  # pragma: no cover - lit les vraies données
     parser.add_argument("--modele", choices=llm.MODELS)
     parser.add_argument("--jeu", choices=KNOWN_SETS, default=DEVELOPMENT)
     parser.add_argument("--database", type=Path, default=Path("data/entrepot/bond_terms.duckdb"))
-    parser.add_argument("--pages", type=Path, default=Path("data/interim/textes/pages.parquet"))
-    parser.add_argument(
-        "--ocr-pages", type=Path, default=Path("data/interim/textes/pages-ocr.parquet")
-    )
     parser.add_argument(
         "--echantillon", type=int, help="nombre de documents tirés au hasard (graine fixe)"
     )
     parser.add_argument("--llm-cache", type=Path, default=Path("data/interim/llm"))
-    parser.add_argument("--output-dir", type=Path, default=Path("data/interim/extractions"))
-    parser.add_argument("--summary-dir", type=Path, default=Path("docs/v0.3-revue/data"))
+    parser.add_argument("--output-dir", type=Path, default=RUN_DIR)
+    parser.add_argument("--summary-dir", type=Path, default=Path("docs/v0.4-service/data"))
     args = parser.parse_args()
 
     if args.extracteur == "llm":
@@ -186,7 +202,7 @@ def main() -> None:  # pragma: no cover - lit les vraies données
         documents = sample(documents, args.echantillon)
         truth = [couple for couple in truth if couple["document_id"] in documents]
         name = f"{name}-echantillon{args.echantillon}"
-    pages = pages_by_document(pq.read_table(args.pages), pq.read_table(args.ocr_pages))
+    pages = known_pages()
     extractions, stopped = run(documents, pages, extract)
 
     args.output_dir.mkdir(parents=True, exist_ok=True)
