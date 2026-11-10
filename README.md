@@ -61,7 +61,7 @@ Détails : [rapport de revue et d'exceptions (PDF)](docs/pdf/bond-terms_v0.3_Rap
 ## Structure du dépôt
 
 ```
-src/bond_terms/       code du projet : collecte, découpage, entrepôt, OCR, extracteurs, évaluation
+src/bond_terms/       code du projet : collecte, découpage, entrepôt, OCR, extracteurs, évaluation, API
 entrepot/             projet dbt : modèles, tests de données, profils DuckDB et BigQuery
 scripts/feasibility/  scripts de l'étude de faisabilité et de la saisie chronométrée
 scripts/adr0002/      mesure de l'OCR et de la présence des valeurs de FIRDS (ADR 0002)
@@ -74,6 +74,7 @@ docs/v0.0-cadrage/    rapport de cadrage et chiffres produits par les scripts
 docs/v0.1-collecte/   rapport de collecte et chiffres produits par la collecte
 docs/v0.2-extraction/ rapport d'extraction, résultats et registre d'ouverture du test
 docs/v0.3-revue/      rapport de revue, nouveau test figé, résultats et exceptions vérifiées
+docs/v0.4-service/    nouveau test de la v0.4, résultats et exceptions vérifiées
 docs/pdf/             rapports compilés
 ```
 
@@ -134,6 +135,22 @@ Le nouveau test de la v0.3 a été tiré par `bond_terms.nouveau_test` et ouvert
 L'extracteur LLM demande une clé de l'API Gemini, créée dans AI Studio sur un projet sans facturation liée, dans `.env` (voir `.env.example`). Les jeux de test ont été ouverts une seule fois, le 27 octobre 2026 ; la commande `bond_terms.ouverture` refuse une seconde ouverture.
 
 Le découpage et ses chiffres sont versionnés dans `docs/v0.1-collecte/data` : relancer la collecte un autre jour donnerait un autre registre, mais ne doit pas remplacer le découpage figé.
+
+### API en lecture seule (v0.4)
+
+```bash
+# Instantané des conditions extraites, puis API sur http://localhost:8000 (documentation sur /docs)
+uv run python -m bond_terms.instantane
+uv run uvicorn bond_terms.api:app
+```
+
+| Route | Contenu |
+|---|---|
+| `GET /obligations/{isin}` | Pour chaque document de l'obligation : valeurs lues avec leur citation, leur page et leur statut, statut de revue, exceptions avec FIRDS |
+| `GET /indicateurs` | Indicateurs de surveillance par jeu : part en revue, part des valeurs refusées, part des documents avec exception, documents lus par les règles faute de quota |
+| `GET /sante` | État du service et date de l'instantané |
+
+L'API ne fait que lire un instantané chargé au démarrage (`BOND_TERMS_INSTANTANE`, par défaut `data/instantane/instantane.json`) : elle n'appelle jamais le modèle. Un ISIN mal formé ou dont la clé de contrôle est fausse est refusé (422) avant toute recherche ; au-delà de 60 appels par minute, un client reçoit une réponse 429.
 
 ### Bac à sable BigQuery (facultatif)
 
