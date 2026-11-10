@@ -1,0 +1,8 @@
+{
+  "test_v04": {
+    "couples": 150,
+    "isin_cite": 148,
+    "anomalies_de_rattachement": 2,
+    "produits_structures": 32
+  }
+}
