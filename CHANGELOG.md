@@ -4,6 +4,23 @@ Les évolutions notables du projet sont notées ici, selon le format [Keep a Cha
 
 ## [Non publié]
 
+## [v0.3] - 2026-11-10
+
+Bilan ([ADR 0003](docs/adr/0003-revue-et-exceptions.md)) : sur un nouveau test de 131 documents d'émetteurs jamais vus, ouvert une seule fois, le LLM est juste sur 92,2 % des paires document-champ contre 60,9 % pour les règles. Devise et valeur nominale atteignent leur seuil avec une marge statistique insuffisante. La file de revue prend 17,6 % des documents (plafond : 30 %). Le rapport d'exceptions compte 78,1 % de vrais écarts, sous le seuil de 80 %.
+
+### Ajouté
+- ADR 0003, décidée sur les jeux connus avant tout code, avec ses précisions et son gel datés d'avant l'ouverture du nouveau test.
+- Nouveau jeu de test (`bond_terms.nouveau_test`) : émetteurs jamais vus, tiré et versionné avant tout téléchargement, tirage de la v0.1 rejoué pour l'exclure.
+- Vérification v2 : citation en deux morceaux, guillemets et tirets sans valeur ignorés, signe d'un nombre vérifié.
+- Type de taux « fixe puis variable » ; règles v2 et prompt v3 avec la seconde période des titres hybrides.
+- Contrôle des produits structurés que FIRDS déclare comme des obligations classiques, versé dans l'entrepôt.
+- File de revue humaine (`bond_terms.revue`) et rapport d'exceptions (`bond_terms.exceptions`), avec la fiche de vérification et le calcul de la part de vrais écarts.
+- Le nouveau test rejoint l'entrepôt ; commande d'ouverture v0.3 avec répétition sur un jeu connu.
+- Rapport de revue et d'exceptions en LaTeX et en PDF.
+
+### Modifié
+- Un document part en revue seulement si le LLM n'a pas justifié une valeur clé ; les désaccords avec les règles sont affichés au relecteur.
+- Les sorties des extracteurs portent leur version dans leur nom ; l'évaluation accepte plusieurs jeux.
 ## [v0.2] - 2026-10-28
 
 Bilan ([ADR 0002](docs/adr/0002-conception-extracteur.md)) : sur le test principal, ouvert une seule fois, le LLM (`gemini-3.5-flash-lite`) est juste sur 90,8 % des paires document-champ contre 83,3 % pour l'extracteur à règles, un écart de 7,5 points [3,9 ; 11,0] : il est retenu. Sur les émetteurs jamais vus, 93,1 % contre 61,5 %. La valeur nominale atteint son seuil, le rang avec une marge statistique insuffisante, les autres champs non.

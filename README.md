@@ -11,7 +11,7 @@ L'utilisateur visé est l'équipe « référentiel titres » d'une banque ou d'u
 | v0.0 | Cadrage : population, vérité terrain, seuils fixés avant toute extraction, référence humaine | Terminé |
 | v0.1 | Collecte (FIRDS, registre, PDF), date de coupure du test, entrepôt de données | Terminé |
 | v0.2 | Extracteur à règles contre LLM sur les champs vérifiables, test ouvert une seule fois | Terminé |
-| v0.3 | Clauses littérales, file de revue humaine, rapport d'exceptions | À venir |
+| v0.3 | File de revue humaine, rapport d'exceptions, nouveau test (clauses littérales reportées) | Terminé |
 | v0.4 | API, collecte planifiée, surveillance de la qualité des données | À venir |
 | v1.0 | Démonstration publique, note de synthèse, business case mesuré | À venir |
 
@@ -44,6 +44,16 @@ Détails : [rapport de collecte (PDF)](docs/pdf/bond-terms_v0.1_Rapport-de-colle
 
 Détails : [rapport d'extraction (PDF)](docs/pdf/bond-terms_v0.2_Rapport-extraction.pdf) et [ADR 0002](docs/adr/0002-conception-extracteur.md).
 
+## Résultats de la revue et des exceptions (v0.3)
+
+- **Nouveau test, ouvert une seule fois.** Sur 131 documents d'émetteurs jamais vus, le LLM est juste sur 92,2 % des paires document-champ [89,8 ; 94,5], contre 60,9 % pour l'extracteur à règles.
+- **Seuils.** Devise (99,2 %) et valeur nominale (97,0 %) atteignent leur seuil avec une marge statistique insuffisante ; les autres champs restent en dessous.
+- **File de revue.** 17,6 % des documents partent en revue, sous le plafond de 30 % ; 72 % des documents erronés sont attrapés.
+- **Rapport d'exceptions.** 34 écarts entre FIRDS et le document ; vérifiés à la main, 78,1 % sont réels, pour 80 % exigés. La cause principale des lectures fausses : un prospectus qui décrit plusieurs obligations.
+- **Vérité terrain corrigée.** Des produits structurés que FIRDS déclare comme des obligations classiques sont écartés par un contrôle du libellé (19 documents sur 150 dans le nouveau test).
+
+Détails : [rapport de revue et d'exceptions (PDF)](docs/pdf/bond-terms_v0.3_Rapport-revue-exceptions.pdf) et [ADR 0003](docs/adr/0003-revue-et-exceptions.md).
+
 ## Structure du dépôt
 
 ```
@@ -52,12 +62,14 @@ entrepot/             projet dbt : modèles, tests de données, profils DuckDB e
 scripts/feasibility/  scripts de l'étude de faisabilité et de la saisie chronométrée
 scripts/adr0002/      mesure de l'OCR et de la présence des valeurs de FIRDS (ADR 0002)
 scripts/v0.2/         analyse des erreurs sur le test, après son ouverture
+scripts/adr0003/      mesures de l'ADR 0003 sur les jeux connus
 scripts/docs/         compilation des rapports LaTeX
 tests/                tests unitaires et construction de l'entrepôt sur des données fabriquées
 docs/adr/             décisions d'architecture
 docs/v0.0-cadrage/    rapport de cadrage et chiffres produits par les scripts
 docs/v0.1-collecte/   rapport de collecte et chiffres produits par la collecte
 docs/v0.2-extraction/ rapport d'extraction, résultats et registre d'ouverture du test
+docs/v0.3-revue/      rapport de revue, nouveau test figé, résultats et exceptions vérifiées
 docs/pdf/             rapports compilés
 ```
 
@@ -101,6 +113,19 @@ uv run python -m bond_terms.lancement --extracteur regles
 uv run --group llm --env-file .env python -m bond_terms.lancement --extracteur llm --modele gemini-3.5-flash-lite
 uv run python -m bond_terms.evaluation
 ```
+
+### Revue et exceptions (v0.3)
+
+```bash
+# Extracteurs sur les trois jeux connus, puis évaluation, file de revue et exceptions
+uv run python -m bond_terms.lancement --extracteur regles --jeu test
+uv run --group llm --env-file .env python -m bond_terms.lancement --extracteur llm --modele gemini-3.5-flash-lite --jeu test
+uv run python -m bond_terms.evaluation
+uv run python -m bond_terms.revue
+uv run python -m bond_terms.exceptions
+```
+
+Le nouveau test de la v0.3 a été tiré par `bond_terms.nouveau_test` et ouvert une seule fois par `bond_terms.ouverture` ; les deux commandes refusent d'être relancées.
 
 L'extracteur LLM demande une clé de l'API Gemini, créée dans AI Studio sur un projet sans facturation liée, dans `.env` (voir `.env.example`). Les jeux de test ont été ouverts une seule fois, le 27 octobre 2026 ; la commande `bond_terms.ouverture` refuse une seconde ouverture.
 

@@ -1,0 +1,155 @@
+\documentclass[11pt,a4paper]{article}
+
+\newcommand{\rapporttitre}{Rapport de revue et d'exceptions}
+\newcommand{\rapportversion}{v0.3}
+\input{../latex/preambule}
+\usepackage{needspace}
+\usepackage{amsmath}
+\usepackage{etoolbox}
+% Un titre de section ne reste jamais seul en bas de page.
+\pretocmd{\section}{\needspace{10\baselineskip}}{}{}
+
+\begin{document}
+
+\pagedegarde{Extraction des conditions des obligations à partir des documents de l'ESMA}{10 novembre 2026}{Version 0.3, revue humaine, exceptions et nouveau test}
+
+\setcounter{tocdepth}{1}
+\tableofcontents
+\newpage
+
+\section*{Synthèse}
+\addcontentsline{toc}{section}{Synthèse}
+
+La version 0.2 avait retenu le LLM et montré deux limites : des valeurs justes refusées par la vérification des citations, et une vérité terrain instable pour les titres à taux hybride. La version 0.3 les traite, construit la file de revue humaine et le rapport d'exceptions prévus au cadrage, et mesure le tout sur un nouveau jeu de test, tiré au hasard et ouvert une seule fois.
+
+\begin{itemize}
+  \item \textbf{Le LLM tient sur des émetteurs jamais vus.} Sur 131 documents du nouveau test, il est juste sur 92,2~\% des paires document--champ [89,8 ; 94,5], contre 60,9~\% pour l'extracteur à règles.
+  \item \textbf{Deux seuils atteints, sans marge statistique.} Devise (99,2~\%) et valeur nominale (97,0~\%) atteignent leur seuil, mais leur intervalle descend en dessous ; les autres champs restent sous leur seuil.
+  \item \textbf{La file de revue respecte le cadrage.} Elle prend 17,6~\% des documents, sous le plafond de 30~\%, et attrape 72~\% des documents erronés.
+  \item \textbf{Le rapport d'exceptions manque son seuil de peu.} D'après la vérification humaine, 78,1~\% des écarts signalés sont réels, pour 80~\% exigés. La cause principale est identifiée : le modèle lit parfois l'obligation voisine dans un prospectus qui en décrit plusieurs.
+  \item \textbf{Un défaut de la population découvert et corrigé avant le test.} Des produits structurés que FIRDS déclare comme des obligations classiques représentaient 21~\% d'un jeu de développement et 13~\% du nouveau test ; ils sont désormais écartés par un contrôle du libellé.
+\end{itemize}
+
+\section{Ce que la version devait livrer}
+
+\begin{table}[H]
+\small
+\begin{tabularx}{\linewidth}{lYl}
+\toprule
+\textbf{Issue} & \textbf{Livrable} & \textbf{Pull request} \\
+\midrule
+\#35 & ADR 0003 : revue, exceptions et nouveau test & \#41 \\
+\#36 & Nouveau jeu de test, tiré et figé avant tout téléchargement & \#42 \\
+\#37 & Vérification v2, taux hybrides, prompt v3 & \#43 \\
+\#38 & File de revue humaine, produits structurés mal classés & \#44 \\
+\#39 & Rapport d'exceptions & \#45 \\
+\#40 & Gel, ouverture du nouveau test, vérification humaine, clôture & \#46 et suivantes \\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+Les trois jeux ouverts en v0.2 (588 couples document--ISIN) sont devenus le développement de la v0.3 : tout réglage s'y est fait. Le nouveau test n'a été ni extrait ni lu avant son ouverture ; seuls ses comptes de lecture ont été vus.
+
+\section{Le nouveau jeu de test}
+
+Le test de la v0.2 était connu, puisqu'il avait servi à analyser les erreurs. Un nouveau jeu a été tiré au hasard (graine fixée) parmi les 4\,405 obligations classiques à ISIN français des émetteurs autres que les huit étudiés, en excluant les 300 obligations tirées en v0.1. Le tirage de la v0.1 a été rejoué à l'identique pour cette exclusion, et vérifié sur les 92 obligations de l'ancien jeu. Sur 450 obligations tirées, 224 ont un document d'émission ; 150 documents ont été gardés, puis versionnés avant tout téléchargement. Les 150 PDF ont été lus, dont 10 scans ; les 150 documents citent leur ISIN.
+
+\section{Les corrections de la v0.3, réglées sur le développement}
+
+\subsection{Citation en deux morceaux}
+
+Dans certaines mises en page sur deux colonnes, l'intitulé et la valeur sont séparés dans le texte extrait du PDF. La vérification accepte désormais une citation dont l'intitulé précède la valeur de moins de 400 caractères sur la même page. Sur les sorties de la v0.2, elle récupère 29 valeurs justes et n'accepte aucune valeur fausse. Guillemets et tirets sans valeur sont ignorés, sauf un tiret devant un chiffre, qui reste vérifié comme signe d'une marge.
+
+\subsection{Taux hybrides}
+
+Pour les titres à taux fixe puis variable ou révisables, FIRDS déclare un taux variable dans environ 15~\% des cas de 2022 à 2024, puis dans 40~\% en 2025 et 56~\% en 2026. Le type de taux prend une troisième valeur, « fixe puis variable », jugée juste dans les deux cas ; le prompt v3 demande aussi le taux initial et la référence de la seconde période.
+
+\subsection{Produits structurés mal classés par FIRDS}
+
+En analysant les erreurs du développement, 21 documents sur 99 du jeu « émetteurs jamais vus » se sont révélés être des produits structurés de Crédit Agricole CIB et de Natixis (« Titres à Coupon Indexé ») que FIRDS déclare comme des obligations à taux fixe. Le LLM les lisait correctement comme indexés et était compté faux. Un contrôle sur le libellé du document les écarte de la vérité terrain, comme le contrôle de l'ISIN ; il ne touche aucun autre document connu. Appliqué au nouveau test avant toute extraction, il en a écarté 19 sur 150.
+
+\aretenir{La règle « obligation classique » du cadrage ne regardait que FIRDS. Les erreurs du LLM ont révélé que FIRDS classe mal certains produits structurés : une erreur de la vérité terrain, pas du modèle.}
+
+\subsection{Règle de revue}
+
+La règle prévue (valeur non justifiée, ou désaccord avec l'extracteur à règles) dépassait le plafond de 30~\% sur les émetteurs jamais vus. Sur le développement, les désaccords ajoutaient 52 revues pour attraper 7 documents erronés de plus. Un document part désormais en revue seulement si le LLM n'a pas justifié une valeur clé ; les désaccords restent affichés au relecteur.
+
+\subsection{Effet sur le développement}
+
+Sur les 588 couples connus, le LLM passe de 94,2~\% en v0.2 à 96,0~\% en v0.3, puis à 96,7~\% une fois les produits structurés écartés ; tous les champs progressent. Ce sont des données de réglage : seule la mesure du nouveau test compte.
+
+\section{L'ouverture du nouveau test}
+
+L'ADR 0003 a consigné, avant l'ouverture, les extracteurs, la vérification, la vérité terrain et les critères. La commande d'ouverture a d'abord été répétée sur un jeu connu, depuis le cache et sans requête, pour éviter l'incident de la v0.2. L'ouverture a eu lieu le 29 octobre 2026 à 19~h~49 UTC, depuis le commit \texttt{a655b1b}, consigné dans un registre écrit avant toute extraction.
+
+\begin{table}[H]
+\small
+\begin{tabularx}{\linewidth}{Yrrrl}
+\toprule
+\textbf{Champ} & \textbf{Seuil} & \textbf{Règles} & \textbf{LLM [IC 95~\%]} & \textbf{Verdict du LLM} \\
+\midrule
+Devise & 98~\% & 68,7~\% & 99,2~\% [97,7 ; 100] & atteint, marge insuffisante \\
+Échéance & 98~\% & 77,9~\% & 96,2~\% [92,4 ; 99,2] & non atteint \\
+Type de taux & 98~\% & 61,1~\% & 93,9~\% [90,1 ; 97,7] & non atteint \\
+Taux fixe & 98~\% & 56,7~\% & 91,7~\% [86,7 ; 96,5] & non atteint \\
+Valeur nominale & 95~\% & 79,4~\% & 97,0~\% [93,9 ; 99,2] & atteint, marge insuffisante \\
+Rang & 95~\% & 34,7~\% & 90,1~\% [84,0 ; 95,6] & non atteint \\
+Taux variables (11 titres) & 95~\% & 27 à 73~\% & 55 à 73~\% & non atteints, très incertains \\
+Montant (indicatif) & -- & 40,5~\% & 82,0~\% [73,9 ; 88,9] & mesuré sans seuil \\
+\midrule
+Exactitude globale & -- & 60,9~\% & 92,2~\% [89,8 ; 94,5] & \\
+\bottomrule
+\end{tabularx}
+\caption{Nouveau test, 131 documents d'émetteurs jamais vus (\texttt{evaluation-test-v03.json}).}
+\end{table}
+
+\begin{itemize}
+  \item \textbf{Vérification v2.} Sur le nouveau test, elle n'a récupéré aucune valeur et n'a accepté aucune valeur fausse de plus que celle de la v0.2 (34 dans les deux cas) : elle est gardée, sans gain mesuré ici.
+  \item \textbf{File de revue.} 23 documents sur 131 (17,6~\%), sous le plafond de 30~\% ; 21 des 29 documents erronés sont attrapés (72~\%).
+  \item \textbf{Coût.} 131 requêtes, 1,8 seconde par document en médiane, 0~€.
+\end{itemize}
+
+\section{Le rapport d'exceptions, vérifié à la main}
+
+Le rapport a signalé 34 exceptions dans 28 documents : des valeurs justifiées par une citation retrouvée, mais différentes de FIRDS. Nathan Mang les a vérifiées une à une, à partir d'un extrait du document placé à côté de chaque exception, avec des explications sur la règle ; deux cas douteux sont restés sans verdict.
+
+\begin{table}[H]
+\small
+\begin{tabularx}{\linewidth}{Yr}
+\toprule
+\textbf{Exceptions vérifiées} & \textbf{Nombre} \\
+\midrule
+Vrais écarts de fond (le document dit autre chose que FIRDS) & 22 \\
+Écarts de forme (même réalité, écrite autrement) & 3 \\
+Lectures fausses du modèle & 7 \\
+\midrule
+Part de vrais écarts & 25 sur 32, soit 78,1~\% (seuil : 80~\%) \\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+\textbf{Le seuil n'est pas atteint.} Les vrais écarts sont surtout des montants : le document annonce le montant émis, FIRDS l'encours ou le montant réellement placé. Viennent ensuite des échéances de titrisations (échéance légale contre échéance attendue) et des valeurs aberrantes de FIRDS (marge nulle, durée de « 0 jour »). Les écarts de forme sont un taux écrit en fraction (0,049 pour 4,90~\%), un coupon cumulé versé à l'échéance et un taux CMS que la comparaison ne reconnaît pas encore comme un taux de swap.
+
+Les sept lectures fausses ont des causes précises : cinq fois, un prospectus décrit plusieurs obligations et le modèle a lu la voisine ; une fois, un montant écrit à la française (« 1~000~000,000 ») a été lu comme un milliard ; une fois, une fourchette a été lue comme le montant.
+
+\aretenir{Sur quatre écarts signalés entre FIRDS et le document, trois sont réels. Le quatrième vient le plus souvent d'un prospectus à plusieurs titres : c'est la prochaine correction à mesurer.}
+
+\section{Revue de sprint et rétrospective}
+
+\textbf{Ce qui a bien marché.} Le nouveau test a été figé avant tout téléchargement, et toutes les décisions qui pouvaient influencer sa mesure ont été écrites avant son ouverture. La répétition de la commande d'ouverture a évité de reproduire l'incident de la v0.2. Les erreurs du développement ont révélé un défaut de la vérité terrain avant qu'il ne fausse le test.
+
+\textbf{Ce qui a moins bien marché.}
+\begin{itemize}
+  \item La règle de revue fixée dans l'ADR a dû être modifiée sur le développement : elle aurait dépassé le plafond sur le nouveau test.
+  \item La nouvelle extraction du développement a pris deux jours de quota gratuit, avec des surcharges du service.
+  \item Un test qui échouait a été committé : le hook de pré-commit ne lance pas les tests. La règle est de les lancer avant chaque commit.
+  \item Le contrôle des produits structurés repose sur des libellés français ; un produit structuré rédigé en anglais (« Digital Rate Linked ») est passé au travers.
+\end{itemize}
+
+\section{Suite du projet}
+
+La v0.4 portera sur l'API, la collecte planifiée et la surveillance de la qualité des données, comme prévu au cadrage. Elle reprendra aussi ce que la v0.3 a appris : choisir dans un prospectus à plusieurs titres l'obligation qui correspond à l'ISIN et à son échéance, lire les montants à décimales françaises, reconnaître le taux CMS comme un taux de swap, détecter les produits structurés rédigés en anglais, et traiter les clauses littérales du niveau B, reportées. Chaque correction sera mesurée sur un jeu jamais vu.
+
+Les décisions de cette version sont consignées dans l'ADR 0003, dans le dossier \texttt{docs/adr} du dépôt.
+
+\end{document}
