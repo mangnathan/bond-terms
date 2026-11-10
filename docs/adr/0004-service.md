@@ -61,3 +61,15 @@ Un nouveau jeu de test est tiré selon la règle de l'ADR 0003, parmi les obliga
 - La v0.4 ajoute un module d'API, un workflow planifié, un module de surveillance et un fichier de déploiement.
 - Les secrets restent hors du code : clé Gemini en secret du dépôt, rien dans les fichiers versionnés.
 - Le nouveau test demande une collecte dans le registre et environ 150 requêtes au modèle à son ouverture.
+
+## Précisions et gel avant l'ouverture du jeu de test de la v0.4
+
+Ajoutés le 10 novembre 2026. Les corrections ont été réglées sur les quatre jeux connus (le test de la v0.3, ouvert, en fait désormais partie : 681 couples), sans extraire ni lire le jeu de test de la v0.4, dont seuls les comptes de lecture ont été vus.
+
+- **Prospectus à plusieurs obligations.** Le début du document est lu : s'il annonce des obligations d'échéances différentes (5 documents connus, dont les 2 à l'origine de 5 des 7 lectures fausses de la v0.3), le message envoyé au modèle le précise et montre le passage où figure l'ISIN. Le prompt `extraction-v3` ne change pas : seuls ces documents ont été renvoyés au modèle.
+- **Montants.** Un montant ou une valeur nominale n'est accepté que si sa citation l'écrit. Une fourchette est refusée ; une écriture ambiguë l'est aussi, car « 750 000,000 » vaut 750 millions et « 1 000 000,000 » un million dans les documents mesurés : la valeur part en revue humaine plutôt que d'être devinée.
+- **Taux CMS** comparé comme un taux de swap.
+- **Produits structurés rédigés en anglais** (autocallable, equity linked, digital rate linked) ajoutés au contrôle du libellé : aucun document des huit émetteurs touché ; 23 documents écartés chez les émetteurs jamais vus de la v0.2, 34 dans le test de la v0.3, 32 dans le jeu de test de la v0.4. Les résultats publiés de la v0.3 restent inchangés ; ils comptaient ces produits et sont donc un peu pessimistes pour le LLM.
+- **Effet sur les jeux connus.** Exactitude globale du LLM : 96,3 % contre 96,1 % avec la configuration de la v0.3. Sur le test de la v0.3, étiqueté à la main, les exceptions passent de 30 à 23 : les 6 lectures fausses disparaissent, un vrai écart écrit de façon ambiguë part en revue.
+
+**Gel.** À partir de l'ouverture du jeu de test de la v0.4, rien ne change pour la v0.4 : règles `regles-2`, LLM `gemini-3.5-flash-lite` avec le prompt `extraction-v3` et l'avertissement des prospectus à plusieurs obligations, vérification v3 (citation en deux morceaux, montants écrits sans ambiguïté), vérité terrain et critères de l'ADR 0003. La vérification v3 est gardée si elle n'accepte pas plus de valeurs fausses que celle de la v0.3 sur les mêmes sorties. Les exceptions du nouveau test sont vérifiées à la main, comme en v0.3. Le commit exact est consigné dans `docs/v0.4-service/data/ouverture-du-test.json`, avant toute extraction.
