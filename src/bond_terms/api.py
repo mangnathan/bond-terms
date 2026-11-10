@@ -3,6 +3,9 @@
 Usage :
     uv run uvicorn bond_terms.api:app
 
+Les routes sont versionnées (/v1/...) : un changement incompatible ouvrira /v2 sans casser les
+clients existants.
+
 L'API charge l'instantané au démarrage (chemin dans BOND_TERMS_INSTANTANE) et ne fait ensuite que
 le lire : elle n'appelle jamais le modèle, si bien qu'aucune requête extérieure ne peut consommer
 le quota gratuit. L'ISIN est vérifié (format et clé de contrôle) avant toute recherche, et le
@@ -11,6 +14,7 @@ nombre d'appels par client est limité.
 
 from __future__ import annotations
 
+import logging
 import os
 import re
 import threading
@@ -20,14 +24,23 @@ from contextlib import asynccontextmanager
 from pathlib import Path
 from typing import Literal
 
-from fastapi import FastAPI, HTTPException, Request, Response
+from fastapi import APIRouter, FastAPI, HTTPException, Request, Response
 from fastapi.responses import JSONResponse
 from pydantic import BaseModel, ConfigDict
 
+API_VERSION = "0.4"
 DEFAULT_SNAPSHOT = Path("data/instantane/instantane.json")
 # Appels par client et par minute : large pour un humain ou un script raisonnable.
 MAX_CALLS = 60
 WINDOW_S = 60.0
+
+# uvicorn ne configure que ses propres journaux : celui de l'API reçoit sa sortie console.
+log = logging.getLogger("bond_terms.api")
+if not log.handlers:
+    _console = logging.StreamHandler()
+    _console.setFormatter(logging.Formatter("%(levelname)s:     %(message)s"))
+    log.addHandler(_console)
+    log.setLevel(logging.INFO)
 
 _ISIN = re.compile(r"[A-Z]{2}[A-Z0-9]{9}[0-9]")
 
@@ -97,7 +110,10 @@ class Obligation(_Strict):
 
 class Sante(_Strict):
     statut: Literal["ok"]
+    version_api: str
     instantane: str
+    commit: str
+    extracteurs: dict[str, str]
     obligations: int
 
 
@@ -148,7 +164,7 @@ def create_app(snapshot_path: Path | None = None, limiter: RateLimiter | None = 
     app = FastAPI(
         title="bond-terms",
         summary="Conditions d'émission d'obligations lues dans les prospectus, avec citations.",
-        version="0.4",
+        version=API_VERSION,
         lifespan=lifespan,
     )
 
@@ -156,26 +172,44 @@ def create_app(snapshot_path: Path | None = None, limiter: RateLimiter | None = 
     async def limit_calls(
         request: Request, call_next: Callable[[Request], Awaitable[Response]]
     ) -> Response:
+        start = time.perf_counter()
         client = request.client.host if request.client else "inconnu"
         wait = limiter.retry_after(client)
         if wait:
-            return JSONResponse(
+            response: Response = JSONResponse(
                 {"detail": "trop d'appels, réessayer plus tard"},
                 status_code=429,
                 headers={"Retry-After": str(wait)},
             )
-        response = await call_next(request)
+        else:
+            response = await call_next(request)
         response.headers["X-Content-Type-Options"] = "nosniff"
+        # Journal d'une ligne par appel, pour la surveillance. L'adresse du client n'y figure
+        # pas : c'est une donnée personnelle, inutile pour suivre le service.
+        log.info(
+            "%s %s %d %.1f ms",
+            request.method,
+            request.url.path,
+            response.status_code,
+            (time.perf_counter() - start) * 1000,
+        )
         return response
 
-    @app.get("/sante")
+    v1 = APIRouter(prefix="/v1")
+
+    @v1.get("/sante")
     def sante() -> Sante:
         snapshot = state["instantane"]
         return Sante(
-            statut="ok", instantane=snapshot.cree_le, obligations=len(snapshot.obligations)
+            statut="ok",
+            version_api=API_VERSION,
+            instantane=snapshot.cree_le,
+            commit=snapshot.commit,
+            extracteurs=snapshot.extracteurs,
+            obligations=len(snapshot.obligations),
         )
 
-    @app.get("/obligations/{isin}")
+    @v1.get("/obligations/{isin}")
     def obligation(isin: str) -> Obligation:
         isin = isin.strip().upper()
         if not is_valid_isin(isin):
@@ -186,10 +220,11 @@ def create_app(snapshot_path: Path | None = None, limiter: RateLimiter | None = 
             raise HTTPException(404, "ISIN absent de l'instantané")
         return Obligation(isin=isin, instantane=snapshot.cree_le, documents=documents)
 
-    @app.get("/indicateurs")
+    @v1.get("/indicateurs")
     def indicateurs() -> dict[str, Indicateurs]:
         return state["instantane"].indicateurs
 
+    app.include_router(v1)
     return app
 
 
