@@ -1,0 +1,59 @@
+{
+  "extracteur": "regles-2",
+  "version": "regles-2",
+  "jeu": "test_nouveaux_emetteurs",
+  "documents": 76,
+  "couples": 76,
+  "arret": "",
+  "couts": {
+    "latence_mediane_s": 0.004,
+    "latence_p95_s": 0.03,
+    "jetons_entree_moyenne": null,
+    "jetons_sortie_moyenne": null,
+    "documents_en_repli": 0,
+    "formats_refuses": 0,
+    "cout_euros": 0
+  },
+  "champs": {
+    "devise": {
+      "justes": 66,
+      "compares": 76
+    },
+    "date_echeance": {
+      "justes": 68,
+      "compares": 76
+    },
+    "type_taux": {
+      "justes": 60,
+      "compares": 76
+    },
+    "taux_fixe": {
+      "justes": 50,
+      "compares": 64
+    },
+    "reference_taux": {
+      "justes": 3,
+      "compares": 12
+    },
+    "duree_reference": {
+      "justes": 3,
+      "compares": 12
+    },
+    "marge_pb": {
+      "justes": 8,
+      "compares": 12
+    },
+    "valeur_nominale": {
+      "justes": 59,
+      "compares": 76
+    },
+    "montant": {
+      "justes": 35,
+      "compares": 60
+    },
+    "rang": {
+      "justes": 22,
+      "compares": 60
+    }
+  }
+}
