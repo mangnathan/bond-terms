@@ -39,7 +39,7 @@ Doc = dict[str, Any]
 
 
 def load(name: str) -> dict[str, Doc]:
-    lines = (EXTRACTIONS / name).read_text(encoding="utf-8").splitlines()
+    lines = filter(None, (EXTRACTIONS / name).read_text(encoding="utf-8").split("\n"))
     return {row["document_id"]: row for row in map(json.loads, lines)}
 
 

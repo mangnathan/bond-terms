@@ -51,7 +51,9 @@ Rows = list[dict[str, Any]]
 
 def load_extractions(path: Path) -> dict[str, Extraction]:
     extractions = {}
-    for line in path.read_text(encoding="utf-8").splitlines():
+    # Découpage sur le seul saut de ligne : splitlines() coupe aussi sur des séparateurs Unicode
+    # (U+2028) qu'une citation tirée d'un PDF peut contenir.
+    for line in filter(None, path.read_text(encoding="utf-8").split("\n")):
         data = json.loads(line)
         champs = {name: Value(**value) for name, value in data.pop("champs").items()}
         extraction = Extraction(**data, champs=champs)
