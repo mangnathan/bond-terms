@@ -13,6 +13,7 @@ from dataclasses import asdict, dataclass, field
 from typing import Any
 
 from bond_terms.documents import normalize
+from bond_terms.valeurs import amount_matches_citation
 
 FIELDS = (
     "devise",
@@ -137,7 +138,7 @@ def verify(extraction: Extraction, pages: list[str], two_parts: bool = True) -> 
     """Refuse toute valeur sans citation retrouvée ; renseigne la page des autres. Avec
     `two_parts`, une citation peut être retrouvée en deux morceaux (vérification v2, ADR 0003) ;
     sans, c'est la vérification de la v0.2."""
-    for value in extraction.champs.values():
+    for name, value in extraction.champs.items():
         value.refusee, value.page, value.deux_morceaux = False, None, False
         if value.valeur is None:
             continue
@@ -145,11 +146,25 @@ def verify(extraction: Extraction, pages: list[str], two_parts: bool = True) -> 
         if page is None and two_parts:
             page = two_part_page(value.citation or "", pages)
             value.deux_morceaux = page is not None
+        if page is not None and name in AMOUNT_FIELDS and not _amount_cited(value):
+            # Fourchette, ou montant mal lu (« 1 000 000,000 » vaut un million) : refusé (ADR 0004).
+            page = None
         if page is None:
             value.refusee = True
         else:
             value.page = page
     return extraction
+
+
+AMOUNT_FIELDS = ("montant", "valeur_nominale")
+
+
+def _amount_cited(value: Value) -> bool:
+    try:
+        number = float(value.valeur or "")
+    except ValueError:
+        return False
+    return amount_matches_citation(number, value.citation or "")
 
 
 def accepted(value: Value | None) -> str | None:
