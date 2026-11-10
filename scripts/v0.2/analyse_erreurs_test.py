@@ -34,7 +34,8 @@ HYBRID = re.compile(r"fixe?\s?d.{0,3}(?:/|to).{0,3}float")
 
 
 def load(path: Path) -> dict[str, dict[str, Any]]:
-    rows = [json.loads(line) for line in path.read_text(encoding="utf-8").splitlines()]
+    lines = filter(None, path.read_text(encoding="utf-8").split("\n"))
+    rows = [json.loads(line) for line in lines]
     return {row["document_id"]: row for row in rows}
 
 

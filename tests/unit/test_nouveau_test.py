@@ -48,3 +48,13 @@ def test_split_file_is_read_back_as_written(tmp_path: Path) -> None:
     target = tmp_path / "jeu.csv"
     write_split(rows, target)
     assert len(read_csv(target).to_pylist()) == len(rows)
+
+
+def test_a_previous_draw_is_replayed_exactly() -> None:
+    from bond_terms.nouveau_test import drawn_bonds
+
+    pool = bonds(2000)
+    excluded = {bond["isin"] for bond in pool[:500]}
+    _, rows = draw(pool, excluded, set(), documents_of, seed=123, set_name="x")
+    assert {row["isin"] for row in rows} <= drawn_bonds(pool, excluded, 123)
+    assert {row["jeu"] for row in rows} == {"x"}

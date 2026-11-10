@@ -35,11 +35,21 @@ from bond_terms.documents import normalize
 from bond_terms.evaluation import _rounded, evaluate, global_accuracy
 from bond_terms.exceptions import exceptions, summarize, write_sheet
 from bond_terms.extraction import FIELDS, Extraction, accepted, verify
-from bond_terms.lancement import FALLBACK, KNOWN_SETS, TRUTH_SQL, costs, llm_extractor, run, score
+from bond_terms.lancement import (
+    FALLBACK,
+    KNOWN_SETS,
+    RUN_DIR,
+    TRUTH_SQL,
+    costs,
+    known_pages,
+    llm_extractor,
+    run,
+    score,
+)
 from bond_terms.ocr import pages_by_document
 from bond_terms.revue import indicators, queue, wrong_documents
 
-TEST_SETS = ("test_v03",)
+TEST_SETS = ("test_v04",)
 MODEL = "gemini-3.5-flash-lite"
 
 
@@ -70,7 +80,7 @@ def opening_record(commit: str, now: dt.datetime) -> dict[str, Any]:
         "commit": commit,
         "regles": regles.VERSION,
         "llm": f"{MODEL}/{llm.PROMPT_VERSION}",
-        "verification": "v2 (citation en deux morceaux)",
+        "verification": "v3 (citation en deux morceaux, montants écrits sans ambiguïté)",
         "jeux": list(TEST_SETS),
     }
 
@@ -86,13 +96,13 @@ def wrong_accepted(extractions: dict[str, Extraction], truth: list[dict[str, Any
     return count
 
 
-def with_v02_verification(
+def with_previous_verification(
     extractions: dict[str, Extraction], pages: dict[str, list[str]]
 ) -> dict[str, Extraction]:
-    """Les mêmes sorties, vérifiées comme en v0.2 (sans citation en deux morceaux)."""
+    """Les mêmes sorties, vérifiées comme en v0.3 (sans contrôle des montants)."""
     replay = copy.deepcopy(extractions)
     for document_id, extraction in replay.items():
-        verify(extraction, pages[document_id], two_parts=False)
+        verify(extraction, pages[document_id], amounts=False)
     return replay
 
 
@@ -129,14 +139,14 @@ def main() -> None:  # pragma: no cover - ouvre le vrai jeu de test
     # Répétition : la même commande sur un jeu déjà connu, sorties dans un dossier temporaire.
     parser.add_argument("--repetition-sur", choices=KNOWN_SETS)
     parser.add_argument("--database", type=Path, default=Path("data/entrepot/bond_terms.duckdb"))
-    parser.add_argument("--pages", type=Path, default=Path("data/interim/textes/pages-v03.parquet"))
+    parser.add_argument("--pages", type=Path, default=Path("data/interim/textes/pages-v04.parquet"))
     parser.add_argument(
-        "--ocr-pages", type=Path, default=Path("data/interim/textes/pages-ocr-v03.parquet")
+        "--ocr-pages", type=Path, default=Path("data/interim/textes/pages-ocr-v04.parquet")
     )
     parser.add_argument("--llm-cache", type=Path, default=Path("data/interim/llm"))
-    parser.add_argument("--output-dir", type=Path, default=Path("data/interim/extractions"))
+    parser.add_argument("--output-dir", type=Path, default=RUN_DIR)
     parser.add_argument("--sheet-dir", type=Path, default=Path("data/interim/exceptions"))
-    parser.add_argument("--summary-dir", type=Path, default=Path("docs/v0.3-revue/data"))
+    parser.add_argument("--summary-dir", type=Path, default=Path("docs/v0.4-service/data"))
     args = parser.parse_args()
 
     sets: tuple[str, ...] = TEST_SETS
@@ -151,7 +161,7 @@ def main() -> None:  # pragma: no cover - ouvre le vrai jeu de test
         args.summary_dir.mkdir(parents=True, exist_ok=True)
         sets = (args.repetition_sur,)
     register = args.summary_dir / "ouverture-du-test.json"
-    results = args.summary_dir / "evaluation-test-v03.json"
+    results = args.summary_dir / "evaluation-test-v04.json"
     check_opening(register, results, args.reprendre)
     commit = current_commit()
     if not register.exists():
@@ -159,7 +169,10 @@ def main() -> None:  # pragma: no cover - ouvre le vrai jeu de test
         register.write_bytes((json.dumps(record, indent=2) + "\n").encode("utf-8"))
 
     extract_llm, _ = llm_extractor(MODEL, args.llm_cache)
-    pages = pages_by_document(pq.read_table(args.pages), pq.read_table(args.ocr_pages))
+    if args.repetition_sur:
+        pages = known_pages()
+    else:
+        pages = pages_by_document(pq.read_table(args.pages), pq.read_table(args.ocr_pages))
     texts = {doc: normalize("\n".join(parts)) for doc, parts in pages.items()}
     summary: dict[str, Any] = {"commit": commit}
     with duckdb.connect(str(args.database), read_only=True) as connection:
@@ -179,16 +192,16 @@ def main() -> None:  # pragma: no cover - ouvre le vrai jeu de test
         missing += incomplete(model)
         write_jsonl(rules, args.output_dir / f"{regles.VERSION}-{name}.jsonl")
         write_jsonl(model, args.output_dir / f"llm-{MODEL}-{llm.PROMPT_VERSION}-{name}.jsonl")
-        replay = with_v02_verification(model, pages)
+        replay = with_previous_verification(model, pages)
         sheets[name] = exceptions(model, truth, texts)
         flagged = queue(model, rules)
         summary[name] = {
             **evaluate(truth, rules, model),
             "verification": {
-                "v2": global_accuracy(score(model, truth)),
-                "v1_de_la_v0.2": global_accuracy(score(replay, truth)),
-                "valeurs_fausses_acceptees_v2": wrong_accepted(model, truth),
-                "valeurs_fausses_acceptees_v1": wrong_accepted(replay, truth),
+                "v3": global_accuracy(score(model, truth)),
+                "v2_de_la_v0.3": global_accuracy(score(replay, truth)),
+                "valeurs_fausses_acceptees_v3": wrong_accepted(model, truth),
+                "valeurs_fausses_acceptees_v2": wrong_accepted(replay, truth),
             },
             "revue": indicators(flagged, len(documents), wrong_documents(model, truth)),
             "exceptions": summarize(sheets[name]),

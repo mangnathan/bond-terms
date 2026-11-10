@@ -2,4 +2,4 @@
 select verite.document_id, verite.isin
 from {{ ref('verite_terrain') }} as verite
 inner join {{ ref('population') }} as population on population.isin = verite.isin
-where verite.jeu in ('test_nouveaux_emetteurs', 'test_v03')
+where verite.jeu in ('test_nouveaux_emetteurs', 'test_v03', 'test_v04')

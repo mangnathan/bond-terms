@@ -62,3 +62,18 @@ def test_regression_cases_by_category() -> None:
         "non comparé": {"cas": 0, "regles": 0, "llm": 0},
     }
     assert case_right(rules, "3", "rang") is None
+
+
+def test_extractions_survive_unicode_line_separators_in_citations(tmp_path) -> None:  # type: ignore[no-untyped-def]
+    from bond_terms.evaluation import load_extractions
+    from bond_terms.extraction import Extraction, Value
+
+    citation = "Specified Currency:" + chr(0x2028) + "Euro"
+    extraction = Extraction("1", "llm", "v", {"devise": Value("EUR", citation)})
+    path = tmp_path / "x.jsonl"
+    import json
+
+    path.write_text(
+        json.dumps(extraction.to_dict(), ensure_ascii=False) + chr(10), encoding="utf-8"
+    )
+    assert load_extractions(path)["1"].champs["devise"].citation == citation

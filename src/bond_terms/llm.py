@@ -19,7 +19,9 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Any, Protocol
 
+from bond_terms.documents import normalize
 from bond_terms.extraction import FIELDS, HYBRID, PERPETUAL, Extraction, Value, verify
+from bond_terms.valeurs import several_bonds
 
 PROMPT_VERSION = "extraction-v3"
 SYSTEM_PROMPT = (Path(__file__).parent / "prompts" / f"{PROMPT_VERSION}.txt").read_text(
@@ -146,8 +148,37 @@ def document_text(pages: list[str]) -> str:
     return text[:MAX_CHARS]
 
 
-def user_message(isins: list[str], pages: list[str]) -> str:
-    return f"ISIN: {', '.join(isins)}\n\nDocument:\n{document_text(pages)}"
+SEVERAL_BONDS_HINT = "plusieurs-titres"
+
+
+def isin_context(isin: str, pages: list[str], width: int = 300) -> str:
+    """Passage du document autour de l'ISIN, ou vide s'il n'y figure pas."""
+    text = re.sub(r"\s+", " ", "\n".join(pages))
+    position = re.sub(r"\s", "", text.lower()).find(isin.lower())
+    if position < 0:
+        return ""
+    # Position dans le texte sans espaces : on la reporte sur le texte avec espaces.
+    seen = 0
+    for index, char in enumerate(text):
+        if not char.isspace():
+            if seen == position:
+                return text[max(0, index - width) : index + width]
+            seen += 1
+    return ""
+
+
+def user_message(isins: list[str], pages: list[str], several: bool = False) -> str:
+    message = f"ISIN: {', '.join(isins)}"
+    if several:
+        # Prospectus à plusieurs obligations (ADR 0004) : le modèle lisait parfois la voisine.
+        contexts = [c for c in (isin_context(isin, pages) for isin in isins) if c]
+        message += (
+            "\n\nWarning: this document describes several bonds with different maturities. "
+            "Extract only the terms of the bond with the ISIN above, never those of another bond."
+        )
+        if contexts:
+            message += "\nThe ISIN appears in this passage: " + " [...] ".join(contexts)
+    return f"{message}\n\nDocument:\n{document_text(pages)}"
 
 
 def cache_key(model: str, user: str) -> str:
@@ -245,11 +276,13 @@ class Extractor:
         return reply
 
     def extract(self, document_id: str, pages: list[str], isins: list[str]) -> Extraction:
-        reply = self.reply(document_id, user_message(isins, pages))
+        several = several_bonds(normalize("\n".join(pages)))
+        reply = self.reply(document_id, user_message(isins, pages, several))
         champs, remark = parse(reply.text)
-        extraction = Extraction(
-            document_id, "llm", f"{self.model.name}/{PROMPT_VERSION}", champs, remarque=remark
-        )
+        version = f"{self.model.name}/{PROMPT_VERSION}"
+        if several:
+            version += f"+{SEVERAL_BONDS_HINT}"
+        extraction = Extraction(document_id, "llm", version, champs, remarque=remark)
         extraction.secondes = reply.seconds
         extraction.jetons_entree = reply.tokens_in
         extraction.jetons_sortie = reply.tokens_out

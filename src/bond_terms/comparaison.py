@@ -43,6 +43,8 @@ _REFERENCE_PREFIXES = {
     "NIBOR": "NIBOR",
     "STIBOR": "STIBOR",
     "SWAP": "SWAP",
+    # Constant Maturity Swap : taux de swap (ADR 0004).
+    "CMS": "SWAP",
 }
 
 
