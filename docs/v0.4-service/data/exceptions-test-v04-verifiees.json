@@ -1,0 +1,30 @@
+{
+  "exceptions": 28,
+  "documents": 25,
+  "par_champ": {
+    "montant": 17,
+    "date_echeance": 4,
+    "taux_fixe": 3,
+    "type_taux": 2,
+    "duree_reference": 1,
+    "reference_taux": 1
+  },
+  "verifiees": 27,
+  "vrais_ecarts": 17,
+  "part_de_vrais_ecarts": 0.6296,
+  "seuil_atteint": false,
+  "non_tranchees": {
+    "reference_taux": "FIRDS donne le code ISIN de l'indice €STR (EU000A2X2A25) au lieu de son nom : la lecture est juste, la table de correspondance ne connaît pas ce code"
+  },
+  "lectures_fausses_par_cause": {
+    "taux à décimales françaises lu comme un entier (« 2,000 » devenu 2000, conversion du projet)": 3,
+    "obligation voisine dans un prospectus à plusieurs titres": 3,
+    "tranche lue au lieu de la série lors d'un abondement": 2,
+    "échéance prolongée lue au lieu de l'échéance finale": 1,
+    "année mal recopiée depuis la citation": 1
+  },
+  "vrais_ecarts_sans_le_bug_de_conversion": 17,
+  "verifiees_sans_le_bug_de_conversion": 24,
+  "part_sans_le_bug_de_conversion": 0.7083,
+  "relecteur": "Nathan Mang, avec des explications sur la règle"
+}
