@@ -131,10 +131,15 @@ def write_sheet(rows: list[dict[str, Any]], path: Path) -> None:
 
 
 def read_verdicts(sheet: Path) -> list[dict[str, Any]]:
-    """Fiche remplie par le relecteur ; « vrai ecart » et « Vrai écart » valent « vrai écart »."""
+    """Fiche remplie par le relecteur ; « vrai ecart », « Vrai écart » et la faute d'accord
+    « vraie écart » valent « vrai écart ». Toute autre réponse n'est pas comptée."""
     with sheet.open(encoding="utf-8-sig", newline="") as f:
         rows = list(csv.DictReader(f, delimiter=";"))
-    labels = {normalize(TRUE_GAP): TRUE_GAP, normalize(WRONG_READING): WRONG_READING}
+    labels = {
+        normalize(TRUE_GAP): TRUE_GAP,
+        "vraie ecart": TRUE_GAP,
+        normalize(WRONG_READING): WRONG_READING,
+    }
     for row in rows:
         row["verdict"] = labels.get(normalize(row.get("verdict") or "").strip(), "")
     return rows

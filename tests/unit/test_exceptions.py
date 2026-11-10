@@ -80,10 +80,10 @@ def test_verdicts_are_read_whatever_the_accents_and_case(tmp_path: Path) -> None
     sheet = tmp_path / "fiche.csv"
     sheet.write_text(
         "numero;document_id;champ;verdict\n1;a;montant;Vrai ecart\n2;b;rang;lecture fausse\n"
-        "3;c;devise;\n4;d;x;peut-être\n",
+        "3;c;devise;\n4;d;x;peut-être\n5;e;montant;Vraie écart\n",
         encoding="utf-8-sig",
     )
     rows = read_verdicts(sheet)
-    assert [r["verdict"] for r in rows] == [TRUE_GAP, WRONG_READING, "", ""]
+    assert [r["verdict"] for r in rows] == [TRUE_GAP, WRONG_READING, "", "", TRUE_GAP]
     summary = summarize(rows)
-    assert summary["verifiees"] == 2 and summary["vrais_ecarts"] == 1
+    assert summary["verifiees"] == 3 and summary["vrais_ecarts"] == 2
