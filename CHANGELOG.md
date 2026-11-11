@@ -15,6 +15,7 @@ Les évolutions notables du projet sont notées ici, selon le format [Keep a Cha
 - Routes de l'API versionnées sous `/v1`, versions de l'API et des extracteurs dans `/v1/sante`, une ligne de journal par appel sans adresse du client.
 
 ### Corrigé
+- Un document lu par les règles faute de LLM (quota, service indisponible) n'était plus jamais relu, et l'API ne le signalait pas : chaque fiche porte désormais son extracteur, et un tel document est relu la semaine suivante.
 - La collecte reprenait l'instantané de départ au lieu du plus récent : les releases sont triées sur leur date de publication, et non sur celle du commit visé.
 
 ## [v0.3] - 2026-11-10
