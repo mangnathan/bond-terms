@@ -17,8 +17,8 @@
     "collecte-2026-11-11": {
       "documents": 5,
       "part_en_revue": 0.4,
-      "part_valeurs_refusees": 0.0541,
-      "part_documents_avec_exception": 0.4,
+      "part_valeurs_refusees": 0.027,
+      "part_documents_avec_exception": 0.6,
       "documents_en_repli": 1
     }
   },
@@ -30,8 +30,8 @@
     "jugee": false,
     "parts": {
       "part_en_revue": 0.4,
-      "part_valeurs_refusees": 0.0541,
-      "part_documents_avec_exception": 0.4
+      "part_valeurs_refusees": 0.027,
+      "part_documents_avec_exception": 0.6
     },
     "seuils": {
       "part_en_revue": 0.3,
