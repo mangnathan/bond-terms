@@ -98,6 +98,9 @@ class Ecart(_Strict):
 class Document(_Strict):
     document_id: str
     jeu: str
+    # « llm », ou « regles » quand le LLM n'a pas pu lire le document : fiche moins sûre, relue
+    # la semaine suivante. Absent des instantanés publiés avant que l'extracteur ne soit noté.
+    extracteur: Literal["llm", "regles"] | None = None
     champs: dict[str, Champ]
     en_revue: bool
     raisons_revue: list[str]

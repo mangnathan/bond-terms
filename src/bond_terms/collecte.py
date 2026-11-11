@@ -241,7 +241,9 @@ def main() -> None:  # pragma: no cover - collecte réelle
         if position % 100 == 0:
             print(f"registre : {position}/{len(population)} obligations", flush=True)
 
-    couples = new_couples(register, set(previous["documents_vus"]))
+    # Les documents que le LLM n'a pas lus la semaine précédente sont repris.
+    seen = set(previous["documents_vus"]) - instantane.to_retry(previous)
+    couples = new_couples(register, seen)
     refs = references(couples)
     print(f"{len(refs)} nouveaux documents", flush=True)
     quality: list[dict[str, Any]] = []

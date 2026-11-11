@@ -1,12 +1,13 @@
 import datetime as dt
 import json
 from pathlib import Path
+from typing import Any
 
 import pytest
 
 from bond_terms.api import Instantane
 from bond_terms.extraction import Extraction, Value
-from bond_terms.instantane import build, merge, read, status, write
+from bond_terms.instantane import build, merge, read, status, to_retry, write
 from bond_terms.lancement import FALLBACK
 
 TRUTH = {
@@ -88,15 +89,17 @@ def test_a_document_covering_two_isins_is_counted_once() -> None:
     assert indicators["part_documents_avec_exception"] == 1.0
 
 
-def snapshot_of(documents: dict[str, list[str]], seen: list[str]) -> dict[str, object]:
+def doc(document_id: str, jeu: str = "test", extracteur: str | None = "llm") -> dict[str, object]:
+    return {"document_id": document_id, "jeu": jeu, "extracteur": extracteur}
+
+
+def snapshot_of(documents: dict[str, list[dict[str, object]]], seen: list[str]) -> dict[str, Any]:
     return {
         "format": 2,
         "cree_le": "2026-11-10T00:00:00+00:00",
         "commit": "a",
         "extracteurs": {},
-        "obligations": {
-            isin: [{"document_id": d} for d in docs] for isin, docs in documents.items()
-        },
+        "obligations": documents,
         "indicateurs": {"ancien": {"documents": 1}},
         "documents_vus": seen,
         "collectes": [],
@@ -104,15 +107,40 @@ def snapshot_of(documents: dict[str, list[str]], seen: list[str]) -> dict[str, o
 
 
 def test_merge_adds_the_new_documents_once_and_keeps_the_memory() -> None:
-    previous = snapshot_of({"FR0014007NG9": ["1"]}, ["1", "2"])
-    weekly = snapshot_of({"FR0014007NG9": ["1", "3"], "FR001400IIR9": ["3"]}, ["3", "4"])
+    previous = snapshot_of({"FR0014007NG9": [doc("1")]}, ["1", "2"])
+    weekly = snapshot_of({"FR0014007NG9": [doc("3")], "FR001400IIR9": [doc("3")]}, ["3", "4"])
     weekly["indicateurs"] = {"collecte-2026-11-16": {"documents": 1}}
     merged = merge(previous, weekly, {"date": "2026-11-16"})
-    assert merged["obligations"]["FR0014007NG9"] == [{"document_id": "1"}, {"document_id": "3"}]
-    assert merged["obligations"]["FR001400IIR9"] == [{"document_id": "3"}]
+    assert merged["obligations"]["FR0014007NG9"] == [doc("1"), doc("3")]
+    assert merged["obligations"]["FR001400IIR9"] == [doc("3")]
     assert merged["documents_vus"] == ["1", "2", "3", "4"]
     assert set(merged["indicateurs"]) == {"ancien", "collecte-2026-11-16"}
     assert merged["collectes"] == [{"date": "2026-11-16"}]
+
+
+def test_a_document_read_by_the_rules_is_published_but_retried() -> None:
+    fallback = doc("5", "collecte-2026-11-11", "regles")
+    merged = merge(snapshot_of({}, ["1"]), snapshot_of({"FR001401BOR0": [fallback]}, ["5"]), {})
+    # La fiche est servie, marquée comme lue par les règles, mais le document n'est pas « vu ».
+    assert merged["obligations"]["FR001401BOR0"] == [fallback]
+    assert merged["documents_vus"] == ["1"]
+    assert to_retry(merged) == {"5"}
+
+
+def test_a_retried_document_replaces_its_previous_version() -> None:
+    old = doc("5", "collecte-2026-11-11", None)
+    new = doc("5", "collecte-2026-11-16", "llm")
+    previous = snapshot_of({"FR001401BOR0": [old]}, ["5"])
+    # Lu avant que l'extracteur ne soit noté : relu par prudence.
+    assert to_retry(previous) == {"5"}
+    merged = merge(previous, snapshot_of({"FR001401BOR0": [new]}, ["5"]), {})
+    assert merged["obligations"]["FR001401BOR0"] == [new]
+    assert merged["documents_vus"] == ["5"]
+    assert to_retry(merged) == set()
+
+
+def test_evaluation_sets_are_never_retried() -> None:
+    assert to_retry(snapshot_of({"FR0014007NG9": [doc("1", "test_v04", None)]}, ["1"])) == set()
 
 
 def test_documents_set_aside_are_remembered_as_seen() -> None:
