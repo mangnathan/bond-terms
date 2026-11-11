@@ -41,7 +41,7 @@ RAW_TABLES = frozenset(
 )
 
 
-def _strings(table: pa.Table) -> pa.Table:
+def as_strings(table: pa.Table) -> pa.Table:
     """Toutes les colonnes en texte : les types sont posés par dbt, pas au chargement."""
     return table.cast(pa.schema([(name, pa.string()) for name in table.column_names]))
 
@@ -109,14 +109,14 @@ def build_raw_tables(
     documents = pa.concat_tables([documents, pa.Table.from_pylist(new_rows, schema=schema)])
 
     return {
-        "firds_titres": _strings(firds),
+        "firds_titres": as_strings(firds),
         "population": pa.table(
             {
                 "isin": [row["isin"] for row in population],
                 "issuer_lei": [row["issuer_lei"] for row in population],
             }
         ),
-        "registre_documents": _strings(documents),
+        "registre_documents": as_strings(documents),
         "decoupage": split,
         "pdf_controle": pa.concat_tables(
             [read_csv(pdf_quality), *(read_csv(e.pdf_quality) for e in extra)]

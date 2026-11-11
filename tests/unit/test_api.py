@@ -13,7 +13,7 @@ FIELD = {"valeur": "EUR", "citation": "Specified Currency: Euro", "page": 2, "st
 
 def snapshot(**changes: Any) -> dict[str, Any]:
     data = {
-        "format": 1,
+        "format": 2,
         "cree_le": "2026-11-10T18:00:00+00:00",
         "commit": "abc123",
         "extracteurs": {"llm": "modele/prompt", "regles": "regles-2"},
@@ -40,6 +40,8 @@ def snapshot(**changes: Any) -> dict[str, Any]:
                 "documents_en_repli": 0,
             }
         },
+        "documents_vus": ["14947257"],
+        "collectes": [],
     }
     data.update(changes)
     return data
@@ -89,6 +91,7 @@ def test_health_and_indicators(tmp_path: Path) -> None:
             "commit": "abc123",
             "extracteurs": {"llm": "modele/prompt", "regles": "regles-2"},
             "obligations": 1,
+            "derniere_collecte": None,
         }
         assert api.get("/v1/indicateurs").json()["test_v04"]["documents"] == 1
 
@@ -142,3 +145,24 @@ def test_each_call_is_logged_without_the_client_address(
     line = caplog.records[-1].getMessage()
     assert line.startswith("GET /v1/obligations/FR0014007NG8 422 ")
     assert "testclient" not in line
+
+
+COLLECTE = {
+    "date": "2026-11-16",
+    "firds": "2026-11-14",
+    "obligations_suivies": 840,
+    "documents_registre": 510,
+    "nouveaux_documents": 3,
+    "documents_lus": 3,
+    "erreurs_lecture": 0,
+    "rattachements_errones": 0,
+    "produits_structures": 1,
+    "documents_extraits": 2,
+    "documents_en_repli": 0,
+    "arret_quota": False,
+}
+
+
+def test_health_shows_the_last_collection(tmp_path: Path) -> None:
+    with client(tmp_path, snapshot(collectes=[COLLECTE])) as api:
+        assert api.get("/v1/sante").json()["derniere_collecte"] == "2026-11-16"

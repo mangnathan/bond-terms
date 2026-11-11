@@ -1,0 +1,95 @@
+# Collecte hebdomadaire (ADR 0004) : nouveaux documents d'émission du registre, lus, extraits et
+# comparés à FIRDS. L'instantané est publié en release, que l'API charge au démarrage ; le bilan
+# de la semaine est commité sur la branche `donnees`, ce qui garde aussi le dépôt actif (GitHub
+# désactive une tâche planifiée après 60 jours sans activité).
+name: Collecte hebdomadaire
+
+on:
+  schedule:
+    # Lundi 6 h UTC : la publication complète de FIRDS de la semaine est parue le week-end.
+    - cron: "0 6 * * 1"
+  # Lancement à la main, pour le premier essai et après une panne.
+  workflow_dispatch:
+
+# Écriture limitée au contenu : créer la release et pousser la branche `donnees`.
+permissions:
+  contents: write
+
+# Jamais deux collectes en même temps ; la seconde attend la fin de la première.
+concurrency:
+  group: collecte
+  cancel-in-progress: false
+
+jobs:
+  collecte:
+    name: Collecte de la semaine
+    runs-on: ubuntu-24.04
+    timeout-minutes: 120
+    env:
+      GH_TOKEN: ${{ github.token }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      - uses: astral-sh/setup-uv@1c37ad07a6a961277cf70c0d37d6f313000f5884 # v10.3.0
+        with:
+          version: "0.13.1"
+          python-version: "3.12"
+          enable-cache: true
+
+      - name: Installer les dépendances (OCR et LLM compris)
+        run: uv sync --locked --group ocr --group llm
+
+      - name: Récupérer le dernier instantané
+        run: |
+          tag=$(gh release list --limit 100 --json tagName,createdAt \
+            --jq '[.[] | select(.tagName | startswith("instantane-"))] | sort_by(.createdAt) | last | .tagName // ""')
+          if [ -z "$tag" ]; then
+            echo "::error::Aucune release instantane-* : publier d'abord l'instantané de départ."
+            exit 1
+          fi
+          echo "Instantané précédent : $tag"
+          gh release download "$tag" --pattern instantane.json --dir precedent
+
+      - name: Collecter
+        env:
+          # Clé de l'API Gemini, sur un projet Google sans facturation liée.
+          GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
+          # Plafond de la collecte, sous celui du code : le flux mesuré est de 2 à 3 documents
+          # par semaine.
+          BOND_TERMS_LLM_MAX_JOUR: "60"
+        run: >-
+          uv run --no-sync python -m bond_terms.collecte
+          --precedent precedent/instantane.json
+          --commit "$GITHUB_SHA"
+
+      - name: Publier l'instantané
+        run: |
+          day=$(date -u +%F)
+          gh release create "instantane-$day-$GITHUB_RUN_NUMBER" \
+            data/instantane/instantane.json data/instantane/bilan.json \
+            --title "Instantané du $day" \
+            --notes "Collecte hebdomadaire du $day, commit $GITHUB_SHA." \
+            --latest=false
+
+      - name: Commiter le bilan sur la branche donnees
+        run: |
+          day=$(date -u +%F)
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          if git ls-remote --exit-code --heads origin donnees > /dev/null; then
+            git fetch --depth 1 origin donnees
+            git worktree add -B donnees ../donnees FETCH_HEAD
+          else
+            git worktree add --orphan -b donnees ../donnees
+          fi
+          mkdir -p ../donnees/bilans
+          cp data/instantane/bilan.json "../donnees/bilans/$day.json"
+          cd ../donnees
+          git add bilans
+          # Une relance le même jour peut donner un bilan identique : rien à commiter.
+          if git diff --cached --quiet; then
+            echo "Bilan inchangé"
+          else
+            git commit -m "Bilan de la collecte du $day"
+            git push origin donnees
+          fi
