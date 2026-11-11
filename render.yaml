@@ -11,9 +11,13 @@ services:
     branch: main
     # Seuls le paquet et le groupe api : ni OCR, ni LLM, ni entrepôt sur le serveur.
     buildCommand: uv sync --locked --no-default-groups --group api
-    # Le journal d'accès d'uvicorn est coupé : il contient l'adresse du client. L'API écrit son
-    # propre journal, sans elle.
-    startCommand: uv run --no-sync uvicorn bond_terms.api:app --host 0.0.0.0 --port $PORT --no-access-log
+    # Un seul processus : 512 Mo sur l'offre gratuite, et la limite d'appels est tenue en
+    # mémoire. Le journal d'accès d'uvicorn est coupé, car il contient l'adresse du client ;
+    # l'API écrit son propre journal, sans elle. À l'arrêt (déploiement, mise en veille), les
+    # requêtes en cours ont 10 secondes pour finir.
+    startCommand: >-
+      uv run --no-sync uvicorn bond_terms.api:app --host 0.0.0.0 --port $PORT
+      --no-access-log --timeout-graceful-shutdown 10
     healthCheckPath: /v1/sante
     envVars:
       - key: PYTHON_VERSION
