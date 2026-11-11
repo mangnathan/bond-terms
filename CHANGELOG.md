@@ -4,12 +4,19 @@ Les évolutions notables du projet sont notées ici, selon le format [Keep a Cha
 
 ## [Non publié]
 
+## [v0.4] - 2026-11-11
+
+Bilan ([ADR 0004](docs/adr/0004-service.md)) : sur un troisième test de 116 documents d'émetteurs jamais vus, ouvert une seule fois, le LLM est juste sur 91,1 % des paires document-champ contre 67,1 % pour les règles ; seule la valeur nominale passe son seuil avec une marge suffisante. Le rapport d'exceptions compte 63,0 % de vrais écarts, sous le seuil de 80 %. Le projet est en service : collecte hebdomadaire, surveillance avec alertes et API en ligne, à coût nul.
+
 ### Ajouté
+- ADR 0004, avec ses précisions et son gel datés d'avant l'ouverture du test, puis les précisions de la mise en service.
+- Corrections de lecture de la v0.3 : prospectus à plusieurs obligations signalés au modèle, montants acceptés seulement s'ils sont écrits sans ambiguïté, taux CMS, produits structurés rédigés en anglais.
+- Rapport de mise en service en LaTeX et en PDF.
 - Nouveau test de la v0.4 ouvert une seule fois : le LLM est juste sur 91,1 % des paires contre 67,1 % pour les règles ; exceptions vérifiées à la main, 63,0 % de vrais écarts.
 - Instantané des conditions extraites (`bond_terms.instantane`) : pour chaque ISIN, valeurs, citations, statut de revue et exceptions, et indicateurs de surveillance par jeu.
 - API en lecture seule (`bond_terms.api`, FastAPI) : ISIN vérifié avec sa clé de contrôle, nombre d'appels limité, instantané validé au démarrage.
 - Collecte hebdomadaire (`bond_terms.collecte`, workflow planifié) : nouveaux documents du registre lus, extraits et comparés à FIRDS par les modèles dbt de l'entrepôt, instantané publié en release, bilan sur la branche `donnees`.
-- Déploiement de l'API sur Render (`render.yaml`) : instantané téléchargé au démarrage depuis la dernière release (`bond_terms.publication`), adresse du client lue dans `True-Client-IP` et plafond global de 600 appels par minute.
+- Déploiement de l'API sur Render (`render.yaml`) : instantané téléchargé au démarrage depuis la release `en-service` (`bond_terms.publication`), redéploiement après la CI, adresse du client lue dans `True-Client-IP` et plafond global de 600 appels par minute.
 - Surveillance et alertes (`bond_terms.surveillance`) : seuils de l'ADR 0004 jugés sur une fenêtre glissante d'au moins 20 documents, issue GitHub ouverte si un seuil est franchi, en cas d'arrêt pour quota ou d'échec du workflow.
 - L'instantané garde la mémoire de la collecte (documents déjà examinés, bilans) ; `/v1/sante` donne la date de la dernière collecte.
 - Routes de l'API versionnées sous `/v1`, versions de l'API et des extracteurs dans `/v1/sante`, une ligne de journal par appel sans adresse du client.

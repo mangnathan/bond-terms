@@ -6,7 +6,9 @@ Dans une banque, l'équipe qui tient à jour la base des titres recopie ces cond
 
 **bond-terms lit ces documents automatiquement.** Pour chaque valeur, l'outil donne la phrase exacte du document qui la justifie, et vérifie qu'elle s'y trouve bien ; sinon, la valeur est refusée. Les documents douteux partent en revue humaine, et un rapport signale les écarts entre le document et FIRDS, la base de référence officielle de l'ESMA.
 
-**Résultat**, mesuré sur des documents jamais vus pendant le développement : **92 % de valeurs justes**, contre 61 % pour une approche par règles écrites à la main, en 2 secondes par document et à coût nul.
+**Résultat**, mesuré sur des documents jamais vus pendant le développement : **91 % de valeurs justes**, contre 67 % pour une approche par règles écrites à la main, en 2 secondes par document et à coût nul.
+
+**Le service tourne** : chaque lundi, les nouveaux documents des 840 obligations suivies sont collectés, lus et comparés à FIRDS. L'API est en ligne sur **[bond-terms.onrender.com](https://bond-terms.onrender.com)**, avec sa documentation interactive. Elle est hébergée sur l'offre gratuite de Render : si personne ne l'a appelée depuis un quart d'heure, la première réponse prend environ une minute.
 
 ## Avancement
 
@@ -16,7 +18,7 @@ Dans une banque, l'équipe qui tient à jour la base des titres recopie ces cond
 | v0.1 | Collecte (FIRDS, registre, PDF), date de coupure du test, entrepôt de données | Terminé |
 | v0.2 | Extracteur à règles contre LLM sur les champs vérifiables, test ouvert une seule fois | Terminé |
 | v0.3 | File de revue humaine, rapport d'exceptions, nouveau test (clauses littérales reportées) | Terminé |
-| v0.4 | API, collecte planifiée, surveillance de la qualité des données | À venir |
+| v0.4 | Corrections mesurées sur un nouveau test, collecte hebdomadaire, surveillance et alertes, API en ligne (clauses littérales retirées) | Terminé |
 | v1.0 | Démonstration publique, note de synthèse, business case mesuré | À venir |
 
 ## Résultats du cadrage (v0.0)
@@ -58,6 +60,15 @@ Détails : [rapport d'extraction (PDF)](docs/pdf/bond-terms_v0.2_Rapport-extract
 
 Détails : [rapport de revue et d'exceptions (PDF)](docs/pdf/bond-terms_v0.3_Rapport-revue-exceptions.pdf) et [ADR 0003](docs/adr/0003-revue-et-exceptions.md).
 
+## Résultats de la mise en service (v0.4)
+
+- **Troisième test, ouvert une seule fois.** Sur 116 documents d'émetteurs jamais vus, le LLM est juste sur 91,1 % des paires document-champ [88,3 ; 93,5], contre 67,1 % pour l'extracteur à règles. Seule la valeur nominale passe son seuil avec une marge suffisante.
+- **Rapport d'exceptions.** Vérifiés à la main, 63,0 % des écarts signalés sont réels, pour 80 % exigés. Trois lectures fausses sur dix viennent d'une conversion du projet (« 2,000 % » lu 2 000) : un taux n'est pas encore contrôlé dans sa citation.
+- **Service.** Collecte hebdomadaire par GitHub Actions, surveillance avec alertes en issue GitHub, API FastAPI en lecture seule sur Render ; trois collectes réelles réussies, 0 €.
+- **Mise en service.** Quatre défauts n'apparaissaient qu'en conditions réelles (ordre des releases, fiches lues par les règles sans le dire, limite d'appels de GitHub, redéploiement) : tous corrigés et décrits dans le rapport.
+
+Détails : [rapport de mise en service (PDF)](docs/pdf/bond-terms_v0.4_Rapport-service.pdf) et [ADR 0004](docs/adr/0004-service.md).
+
 ## Structure du dépôt
 
 ```
@@ -74,7 +85,7 @@ docs/v0.0-cadrage/    rapport de cadrage et chiffres produits par les scripts
 docs/v0.1-collecte/   rapport de collecte et chiffres produits par la collecte
 docs/v0.2-extraction/ rapport d'extraction, résultats et registre d'ouverture du test
 docs/v0.3-revue/      rapport de revue, nouveau test figé, résultats et exceptions vérifiées
-docs/v0.4-service/    nouveau test de la v0.4, résultats et exceptions vérifiées
+docs/v0.4-service/    rapport de mise en service, nouveau test figé, résultats et exceptions vérifiées
 docs/pdf/             rapports compilés
 ```
 
