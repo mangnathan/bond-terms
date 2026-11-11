@@ -42,8 +42,10 @@ jobs:
 
       - name: Récupérer le dernier instantané
         run: |
-          tag=$(gh release list --limit 100 --json tagName,createdAt \
-            --jq '[.[] | select(.tagName | startswith("instantane-"))] | sort_by(.createdAt) | last | .tagName // ""')
+          # Tri sur la date de publication : createdAt est celle du commit visé, identique pour
+          # deux releases posées sur le même commit.
+          tag=$(gh release list --limit 100 --json tagName,publishedAt \
+            --jq '[.[] | select(.tagName | startswith("instantane-"))] | sort_by(.publishedAt) | last | .tagName // ""')
           if [ -z "$tag" ]; then
             echo "::error::Aucune release instantane-* : publier d'abord l'instantané de départ."
             exit 1
