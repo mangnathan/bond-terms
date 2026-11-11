@@ -141,16 +141,16 @@ Le découpage et ses chiffres sont versionnés dans `docs/v0.1-collecte/data` : 
 ```bash
 # Instantané des conditions extraites, puis API sur http://localhost:8000 (documentation sur /docs)
 uv run python -m bond_terms.instantane
-uv run uvicorn bond_terms.api:app
+uv run uvicorn bond_terms.api:app --no-access-log
 ```
 
 | Route | Contenu |
 |---|---|
-| `GET /obligations/{isin}` | Pour chaque document de l'obligation : valeurs lues avec leur citation, leur page et leur statut, statut de revue, exceptions avec FIRDS |
-| `GET /indicateurs` | Indicateurs de surveillance par jeu : part en revue, part des valeurs refusées, part des documents avec exception, documents lus par les règles faute de quota |
-| `GET /sante` | État du service et date de l'instantané |
+| `GET /v1/obligations/{isin}` | Pour chaque document de l'obligation : valeurs lues avec leur citation, leur page et leur statut, statut de revue, exceptions avec FIRDS |
+| `GET /v1/indicateurs` | Indicateurs de surveillance par jeu : part en revue, part des valeurs refusées, part des documents avec exception, documents lus par les règles faute de quota |
+| `GET /v1/sante` | État du service, version de l'API, date de l'instantané et versions des extracteurs |
 
-L'API ne fait que lire un instantané chargé au démarrage (`BOND_TERMS_INSTANTANE`, par défaut `data/instantane/instantane.json`) : elle n'appelle jamais le modèle. Un ISIN mal formé ou dont la clé de contrôle est fausse est refusé (422) avant toute recherche ; au-delà de 60 appels par minute, un client reçoit une réponse 429.
+L'API ne fait que lire un instantané chargé au démarrage (`BOND_TERMS_INSTANTANE`, par défaut `data/instantane/instantane.json`) : elle n'appelle jamais le modèle. Un ISIN mal formé ou dont la clé de contrôle est fausse est refusé (422) avant toute recherche ; au-delà de 60 appels par minute, un client reçoit une réponse 429. Les routes sont versionnées : un changement incompatible ouvrira `/v2` sans casser les clients de `/v1`. L'API écrit une ligne de journal par appel (méthode, route, code, durée) sans l'adresse du client ; le journal d'accès d'uvicorn, qui la contient, est coupé par `--no-access-log`.
 
 ### Bac à sable BigQuery (facultatif)
 

@@ -8,6 +8,7 @@ Les évolutions notables du projet sont notées ici, selon le format [Keep a Cha
 - Nouveau test de la v0.4 ouvert une seule fois : le LLM est juste sur 91,1 % des paires contre 67,1 % pour les règles ; exceptions vérifiées à la main, 63,0 % de vrais écarts.
 - Instantané des conditions extraites (`bond_terms.instantane`) : pour chaque ISIN, valeurs, citations, statut de revue et exceptions, et indicateurs de surveillance par jeu.
 - API en lecture seule (`bond_terms.api`, FastAPI) : ISIN vérifié avec sa clé de contrôle, nombre d'appels limité, instantané validé au démarrage.
+- Routes de l'API versionnées sous `/v1`, versions de l'API et des extracteurs dans `/v1/sante`, une ligne de journal par appel sans adresse du client.
 
 ## [v0.3] - 2026-11-10
 
