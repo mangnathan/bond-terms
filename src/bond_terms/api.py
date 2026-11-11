@@ -14,6 +14,7 @@ nombre d'appels par client est limité.
 
 from __future__ import annotations
 
+import json
 import logging
 import os
 import re
@@ -35,14 +36,30 @@ MAX_CALLS = 60
 WINDOW_S = 60.0
 # Plafond tous clients confondus : il borne l'usage même si un client fausse son adresse.
 MAX_TOTAL_CALLS = 600
+# En-têtes de sécurité de chaque réponse : HTTPS imposé au navigateur pendant un an, pas
+# d'affichage dans un cadre d'un autre site, pas de devinette du type de contenu, aucune adresse
+# d'origine transmise. Pas de Content-Security-Policy stricte : la page /docs charge Swagger UI
+# depuis un CDN.
+SECURITY_HEADERS = {
+    "Strict-Transport-Security": "max-age=31536000",
+    "X-Frame-Options": "DENY",
+    "X-Content-Type-Options": "nosniff",
+    "Referrer-Policy": "no-referrer",
+}
 
-# uvicorn ne configure que ses propres journaux : celui de l'API reçoit sa sortie console.
+# uvicorn ne configure que ses propres journaux : celui de l'API reçoit sa sortie console, une
+# ligne JSON par événement.
 log = logging.getLogger("bond_terms.api")
 if not log.handlers:
     _console = logging.StreamHandler()
-    _console.setFormatter(logging.Formatter("%(levelname)s:     %(message)s"))
+    _console.setFormatter(logging.Formatter("%(message)s"))
     log.addHandler(_console)
     log.setLevel(logging.INFO)
+
+
+def event(name: str, **fields: object) -> None:
+    log.info(json.dumps({"evenement": name, **fields}, ensure_ascii=False))
+
 
 _ISIN = re.compile(r"[A-Z]{2}[A-Z0-9]{9}[0-9]")
 
@@ -200,7 +217,7 @@ def create_app(
 
             fetch(repository, path)
         state["instantane"] = load_snapshot(path)
-        log.info("instantané du %s chargé", state["instantane"].cree_le)
+        event("demarrage", instantane=state["instantane"].cree_le)
         yield
 
     app = FastAPI(
@@ -227,15 +244,15 @@ def create_app(
             )
         else:
             response = await call_next(request)
-        response.headers["X-Content-Type-Options"] = "nosniff"
-        # Journal d'une ligne par appel, pour la surveillance. L'adresse du client n'y figure
-        # pas : c'est une donnée personnelle, inutile pour suivre le service.
-        log.info(
-            "%s %s %d %.1f ms",
-            request.method,
-            request.url.path,
-            response.status_code,
-            (time.perf_counter() - start) * 1000,
+        response.headers.update(SECURITY_HEADERS)
+        # Une ligne JSON par appel, lisible par un outil de journaux. L'adresse du client n'y
+        # figure pas : c'est une donnée personnelle, inutile pour suivre le service.
+        event(
+            "appel",
+            methode=request.method,
+            route=request.url.path,
+            code=response.status_code,
+            duree_ms=round((time.perf_counter() - start) * 1000, 1),
         )
         return response
 

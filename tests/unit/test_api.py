@@ -74,6 +74,8 @@ def test_a_bond_is_served_with_its_citations(tmp_path: Path) -> None:
     assert body["documents"][0]["champs"]["devise"]["citation"] == "Specified Currency: Euro"
     assert body["documents"][0]["exceptions"][0]["champ"] == "montant"
     assert response.headers["X-Content-Type-Options"] == "nosniff"
+    assert response.headers["X-Frame-Options"] == "DENY"
+    assert response.headers["Strict-Transport-Security"] == "max-age=31536000"
 
 
 def test_invalid_and_unknown_isins_are_told_apart(tmp_path: Path) -> None:
@@ -143,7 +145,13 @@ def test_each_call_is_logged_without_the_client_address(
     ):
         api.get("/v1/obligations/FR0014007NG8")
     line = caplog.records[-1].getMessage()
-    assert line.startswith("GET /v1/obligations/FR0014007NG8 422 ")
+    record = json.loads(line)
+    assert record["evenement"] == "appel"
+    assert (record["methode"], record["route"], record["code"]) == (
+        "GET",
+        "/v1/obligations/FR0014007NG8",
+        422,
+    )
     assert "testclient" not in line
 
 
