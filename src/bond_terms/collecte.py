@@ -35,7 +35,7 @@ import pyarrow as pa
 import pyarrow.compute as pc
 import pyarrow.parquet as pq
 
-from bond_terms import instantane, ocr, regles
+from bond_terms import instantane, ocr, regles, surveillance
 from bond_terms.decoupage import COLUMNS as SPLIT_COLUMNS
 from bond_terms.documents import QUALITY_COLUMNS, DocumentRef, process
 from bond_terms.entrepot import as_strings, load_duckdb
@@ -281,9 +281,14 @@ def main() -> None:  # pragma: no cover - collecte réelle
         model,
         stopped,
     )
-    instantane.write(instantane.merge(previous, weekly, collection), args.sortie)
+    merged = instantane.merge(previous, weekly, collection)
+    instantane.write(merged, args.sortie)
     args.bilan.parent.mkdir(parents=True, exist_ok=True)
-    report = {"collecte": collection, "indicateurs": weekly["indicateurs"]}
+    report = {
+        "collecte": collection,
+        "indicateurs": weekly["indicateurs"],
+        "surveillance": surveillance.check(merged),
+    }
     args.bilan.write_bytes(
         (json.dumps(report, ensure_ascii=False, indent=2) + "\n").encode("utf-8")
     )
