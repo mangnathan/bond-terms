@@ -1,0 +1,25 @@
+{
+  "collecte": {
+    "date": "2026-11-11",
+    "firds": "2026-11-07",
+    "obligations_suivies": 840,
+    "documents_registre": 506,
+    "nouveaux_documents": 5,
+    "documents_lus": 5,
+    "erreurs_lecture": 0,
+    "rattachements_errones": 0,
+    "produits_structures": 0,
+    "documents_extraits": 5,
+    "documents_en_repli": 0,
+    "arret_quota": false
+  },
+  "indicateurs": {
+    "collecte-2026-11-11": {
+      "documents": 5,
+      "part_en_revue": 0.2,
+      "part_valeurs_refusees": 0.0263,
+      "part_documents_avec_exception": 0.6,
+      "documents_en_repli": 0
+    }
+  }
+}
