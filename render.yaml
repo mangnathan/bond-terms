@@ -9,6 +9,10 @@ services:
     # Union européenne, comme les données de l'ESMA.
     region: frankfurt
     branch: main
+    # Redéploiement à chaque commit sur main, mais seulement une fois la CI passée : un commit
+    # qui casse les tests n'est jamais mis en ligne. Écrit ici plutôt que laissé au réglage par
+    # défaut, qui n'a pas redéployé après la PR #63.
+    autoDeployTrigger: checksPass
     # Seuls le paquet et le groupe api : ni OCR, ni LLM, ni entrepôt sur le serveur.
     buildCommand: uv sync --locked --no-default-groups --group api
     # Un seul processus : 512 Mo sur l'offre gratuite, et la limite d'appels est tenue en

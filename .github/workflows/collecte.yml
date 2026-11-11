@@ -74,6 +74,16 @@ jobs:
             --notes "Collecte hebdomadaire du $day, commit $GITHUB_SHA." \
             --latest=false
 
+      # Adresse fixe lue par l'API au démarrage : un simple téléchargement sur github.com, sans
+      # passer par l'API de GitHub, qui limite les appels sans jeton par adresse IP.
+      - name: Mettre l'instantané en service
+        run: |
+          if ! gh release view en-service > /dev/null 2>&1; then
+            gh release create en-service --title "Instantané en service" --latest=false \
+              --notes "Dernier instantané, lu par l'API au démarrage. Remplacé à chaque collecte."
+          fi
+          gh release upload en-service data/instantane/instantane.json --clobber
+
       - name: Commiter le bilan sur la branche donnees
         run: |
           day=$(date -u +%F)

@@ -154,7 +154,7 @@ L'API ne fait que lire un instantané chargé au démarrage (`BOND_TERMS_INSTANT
 
 ### Déploiement (v0.4)
 
-L'API est décrite pour Render dans [render.yaml](render.yaml), en offre gratuite : seul le groupe `api` est installé, et l'API télécharge au démarrage le dernier instantané publié en release (`BOND_TERMS_DEPOT`). Aucun secret n'est nécessaire. Sans trafic depuis un quart d'heure, le service s'endort : le premier appel prend alors environ une minute. La limite de 60 appels par minute et par client s'appuie sur l'en-tête `True-Client-IP` ; un plafond de 600 appels par minute, tous clients confondus, s'y ajoute.
+L'API est décrite pour Render dans [render.yaml](render.yaml), en offre gratuite : seul le groupe `api` est installé, et l'API télécharge au démarrage l'instantané de la release `en-service`, que chaque collecte remplace (`BOND_TERMS_DEPOT`). Aucun secret n'est nécessaire. Render redéploie chaque commit sur `main` une fois la CI passée. Sans trafic depuis un quart d'heure, le service s'endort : le premier appel prend alors environ une minute. La limite de 60 appels par minute et par client s'appuie sur l'en-tête `True-Client-IP` ; un plafond de 600 appels par minute, tous clients confondus, s'y ajoute.
 
 ### Collecte hebdomadaire (v0.4)
 
