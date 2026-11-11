@@ -146,7 +146,7 @@ uv run uvicorn bond_terms.api:app --no-access-log
 
 | Route | Contenu |
 |---|---|
-| `GET /v1/obligations/{isin}` | Pour chaque document de l'obligation : valeurs lues avec leur citation, leur page et leur statut, statut de revue, exceptions avec FIRDS |
+| `GET /v1/obligations/{isin}` | Pour chaque document de l'obligation : extracteur (LLM, ou règles si le LLM n'a pas pu le lire), valeurs lues avec leur citation, leur page et leur statut, statut de revue, exceptions avec FIRDS |
 | `GET /v1/indicateurs` | Indicateurs de surveillance par jeu : part en revue, part des valeurs refusées, part des documents avec exception, documents lus par les règles faute de quota |
 | `GET /v1/sante` | État du service, version de l'API, date de l'instantané et versions des extracteurs |
 

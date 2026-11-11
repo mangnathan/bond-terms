@@ -219,3 +219,19 @@ def test_deployed_api_downloads_the_latest_snapshot(
     with TestClient(create_app()) as api:
         assert api.get("/v1/sante").status_code == 200
     assert calls == ["mangnathan/bond-terms"]
+
+
+def test_the_extractor_of_each_document_is_served(tmp_path: Path) -> None:
+    data = snapshot()
+    data["obligations"]["FR0014007NG9"][0]["extracteur"] = "regles"
+    with client(tmp_path, data) as api:
+        document = api.get("/v1/obligations/FR0014007NG9").json()["documents"][0]
+    assert document["extracteur"] == "regles"
+
+
+def test_the_root_leads_to_the_documentation(tmp_path: Path) -> None:
+    with client(tmp_path, snapshot()) as api:
+        response = api.get("/", follow_redirects=False)
+        assert response.status_code == 307
+        assert response.headers["location"] == "/docs"
+        assert api.get("/docs").status_code == 200

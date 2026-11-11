@@ -60,6 +60,9 @@ def document_entry(
     return {
         "document_id": extraction.document_id,
         "jeu": set_name,
+        # « regles » quand le LLM n'a pas pu lire le document (quota, service indisponible) :
+        # l'utilisateur doit savoir que la fiche vient de l'extracteur le moins exact.
+        "extracteur": extraction.extracteur,
         "champs": champs,
         # Les raisons commencent par les valeurs non justifiées ; les désaccords avec les règles
         # suivent, à titre d'information.
@@ -146,18 +149,34 @@ def build(
 def merge(
     previous: dict[str, Any], weekly: dict[str, Any], collection: dict[str, Any]
 ) -> dict[str, Any]:
-    """Instantané de la semaine : le précédent, plus les documents nouvellement lus. Un document
-    déjà présent pour un ISIN n'est jamais ajouté deux fois."""
+    """Instantané de la semaine : le précédent, plus les documents lus cette semaine. Un document
+    relu remplace sa version précédente ; un document qui n'a pas été lu par le LLM ne compte pas
+    comme vu, et sera relu la semaine suivante."""
     bonds = {isin: list(documents) for isin, documents in previous["obligations"].items()}
     for isin, documents in weekly["obligations"].items():
-        known = {d["document_id"] for d in bonds.get(isin, [])}
-        bonds[isin] = bonds.get(isin, []) + [d for d in documents if d["document_id"] not in known]
-    return {
+        fresh = {d["document_id"] for d in documents}
+        kept = [d for d in bonds.get(isin, []) if d["document_id"] not in fresh]
+        bonds[isin] = kept + list(documents)
+    merged = {
         **weekly,
         "obligations": dict(sorted(bonds.items())),
         "indicateurs": previous["indicateurs"] | weekly["indicateurs"],
-        "documents_vus": sorted(set(previous["documents_vus"]) | set(weekly["documents_vus"])),
         "collectes": [*previous["collectes"], collection],
+    }
+    seen = set(previous["documents_vus"]) | set(weekly["documents_vus"])
+    merged["documents_vus"] = sorted(seen - to_retry(merged))
+    return merged
+
+
+def to_retry(snapshot: dict[str, Any]) -> set[str]:
+    """Documents de la collecte que le LLM n'a pas lus : passés par les règles faute de quota ou
+    de service, ou lus avant que l'instantané ne note l'extracteur. Ils sont relus la semaine
+    suivante ; les jeux d'évaluation, lus une fois pour toutes, ne sont jamais repris."""
+    return {
+        entry["document_id"]
+        for documents in snapshot["obligations"].values()
+        for entry in documents
+        if entry["jeu"].startswith("collecte-") and entry.get("extracteur") != "llm"
     }
 
 
