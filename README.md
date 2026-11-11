@@ -152,6 +152,16 @@ uv run uvicorn bond_terms.api:app --no-access-log
 
 L'API ne fait que lire un instantané chargé au démarrage (`BOND_TERMS_INSTANTANE`, par défaut `data/instantane/instantane.json`) : elle n'appelle jamais le modèle. Un ISIN mal formé ou dont la clé de contrôle est fausse est refusé (422) avant toute recherche ; au-delà de 60 appels par minute, un client reçoit une réponse 429. Les routes sont versionnées : un changement incompatible ouvrira `/v2` sans casser les clients de `/v1`. L'API écrit une ligne de journal par appel (méthode, route, code, durée) sans l'adresse du client ; le journal d'accès d'uvicorn, qui la contient, est coupé par `--no-access-log`.
 
+### Collecte hebdomadaire (v0.4)
+
+Chaque lundi, le workflow [Collecte hebdomadaire](.github/workflows/collecte.yml) reprend le dernier instantané publié en release, ne traite que les documents d'émission parus depuis, et publie le nouvel instantané avec le bilan de la semaine ; le bilan est aussi commité sur la branche `donnees`. La même collecte se lance sur le poste :
+
+```bash
+uv run --group ocr --group llm --env-file .env python -m bond_terms.collecte --precedent data/instantane/instantane.json
+```
+
+Le workflow demande la clé de l'API Gemini comme secret du dépôt (`GEMINI_API_KEY`), sur un projet Google sans facturation liée. Le premier instantané se construit par `bond_terms.instantane`, à partir des extractions déjà faites, et se publie à la main dans une release `instantane-...` ; au-delà de 60 nouveaux documents, la collecte s'arrête sans rien publier.
+
 ### Bac à sable BigQuery (facultatif)
 
 Le même entrepôt peut tourner sur le [bac à sable BigQuery](https://cloud.google.com/bigquery/docs/sandbox), sans moyen de paiement. Il faut un projet Google Cloud sans facturation liée et un compte de service (rôles « Éditeur de données BigQuery » et « Utilisateur de job BigQuery ») dont la clé est rangée hors du dépôt. Copier `.env.example` en `.env`, le remplir, puis :

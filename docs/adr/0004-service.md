@@ -73,3 +73,14 @@ Ajoutés le 10 novembre 2026. Les corrections ont été réglées sur les quatre
 - **Effet sur les jeux connus.** Exactitude globale du LLM : 96,3 % contre 96,1 % avec la configuration de la v0.3. Sur le test de la v0.3, étiqueté à la main, les exceptions passent de 30 à 23 : les 6 lectures fausses disparaissent, un vrai écart écrit de façon ambiguë part en revue.
 
 **Gel.** À partir de l'ouverture du jeu de test de la v0.4, rien ne change pour la v0.4 : règles `regles-2`, LLM `gemini-3.5-flash-lite` avec le prompt `extraction-v3` et l'avertissement des prospectus à plusieurs obligations, vérification v3 (citation en deux morceaux, montants écrits sans ambiguïté), vérité terrain et critères de l'ADR 0003. La vérification v3 est gardée si elle n'accepte pas plus de valeurs fausses que celle de la v0.3 sur les mêmes sorties. Les exceptions du nouveau test sont vérifiées à la main, comme en v0.3. Le commit exact est consigné dans `docs/v0.4-service/data/ouverture-du-test.json`, avant toute extraction.
+
+## Précisions pour la collecte hebdomadaire
+
+Ajoutées le 11 novembre 2026, après les résultats du test de la v0.4 ; elles ne touchent ni aux extracteurs figés ni à l'évaluation.
+
+- **Obligations suivies.** La population de l'ADR 0001 (obligations classiques à ISIN français des huit émetteurs), recalculée chaque semaine sur la publication complète de FIRDS : une nouvelle émission entre d'elle-même dans le suivi.
+- **Mémoire.** L'instantané publié liste tous les documents déjà examinés, écartés compris (rattachement erroné, produit structuré). La collecte ne traite que les documents d'émission absents de cette liste ; un document illisible n'y entre pas et sera retenté la semaine suivante.
+- **Premier instantané.** Construit à partir des extractions déjà faites, sans aucune requête au modèle : 755 ISIN et 810 documents examinés (registre du 23 octobre 2026 et jeux de test). Le retraiter en CI aurait dépassé le quota gratuit du jour.
+- **Vérité terrain.** Les mêmes modèles dbt que l'évaluation, sur une base DuckDB propre à la semaine. Si un test de l'entrepôt échoue, rien n'est publié.
+- **Garde-fous.** Au-delà de 60 nouveaux documents, la collecte s'arrête sans rien écrire : le flux mesuré est de 2 à 3 par semaine, un tel nombre signale une mémoire perdue. Le modèle est plafonné à 60 requêtes par collecte, sous le plafond du code ; au premier refus pour quota, les documents restants passent par les règles et sont comptés.
+- **Publication.** Une release `instantane-AAAA-MM-JJ-N` porte l'instantané et le bilan de la semaine ; le bilan est aussi commité dans `bilans/` sur la branche `donnees`. L'API indique la date de la dernière collecte : un arrêt du workflow se voit sans attendre.
