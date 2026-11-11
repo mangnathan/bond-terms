@@ -10,16 +10,34 @@
     "rattachements_errones": 0,
     "produits_structures": 0,
     "documents_extraits": 5,
-    "documents_en_repli": 0,
+    "documents_en_repli": 1,
     "arret_quota": false
   },
   "indicateurs": {
     "collecte-2026-11-11": {
       "documents": 5,
-      "part_en_revue": 0.2,
-      "part_valeurs_refusees": 0.0263,
-      "part_documents_avec_exception": 0.6,
-      "documents_en_repli": 0
+      "part_en_revue": 0.4,
+      "part_valeurs_refusees": 0.0541,
+      "part_documents_avec_exception": 0.4,
+      "documents_en_repli": 1
     }
+  },
+  "surveillance": {
+    "fenetre": [
+      "2026-11-11"
+    ],
+    "documents": 5,
+    "jugee": false,
+    "parts": {
+      "part_en_revue": 0.4,
+      "part_valeurs_refusees": 0.0541,
+      "part_documents_avec_exception": 0.4
+    },
+    "seuils": {
+      "part_en_revue": 0.3,
+      "part_valeurs_refusees": 0.1,
+      "part_documents_avec_exception": 0.4
+    },
+    "alertes": []
   }
 }
