@@ -15,6 +15,7 @@ Les évolutions notables du projet sont notées ici, selon le format [Keep a Cha
 - Routes de l'API versionnées sous `/v1`, versions de l'API et des extracteurs dans `/v1/sante`, une ligne de journal par appel sans adresse du client.
 
 ### Corrigé
+- L'API ne démarrait plus sur Render : elle cherchait la dernière release par l'API de GitHub, limitée à 60 appels par heure et par adresse IP sans jeton. Elle télécharge désormais l'instantané de la release `en-service`, que la collecte remplace chaque semaine.
 - Un document lu par les règles faute de LLM (quota, service indisponible) n'était plus jamais relu, et l'API ne le signalait pas : chaque fiche porte désormais son extracteur, et un tel document est relu la semaine suivante.
 - La collecte reprenait l'instantané de départ au lieu du plus récent : les releases sont triées sur leur date de publication, et non sur celle du commit visé.
 
