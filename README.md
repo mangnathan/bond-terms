@@ -162,6 +162,8 @@ uv run --group ocr --group llm --env-file .env python -m bond_terms.collecte --p
 
 Le workflow demande la clé de l'API Gemini comme secret du dépôt (`GEMINI_API_KEY`), sur un projet Google sans facturation liée. Le premier instantané se construit par `bond_terms.instantane`, à partir des extractions déjà faites, et se publie à la main dans une release `instantane-...` ; au-delà de 60 nouveaux documents, la collecte s'arrête sans rien publier.
 
+Chaque collecte se termine par la surveillance (`bond_terms.surveillance`) : part des documents en revue (au plus 30 %), des valeurs refusées (10 %) et des documents avec exception (40 %), jugées sur les dernières collectes jusqu'à 20 documents. Un seuil franchi, un arrêt pour quota ou un échec du workflow ouvrent une issue GitHub avec l'étiquette `alerte`.
+
 ### Bac à sable BigQuery (facultatif)
 
 Le même entrepôt peut tourner sur le [bac à sable BigQuery](https://cloud.google.com/bigquery/docs/sandbox), sans moyen de paiement. Il faut un projet Google Cloud sans facturation liée et un compte de service (rôles « Éditeur de données BigQuery » et « Utilisateur de job BigQuery ») dont la clé est rangée hors du dépôt. Copier `.env.example` en `.env`, le remplir, puis :
