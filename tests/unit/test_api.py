@@ -166,3 +166,48 @@ COLLECTE = {
 def test_health_shows_the_last_collection(tmp_path: Path) -> None:
     with client(tmp_path, snapshot(collectes=[COLLECTE])) as api:
         assert api.get("/v1/sante").json()["derniere_collecte"] == "2026-11-16"
+
+
+def test_the_configured_header_identifies_the_client(tmp_path: Path) -> None:
+    limiter = RateLimiter(max_calls=1, window_s=60, clock=lambda: 0.0)
+    path = tmp_path / "instantane.json"
+    path.write_text(json.dumps(snapshot()), encoding="utf-8")
+    app = create_app(path, limiter, client_header="True-Client-IP")
+    with TestClient(app) as api:
+        assert api.get("/v1/sante", headers={"True-Client-IP": "1.1.1.1"}).status_code == 200
+        assert api.get("/v1/sante", headers={"True-Client-IP": "2.2.2.2"}).status_code == 200
+        assert api.get("/v1/sante", headers={"True-Client-IP": "1.1.1.1"}).status_code == 429
+
+
+def test_a_global_ceiling_holds_whatever_address_clients_claim(tmp_path: Path) -> None:
+    total = RateLimiter(max_calls=2, window_s=60, clock=lambda: 0.0)
+    path = tmp_path / "instantane.json"
+    path.write_text(json.dumps(snapshot()), encoding="utf-8")
+    app = create_app(path, total_limiter=total, client_header="True-Client-IP")
+    with TestClient(app) as api:
+        codes = [
+            api.get("/v1/sante", headers={"True-Client-IP": f"10.0.0.{n}"}).status_code
+            for n in range(3)
+        ]
+    assert codes == [200, 200, 429]
+
+
+def test_deployed_api_downloads_the_latest_snapshot(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    from bond_terms import publication
+
+    target = tmp_path / "telecharge.json"
+    calls: list[str] = []
+
+    def fake_fetch(repository: str, destination: Path) -> Path:
+        calls.append(repository)
+        destination.write_text(json.dumps(snapshot()), encoding="utf-8")
+        return destination
+
+    monkeypatch.setattr(publication, "fetch", fake_fetch)
+    monkeypatch.setenv("BOND_TERMS_DEPOT", "mangnathan/bond-terms")
+    monkeypatch.setenv("BOND_TERMS_INSTANTANE", str(target))
+    with TestClient(create_app()) as api:
+        assert api.get("/v1/sante").status_code == 200
+    assert calls == ["mangnathan/bond-terms"]

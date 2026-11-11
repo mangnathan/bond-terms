@@ -33,6 +33,8 @@ DEFAULT_SNAPSHOT = Path("data/instantane/instantane.json")
 # Appels par client et par minute : large pour un humain ou un script raisonnable.
 MAX_CALLS = 60
 WINDOW_S = 60.0
+# Plafond tous clients confondus : il borne l'usage même si un client fausse son adresse.
+MAX_TOTAL_CALLS = 600
 
 # uvicorn ne configure que ses propres journaux : celui de l'API reçoit sa sortie console.
 log = logging.getLogger("bond_terms.api")
@@ -171,8 +173,19 @@ def load_snapshot(path: Path) -> Instantane:
     return Instantane.model_validate_json(path.read_bytes())
 
 
-def create_app(snapshot_path: Path | None = None, limiter: RateLimiter | None = None) -> FastAPI:
+def create_app(
+    snapshot_path: Path | None = None,
+    limiter: RateLimiter | None = None,
+    total_limiter: RateLimiter | None = None,
+    client_header: str | None = None,
+) -> FastAPI:
     limiter = limiter or RateLimiter(MAX_CALLS, WINDOW_S)
+    total_limiter = total_limiter or RateLimiter(MAX_TOTAL_CALLS, WINDOW_S)
+    # Derrière un proxy, l'adresse vue par l'API est celle du proxy : l'en-tête qui porte la
+    # vraie adresse du client se configure ici (True-Client-IP sur Render). X-Forwarded-For
+    # n'est pas utilisé : le proxy de Render le complète au lieu de le remplacer, un client
+    # pourrait y écrire une fausse adresse.
+    header = client_header or os.environ.get("BOND_TERMS_EN_TETE_CLIENT") or None
     state: dict[str, Instantane] = {}
 
     @asynccontextmanager
@@ -180,7 +193,14 @@ def create_app(snapshot_path: Path | None = None, limiter: RateLimiter | None = 
         # Sans instantané valide, le service refuse de démarrer plutôt que de servir du vide.
         # Une variable vide (ligne laissée vide dans .env) vaut le chemin par défaut.
         path = snapshot_path or Path(os.environ.get("BOND_TERMS_INSTANTANE") or DEFAULT_SNAPSHOT)
+        # Déployée, l'API n'a pas de disque conservé : elle prend le dernier instantané publié.
+        repository = os.environ.get("BOND_TERMS_DEPOT")
+        if repository and snapshot_path is None:
+            from bond_terms.publication import fetch
+
+            fetch(repository, path)
         state["instantane"] = load_snapshot(path)
+        log.info("instantané du %s chargé", state["instantane"].cree_le)
         yield
 
     app = FastAPI(
@@ -196,7 +216,9 @@ def create_app(snapshot_path: Path | None = None, limiter: RateLimiter | None = 
     ) -> Response:
         start = time.perf_counter()
         client = request.client.host if request.client else "inconnu"
-        wait = limiter.retry_after(client)
+        if header and (forwarded := request.headers.get(header, "").strip()):
+            client = forwarded
+        wait = limiter.retry_after(client) or total_limiter.retry_after("tous")
         if wait:
             response: Response = JSONResponse(
                 {"detail": "trop d'appels, réessayer plus tard"},
