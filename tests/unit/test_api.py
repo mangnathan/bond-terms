@@ -74,6 +74,8 @@ def test_a_bond_is_served_with_its_citations(tmp_path: Path) -> None:
     assert body["documents"][0]["champs"]["devise"]["citation"] == "Specified Currency: Euro"
     assert body["documents"][0]["exceptions"][0]["champ"] == "montant"
     assert response.headers["X-Content-Type-Options"] == "nosniff"
+    assert response.headers["X-Frame-Options"] == "DENY"
+    assert response.headers["Strict-Transport-Security"] == "max-age=31536000"
 
 
 def test_invalid_and_unknown_isins_are_told_apart(tmp_path: Path) -> None:
@@ -143,7 +145,13 @@ def test_each_call_is_logged_without_the_client_address(
     ):
         api.get("/v1/obligations/FR0014007NG8")
     line = caplog.records[-1].getMessage()
-    assert line.startswith("GET /v1/obligations/FR0014007NG8 422 ")
+    record = json.loads(line)
+    assert record["evenement"] == "appel"
+    assert (record["methode"], record["route"], record["code"]) == (
+        "GET",
+        "/v1/obligations/FR0014007NG8",
+        422,
+    )
     assert "testclient" not in line
 
 
@@ -166,3 +174,48 @@ COLLECTE = {
 def test_health_shows_the_last_collection(tmp_path: Path) -> None:
     with client(tmp_path, snapshot(collectes=[COLLECTE])) as api:
         assert api.get("/v1/sante").json()["derniere_collecte"] == "2026-11-16"
+
+
+def test_the_configured_header_identifies_the_client(tmp_path: Path) -> None:
+    limiter = RateLimiter(max_calls=1, window_s=60, clock=lambda: 0.0)
+    path = tmp_path / "instantane.json"
+    path.write_text(json.dumps(snapshot()), encoding="utf-8")
+    app = create_app(path, limiter, client_header="True-Client-IP")
+    with TestClient(app) as api:
+        assert api.get("/v1/sante", headers={"True-Client-IP": "1.1.1.1"}).status_code == 200
+        assert api.get("/v1/sante", headers={"True-Client-IP": "2.2.2.2"}).status_code == 200
+        assert api.get("/v1/sante", headers={"True-Client-IP": "1.1.1.1"}).status_code == 429
+
+
+def test_a_global_ceiling_holds_whatever_address_clients_claim(tmp_path: Path) -> None:
+    total = RateLimiter(max_calls=2, window_s=60, clock=lambda: 0.0)
+    path = tmp_path / "instantane.json"
+    path.write_text(json.dumps(snapshot()), encoding="utf-8")
+    app = create_app(path, total_limiter=total, client_header="True-Client-IP")
+    with TestClient(app) as api:
+        codes = [
+            api.get("/v1/sante", headers={"True-Client-IP": f"10.0.0.{n}"}).status_code
+            for n in range(3)
+        ]
+    assert codes == [200, 200, 429]
+
+
+def test_deployed_api_downloads_the_latest_snapshot(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    from bond_terms import publication
+
+    target = tmp_path / "telecharge.json"
+    calls: list[str] = []
+
+    def fake_fetch(repository: str, destination: Path) -> Path:
+        calls.append(repository)
+        destination.write_text(json.dumps(snapshot()), encoding="utf-8")
+        return destination
+
+    monkeypatch.setattr(publication, "fetch", fake_fetch)
+    monkeypatch.setenv("BOND_TERMS_DEPOT", "mangnathan/bond-terms")
+    monkeypatch.setenv("BOND_TERMS_INSTANTANE", str(target))
+    with TestClient(create_app()) as api:
+        assert api.get("/v1/sante").status_code == 200
+    assert calls == ["mangnathan/bond-terms"]

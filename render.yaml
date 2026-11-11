@@ -1,0 +1,30 @@
+# Déploiement de l'API sur Render, offre gratuite (ADR 0004, décision 5).
+# Aucun secret : l'API ne lit que l'instantané publié en release sur le dépôt public, et
+# n'appelle jamais le modèle.
+services:
+  - type: web
+    name: bond-terms
+    runtime: python
+    plan: free
+    # Union européenne, comme les données de l'ESMA.
+    region: frankfurt
+    branch: main
+    # Seuls le paquet et le groupe api : ni OCR, ni LLM, ni entrepôt sur le serveur.
+    buildCommand: uv sync --locked --no-default-groups --group api
+    # Un seul processus : 512 Mo sur l'offre gratuite, et la limite d'appels est tenue en
+    # mémoire. Le journal d'accès d'uvicorn est coupé, car il contient l'adresse du client ;
+    # l'API écrit son propre journal, sans elle. À l'arrêt (déploiement, mise en veille), les
+    # requêtes en cours ont 10 secondes pour finir.
+    startCommand: >-
+      uv run --no-sync uvicorn bond_terms.api:app --host 0.0.0.0 --port $PORT
+      --no-access-log --timeout-graceful-shutdown 10
+    healthCheckPath: /v1/sante
+    envVars:
+      - key: PYTHON_VERSION
+        value: "3.12.7"
+      # Dépôt public dont la dernière release instantane-... est chargée au démarrage.
+      - key: BOND_TERMS_DEPOT
+        value: mangnathan/bond-terms
+      # Adresse réelle du client derrière le proxy de Render (posée par Cloudflare).
+      - key: BOND_TERMS_EN_TETE_CLIENT
+        value: True-Client-IP

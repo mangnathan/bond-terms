@@ -14,6 +14,7 @@ nombre d'appels par client est limité.
 
 from __future__ import annotations
 
+import json
 import logging
 import os
 import re
@@ -33,14 +34,32 @@ DEFAULT_SNAPSHOT = Path("data/instantane/instantane.json")
 # Appels par client et par minute : large pour un humain ou un script raisonnable.
 MAX_CALLS = 60
 WINDOW_S = 60.0
+# Plafond tous clients confondus : il borne l'usage même si un client fausse son adresse.
+MAX_TOTAL_CALLS = 600
+# En-têtes de sécurité de chaque réponse : HTTPS imposé au navigateur pendant un an, pas
+# d'affichage dans un cadre d'un autre site, pas de devinette du type de contenu, aucune adresse
+# d'origine transmise. Pas de Content-Security-Policy stricte : la page /docs charge Swagger UI
+# depuis un CDN.
+SECURITY_HEADERS = {
+    "Strict-Transport-Security": "max-age=31536000",
+    "X-Frame-Options": "DENY",
+    "X-Content-Type-Options": "nosniff",
+    "Referrer-Policy": "no-referrer",
+}
 
-# uvicorn ne configure que ses propres journaux : celui de l'API reçoit sa sortie console.
+# uvicorn ne configure que ses propres journaux : celui de l'API reçoit sa sortie console, une
+# ligne JSON par événement.
 log = logging.getLogger("bond_terms.api")
 if not log.handlers:
     _console = logging.StreamHandler()
-    _console.setFormatter(logging.Formatter("%(levelname)s:     %(message)s"))
+    _console.setFormatter(logging.Formatter("%(message)s"))
     log.addHandler(_console)
     log.setLevel(logging.INFO)
+
+
+def event(name: str, **fields: object) -> None:
+    log.info(json.dumps({"evenement": name, **fields}, ensure_ascii=False))
+
 
 _ISIN = re.compile(r"[A-Z]{2}[A-Z0-9]{9}[0-9]")
 
@@ -171,8 +190,19 @@ def load_snapshot(path: Path) -> Instantane:
     return Instantane.model_validate_json(path.read_bytes())
 
 
-def create_app(snapshot_path: Path | None = None, limiter: RateLimiter | None = None) -> FastAPI:
+def create_app(
+    snapshot_path: Path | None = None,
+    limiter: RateLimiter | None = None,
+    total_limiter: RateLimiter | None = None,
+    client_header: str | None = None,
+) -> FastAPI:
     limiter = limiter or RateLimiter(MAX_CALLS, WINDOW_S)
+    total_limiter = total_limiter or RateLimiter(MAX_TOTAL_CALLS, WINDOW_S)
+    # Derrière un proxy, l'adresse vue par l'API est celle du proxy : l'en-tête qui porte la
+    # vraie adresse du client se configure ici (True-Client-IP sur Render). X-Forwarded-For
+    # n'est pas utilisé : le proxy de Render le complète au lieu de le remplacer, un client
+    # pourrait y écrire une fausse adresse.
+    header = client_header or os.environ.get("BOND_TERMS_EN_TETE_CLIENT") or None
     state: dict[str, Instantane] = {}
 
     @asynccontextmanager
@@ -180,7 +210,14 @@ def create_app(snapshot_path: Path | None = None, limiter: RateLimiter | None = 
         # Sans instantané valide, le service refuse de démarrer plutôt que de servir du vide.
         # Une variable vide (ligne laissée vide dans .env) vaut le chemin par défaut.
         path = snapshot_path or Path(os.environ.get("BOND_TERMS_INSTANTANE") or DEFAULT_SNAPSHOT)
+        # Déployée, l'API n'a pas de disque conservé : elle prend le dernier instantané publié.
+        repository = os.environ.get("BOND_TERMS_DEPOT")
+        if repository and snapshot_path is None:
+            from bond_terms.publication import fetch
+
+            fetch(repository, path)
         state["instantane"] = load_snapshot(path)
+        event("demarrage", instantane=state["instantane"].cree_le)
         yield
 
     app = FastAPI(
@@ -196,7 +233,9 @@ def create_app(snapshot_path: Path | None = None, limiter: RateLimiter | None = 
     ) -> Response:
         start = time.perf_counter()
         client = request.client.host if request.client else "inconnu"
-        wait = limiter.retry_after(client)
+        if header and (forwarded := request.headers.get(header, "").strip()):
+            client = forwarded
+        wait = limiter.retry_after(client) or total_limiter.retry_after("tous")
         if wait:
             response: Response = JSONResponse(
                 {"detail": "trop d'appels, réessayer plus tard"},
@@ -205,15 +244,15 @@ def create_app(snapshot_path: Path | None = None, limiter: RateLimiter | None = 
             )
         else:
             response = await call_next(request)
-        response.headers["X-Content-Type-Options"] = "nosniff"
-        # Journal d'une ligne par appel, pour la surveillance. L'adresse du client n'y figure
-        # pas : c'est une donnée personnelle, inutile pour suivre le service.
-        log.info(
-            "%s %s %d %.1f ms",
-            request.method,
-            request.url.path,
-            response.status_code,
-            (time.perf_counter() - start) * 1000,
+        response.headers.update(SECURITY_HEADERS)
+        # Une ligne JSON par appel, lisible par un outil de journaux. L'adresse du client n'y
+        # figure pas : c'est une donnée personnelle, inutile pour suivre le service.
+        event(
+            "appel",
+            methode=request.method,
+            route=request.url.path,
+            code=response.status_code,
+            duree_ms=round((time.perf_counter() - start) * 1000, 1),
         )
         return response
 

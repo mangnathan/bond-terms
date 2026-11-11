@@ -152,6 +152,10 @@ uv run uvicorn bond_terms.api:app --no-access-log
 
 L'API ne fait que lire un instantané chargé au démarrage (`BOND_TERMS_INSTANTANE`, par défaut `data/instantane/instantane.json`) : elle n'appelle jamais le modèle. Un ISIN mal formé ou dont la clé de contrôle est fausse est refusé (422) avant toute recherche ; au-delà de 60 appels par minute, un client reçoit une réponse 429. Les routes sont versionnées : un changement incompatible ouvrira `/v2` sans casser les clients de `/v1`. L'API écrit une ligne de journal par appel (méthode, route, code, durée) sans l'adresse du client ; le journal d'accès d'uvicorn, qui la contient, est coupé par `--no-access-log`.
 
+### Déploiement (v0.4)
+
+L'API est décrite pour Render dans [render.yaml](render.yaml), en offre gratuite : seul le groupe `api` est installé, et l'API télécharge au démarrage le dernier instantané publié en release (`BOND_TERMS_DEPOT`). Aucun secret n'est nécessaire. Sans trafic depuis un quart d'heure, le service s'endort : le premier appel prend alors environ une minute. La limite de 60 appels par minute et par client s'appuie sur l'en-tête `True-Client-IP` ; un plafond de 600 appels par minute, tous clients confondus, s'y ajoute.
+
 ### Collecte hebdomadaire (v0.4)
 
 Chaque lundi, le workflow [Collecte hebdomadaire](.github/workflows/collecte.yml) reprend le dernier instantané publié en release, ne traite que les documents d'émission parus depuis, et publie le nouvel instantané avec le bilan de la semaine ; le bilan est aussi commité sur la branche `donnees`. La même collecte se lance sur le poste :
