@@ -11,9 +11,10 @@ on:
   # Lancement à la main, pour le premier essai et après une panne.
   workflow_dispatch:
 
-# Écriture limitée au contenu : créer la release et pousser la branche `donnees`.
+# Écriture limitée au contenu (release, branche `donnees`) et aux issues (alertes).
 permissions:
   contents: write
+  issues: write
 
 # Jamais deux collectes en même temps ; la seconde attend la fin de la première.
 concurrency:
@@ -93,3 +94,26 @@ jobs:
             git commit -m "Bilan de la collecte du $day"
             git push origin donnees
           fi
+
+      - name: Ouvrir une issue si un seuil est franchi
+        run: |
+          uv run --no-sync python -m bond_terms.surveillance \
+            --instantane data/instantane/instantane.json --alertes data/instantane/alertes.md
+          if [ -s data/instantane/alertes.md ]; then
+            gh label create alerte --color B60205 \
+              --description "Seuil de surveillance franchi par la collecte" --force
+            gh issue create --title "Alerte de la collecte du $(date -u +%F)" \
+              --body-file data/instantane/alertes.md --label alerte
+          fi
+
+      # Une collecte qui échoue ne produit aucun bilan : sans cette issue, la panne passerait
+      # inaperçue jusqu'à ce qu'on regarde l'onglet Actions.
+      - name: Ouvrir une issue si la collecte échoue
+        if: failure()
+        run: |
+          # Le dépôt est nommé : l'échec a pu survenir avant même sa récupération.
+          gh label create alerte --repo "$GITHUB_REPOSITORY" --color B60205 \
+            --description "Seuil de surveillance franchi par la collecte" --force
+          gh issue create --repo "$GITHUB_REPOSITORY" \
+            --title "Échec de la collecte du $(date -u +%F)" --label alerte \
+            --body "La collecte hebdomadaire a échoué : rien n'a été publié cette semaine. Journal : $GITHUB_SERVER_URL/$GITHUB_REPOSITORY/actions/runs/$GITHUB_RUN_ID"
