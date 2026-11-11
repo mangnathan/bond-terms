@@ -26,7 +26,7 @@ from pathlib import Path
 from typing import Literal
 
 from fastapi import APIRouter, FastAPI, HTTPException, Request, Response
-from fastapi.responses import JSONResponse
+from fastapi.responses import JSONResponse, RedirectResponse
 from pydantic import BaseModel, ConfigDict
 
 API_VERSION = "0.4"
@@ -290,6 +290,13 @@ def create_app(
         return state["instantane"].indicateurs
 
     app.include_router(v1)
+
+    # La racine mène à la documentation interactive : un visiteur qui ouvre l'adresse du
+    # service voit ce que l'API sait faire, plutôt qu'une erreur 404.
+    @app.get("/", include_in_schema=False)
+    def racine() -> RedirectResponse:
+        return RedirectResponse("/docs")
+
     return app
 
 
