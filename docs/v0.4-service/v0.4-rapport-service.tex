@@ -1,0 +1,186 @@
+\documentclass[11pt,a4paper]{article}
+
+\newcommand{\rapporttitre}{Rapport de mise en service}
+\newcommand{\rapportversion}{v0.4}
+\input{../latex/preambule}
+\usepackage{needspace}
+\usepackage{amsmath}
+\usepackage{etoolbox}
+% Un titre de section ne reste jamais seul en bas de page.
+\pretocmd{\section}{\needspace{10\baselineskip}}{}{}
+
+\begin{document}
+
+\pagedegarde{Extraction des conditions des obligations à partir des documents de l'ESMA}{11 novembre 2026}{Version 0.4, corrections, nouveau test et service à coût nul}
+
+\setcounter{tocdepth}{1}
+\tableofcontents
+\newpage
+
+\section*{Synthèse}
+\addcontentsline{toc}{section}{Synthèse}
+
+Jusqu'à la version 0.3, bond-terms était un outil de mesure lancé à la main. La version 0.4 corrige les lectures fausses relevées en v0.3, les mesure sur un troisième jeu de test jamais vu, puis met le projet en service : une collecte hebdomadaire planifiée, une surveillance de la qualité avec alertes, et une API publique en lecture seule. Le tout fonctionne sans aucune dépense.
+
+\begin{itemize}
+  \item \textbf{Le LLM reste nettement devant les règles.} Sur 116 documents d'émetteurs jamais vus, il est juste sur 91,1~\% des paires document--champ [88,3 ; 93,5], contre 67,1~\% pour l'extracteur à règles, soit 24 points d'écart [18,7 ; 29,3]. Seule la valeur nominale passe son seuil avec une marge suffisante.
+  \item \textbf{Le rapport d'exceptions recule.} Vérifiés à la main, 63,0~\% des écarts signalés sont réels, pour 80~\% exigés (78,1~\% en v0.3). Trois lectures fausses sur dix viennent d'un défaut de conversion du projet, et non du modèle.
+  \item \textbf{Le service tourne.} Chaque lundi, GitHub Actions collecte les nouveaux documents des 840 obligations suivies, les lit, les compare à FIRDS et publie un instantané ; l'API le sert sur \url{https://bond-terms.onrender.com}. Trois collectes réelles ont réussi.
+  \item \textbf{La mise en service a révélé quatre défauts}, tous corrigés et documentés : un instantané repris dans le mauvais ordre, des fiches lues par les règles sans le dire, une limite d'appels de GitHub atteinte au démarrage de l'API, et un redéploiement automatique qui ne se déclenchait pas.
+\end{itemize}
+
+\section{Ce que la version devait livrer}
+
+\begin{table}[H]
+\small
+\begin{tabularx}{\linewidth}{lYl}
+\toprule
+\textbf{Issue} & \textbf{Livrable} & \textbf{Pull request} \\
+\midrule
+\#48 & ADR 0004 : service à coût nul et corrections de la v0.3 & \#55 \\
+\#49 & Corrections de lecture, nouveau jeu de test, ouverture et exceptions vérifiées & \#56, \#57 \\
+\#50 & API en lecture seule & \#58, \#59 \\
+\#51 & Collecte hebdomadaire planifiée & \#60 \\
+\#52 & Surveillance de la qualité et alertes & \#61 \\
+\#53 & Déploiement gratuit & \#62, \#63, \#64 \\
+\#54 & Clôture : rapport, CHANGELOG, README, tag & -- \\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+Le niveau B du cadrage (clauses littérales) a été retiré de cette version : il passe à la v1.0 ou sera abandonné. La v0.4 a privilégié un service qui marche sur le niveau A plutôt qu'un niveau de plus mesuré à la main.
+
+\section{Les corrections, réglées sur les jeux connus}
+
+Chaque lecture fausse de la v0.3 a reçu sa correction. Les quatre jeux déjà ouverts (681 couples document--ISIN, le test de la v0.3 compris) ont servi au réglage ; le nouveau test n'a été ni extrait ni lu avant son ouverture.
+
+\begin{itemize}
+  \item \textbf{Prospectus à plusieurs obligations.} Si le début du document annonce des obligations d'échéances différentes, le message envoyé au modèle le signale et montre le passage où figure l'ISIN demandé. Cinq documents connus sont concernés, dont les deux à l'origine de cinq des sept lectures fausses de la v0.3.
+  \item \textbf{Montants.} Un montant n'est accepté que si sa citation l'écrit sans ambiguïté. Une fourchette est refusée ; « 750~000,000 » vaut 750 millions chez un émetteur et « 1~000~000,000 » un million chez un autre : ces écritures partent en revue plutôt que d'être devinées.
+  \item \textbf{Taux CMS}, comparé comme un taux de swap.
+  \item \textbf{Produits structurés rédigés en anglais} (autocallable, equity linked, digital rate linked), ajoutés au contrôle du libellé introduit en v0.3.
+\end{itemize}
+
+Sur les jeux connus, l'exactitude du LLM passe de 96,1~\% à 96,3~\%. Sur le test de la v0.3, étiqueté à la main, les exceptions passent de 30 à 23 et les six lectures fausses disparaissent. Ces chiffres sont des données de réglage : seul le nouveau test compte.
+
+\section{Le nouveau test}
+
+Un jeu de 150 documents (141 conditions définitives, 9 prospectus d'émission isolée) a été tiré au hasard parmi les obligations d'émetteurs jamais tirées, avec une graine fixée, puis versionné avant tout téléchargement. Deux documents ne citaient pas leur ISIN et 32 étaient des produits structurés : 116 couples sont entrés dans la vérité terrain.
+
+Les extracteurs, la vérification et les critères ont été figés dans l'ADR 0004 avant l'ouverture, le 10 novembre 2026 à 16~h~07 UTC, depuis le commit \texttt{41af634} consigné dans un registre écrit avant toute extraction. Gemini a refusé cinq documents (service surchargé, pas le quota) : la commande n'écrit aucun résultat tant qu'un document manque, et une reprise n'a renvoyé que ces cinq-là.
+
+\begin{table}[H]
+\small
+\begin{tabularx}{\linewidth}{Yrrrl}
+\toprule
+\textbf{Champ} & \textbf{Seuil} & \textbf{Règles} & \textbf{LLM [IC 95~\%]} & \textbf{Verdict du LLM} \\
+\midrule
+Devise & 98~\% & 84,5~\% & 98,3~\% [95,7 ; 100] & atteint, marge insuffisante \\
+Échéance & 98~\% & 86,2~\% & 94,8~\% [90,5 ; 98,3] & non atteint \\
+Type de taux & 98~\% & 72,4~\% & 94,0~\% [89,7 ; 98,3] & non atteint \\
+Taux fixe & 98~\% & 71,1~\% & 91,8~\% [85,9 ; 96,9] & non atteint \\
+Valeur nominale & 95~\% & 75,0~\% & 98,3~\% [95,7 ; 100] & atteint \\
+Rang & 95~\% & 47,2~\% & 88,8~\% [82,2 ; 94,9] & non atteint \\
+Taux variables (19 titres) & 95~\% & 26 à 32~\% & 53 à 79~\% & non atteints, très incertains \\
+Montant (indicatif) & -- & 41,6~\% & 79,8~\% [70,9 ; 87,9] & mesuré sans seuil \\
+\midrule
+Exactitude globale & -- & 67,1~\% & 91,1~\% [88,3 ; 93,5] & \\
+\bottomrule
+\end{tabularx}
+\caption{Nouveau test, 116 documents d'émetteurs jamais vus (\texttt{evaluation-test-v04.json}).}
+\end{table}
+
+\begin{itemize}
+  \item \textbf{Écart.} Le LLM devance les règles de 24 points [18,7 ; 29,3], bien au-delà des 2 points exigés : il reste l'extracteur retenu.
+  \item \textbf{Vérification v3.} Elle accepte 28 valeurs fausses, autant que celle de la v0.3 sur les mêmes sorties, et refuse une seule valeur juste de plus : elle est gardée, sans gain mesuré sur ce jeu.
+  \item \textbf{File de revue.} 20 documents sur 116 (17,2~\%), sous le plafond de 30~\% ; 19 des 30 documents erronés sont attrapés (63~\%, contre 72~\% en v0.3).
+  \item \textbf{Coût.} 116 documents lus par le modèle, 2,4 secondes par document en médiane, 0~€.
+\end{itemize}
+
+\section{Le rapport d'exceptions, vérifié à la main}
+
+Le rapport a signalé 28 exceptions dans 25 documents. Nathan Mang les a vérifiées une à une sur la page d'origine du PDF : l'extrait de texte placé à côté de chaque exception était parfois mal retranscrit, et un recueil des 28 pages citées a été construit pour cela. Un cas est resté sans verdict : FIRDS y donne le code de l'indice €STR au lieu de son nom, ce que la table de correspondance ne connaît pas.
+
+\begin{table}[H]
+\small
+\begin{tabularx}{\linewidth}{Yr}
+\toprule
+\textbf{Exceptions vérifiées} & \textbf{Nombre} \\
+\midrule
+Vrais écarts (le document dit autre chose que FIRDS) & 17 \\
+Lectures fausses & 10 \\
+\quad dont conversion du projet (« 2,000~\% » lu 2\,000) & 3 \\
+\quad dont obligation voisine dans un prospectus à plusieurs titres & 3 \\
+\quad dont tranche lue au lieu de la série lors d'un abondement & 2 \\
+\quad dont échéance prolongée, année mal recopiée & 2 \\
+\midrule
+Part de vrais écarts & 17 sur 27, soit 63,0~\% (seuil : 80~\%) \\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+\textbf{Le seuil n'est pas atteint, et recule par rapport à la v0.3.} Les vrais écarts sont toujours surtout des montants : le document annonce le montant émis ou estimé, FIRDS l'encours réellement placé. Les lectures fausses ont des causes précises. La plus nette est à la charge du projet : le modèle écrit parfois un taux à la française (« 2,000 »), et la conversion retirait la virgule comme un séparateur de milliers. Sans ces trois cas, la part serait de 70,8~\%, toujours sous le seuil. L'avertissement « plusieurs obligations » n'a pas suffi pour un prospectus Capgemini qui en décrit quatre.
+
+\aretenir{La vérification contrôlait déjà qu'un montant figure dans sa citation, mais pas un taux ni une date. Une vérification doit porter sur la valeur convertie, pas seulement sur la présence de la citation : c'est la première correction de la suite.}
+
+\section{Le service}
+
+L'ADR 0004 a fixé le principe : tout le travail coûteux se fait hors ligne, une fois par semaine, et l'API ne fait que servir des résultats déjà vérifiés. Elle n'appelle jamais le modèle : aucun appel extérieur ne peut consommer le quota gratuit.
+
+\begin{table}[H]
+\small
+\begin{tabularx}{\linewidth}{lY}
+\toprule
+\textbf{Brique} & \textbf{Fonctionnement} \\
+\midrule
+Collecte & Chaque lundi, GitHub Actions télécharge la publication de FIRDS de la semaine, recalcule la population (840 obligations au 11 novembre), interroge le registre et ne traite que les documents jamais examinés : lecture, OCR, contrôles, vérité terrain par les modèles dbt de l'entrepôt, extraction par le LLM. \\
+Instantané & Un fichier JSON d'environ 1~Mo : pour chaque ISIN, les valeurs, citations, pages, extracteur, revue et exceptions, ainsi que la liste des documents déjà examinés, qui sert de mémoire d'une semaine à l'autre. Publié en release GitHub. \\
+Surveillance & Part en revue, valeurs refusées et documents avec exception, jugées sur les dernières collectes jusqu'à 20 documents. Un seuil franchi, un arrêt pour quota ou un échec du workflow ouvrent une issue GitHub. \\
+API & FastAPI sur Render, offre gratuite, à Francfort. ISIN vérifié avec sa clé de contrôle, 60 appels par minute et par client, plafond de 600 appels par minute au total, en-têtes de sécurité, journal JSON sans adresse du client. \\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+\textbf{Mesures.} La première collecte a trouvé 5 nouveaux documents depuis le 23 octobre, tous lus, en 18 minutes. Sur le poste, avec l'instantané réel, l'API occupe 86~Mo sur les 512 de l'offre gratuite, et répond en 14~ms en médiane (28~ms au 95\textsuperscript{e} centile) à 500 appels de cinq clients en parallèle. Sur le service en ligne, une fausse adresse de client ne contourne pas la limite d'appels : Cloudflare remplace l'en-tête par la vraie.
+
+\textbf{Fenêtre glissante.} La première collecte comptait 5 documents, dont 3 avec exception, soit 60~\%, contre 21,5~\% sur les 116 documents du test. À deux ou trois documents par semaine, une part hebdomadaire varie trop pour être jugée : les seuils ne s'appliquent qu'à partir de 20 documents.
+
+\section{Ce que la mise en service a révélé}
+
+Les tests unitaires passaient ; les défauts suivants ne sont apparus qu'en faisant tourner le service pour de vrai.
+
+\begin{table}[H]
+\small
+\begin{tabularx}{\linewidth}{YY}
+\toprule
+\textbf{Défaut} & \textbf{Cause et correction} \\
+\midrule
+La deuxième collecte a repris l'instantané de départ et relu les 5 mêmes documents. & La date \texttt{created\_at} d'une release est celle du commit visé, identique pour deux releases posées sur le même commit. Tri sur la date de publication. \\
+Une fiche lue par les règles, Gemini étant indisponible, était servie sans le dire, avec une marge de 8\,200 points de base au lieu de 82, et n'aurait jamais été relue. & Chaque fiche porte son extracteur ; un document que le LLM n'a pas lu est relu la semaine suivante. Les 4 autres documents concernés ont été relus ; le cinquième est retombé sur les règles et reste à relire. \\
+Le deuxième déploiement a échoué au démarrage : HTTP 403, limite atteinte. & L'API cherchait la dernière release par l'API de GitHub, limitée sans jeton à 60 appels par heure et par adresse IP, que les serveurs de Render partagent. L'API télécharge désormais l'instantané d'une release fixe, sur github.com, sans passer par cette API. \\
+Render n'a pas redéployé après une fusion. & Déclencheur écrit dans \texttt{render.yaml} : chaque commit sur \texttt{main} est déployé une fois la CI passée. \\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+\aretenir{Un cinquième défaut a été évité avant le déploiement. La configuration prévue lisait l'adresse du client dans l'en-tête \texttt{X-Forwarded-For}, que le proxy de Render complète au lieu de le remplacer : un client aurait pu y écrire une fausse adresse et contourner la limite d'appels. Le point, signalé sur le forum de Render, a été contourné avant la mise en ligne, puis vérifié sur le service réel.}
+
+\section{Revue de sprint et rétrospective}
+
+\textbf{Ce qui a bien marché.} Le protocole de test a tenu une troisième fois : jeu figé avant téléchargement, décisions écrites avant l'ouverture, reprise sans résultat partiel. Le service réutilise le code évalué au lieu d'une copie, si bien que la vérité terrain n'a qu'une définition. Chaque défaut de mise en service a été trouvé en vérifiant le service réel, et non signalé par un utilisateur.
+
+\textbf{Ce qui a moins bien marché.}
+\begin{itemize}
+  \item Le rapport d'exceptions recule, en partie à cause d'un défaut de conversion du projet qu'un contrôle des taux dans leur citation aurait attrapé.
+  \item Gemini a refusé des documents à chaque grande série d'appels (5 à l'ouverture du test, 1 à chaque collecte suivante) ; la raison exacte du refus n'est pas encore gardée dans le bilan.
+  \item Deux défauts de mise en service (ordre des releases, limite de GitHub) viennent d'hypothèses sur une plateforme, non vérifiées avant d'en dépendre.
+  \item Les mêmes pièges d'outillage sont revenus : un hook de pré-commit qui vérifie aussi les fichiers non suivis, des barres obliques inverses passées par un heredoc.
+\end{itemize}
+
+\section{Suite du projet}
+
+La v1.0 visera la qualité des lectures et la solidité du service. Contrôler qu'un taux et une date figurent dans leur citation, comme un montant ; corriger la conversion des taux à la française ; distinguer la tranche de la série lors d'un abondement ; garder la raison de chaque repli sur les règles ; reconnaître le code de l'indice €STR. Le niveau B (clauses littérales) sera tranché à cette occasion. Chaque correction sera de nouveau mesurée sur un jeu jamais vu.
+
+Les décisions de cette version sont consignées dans l'ADR 0004, dans le dossier \texttt{docs/adr} du dépôt.
+
+\end{document}
