@@ -9,9 +9,13 @@ Les évolutions notables du projet sont notées ici, selon le format [Keep a Cha
 - Instantané des conditions extraites (`bond_terms.instantane`) : pour chaque ISIN, valeurs, citations, statut de revue et exceptions, et indicateurs de surveillance par jeu.
 - API en lecture seule (`bond_terms.api`, FastAPI) : ISIN vérifié avec sa clé de contrôle, nombre d'appels limité, instantané validé au démarrage.
 - Collecte hebdomadaire (`bond_terms.collecte`, workflow planifié) : nouveaux documents du registre lus, extraits et comparés à FIRDS par les modèles dbt de l'entrepôt, instantané publié en release, bilan sur la branche `donnees`.
+- Déploiement de l'API sur Render (`render.yaml`) : instantané téléchargé au démarrage depuis la dernière release (`bond_terms.publication`), adresse du client lue dans `True-Client-IP` et plafond global de 600 appels par minute.
 - Surveillance et alertes (`bond_terms.surveillance`) : seuils de l'ADR 0004 jugés sur une fenêtre glissante d'au moins 20 documents, issue GitHub ouverte si un seuil est franchi, en cas d'arrêt pour quota ou d'échec du workflow.
 - L'instantané garde la mémoire de la collecte (documents déjà examinés, bilans) ; `/v1/sante` donne la date de la dernière collecte.
 - Routes de l'API versionnées sous `/v1`, versions de l'API et des extracteurs dans `/v1/sante`, une ligne de journal par appel sans adresse du client.
+
+### Corrigé
+- La collecte reprenait l'instantané de départ au lieu du plus récent : les releases sont triées sur leur date de publication, et non sur celle du commit visé.
 
 ## [v0.3] - 2026-11-10
 
