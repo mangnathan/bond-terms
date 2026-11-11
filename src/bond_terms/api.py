@@ -93,13 +93,33 @@ class Indicateurs(_Strict):
     documents_en_repli: int
 
 
+class Collecte(_Strict):
+    """Bilan d'une collecte hebdomadaire (`bond_terms.collecte`)."""
+
+    date: str
+    firds: str
+    obligations_suivies: int
+    documents_registre: int
+    nouveaux_documents: int
+    documents_lus: int
+    erreurs_lecture: int
+    rattachements_errones: int
+    produits_structures: int
+    documents_extraits: int
+    documents_en_repli: int
+    arret_quota: bool
+
+
 class Instantane(_Strict):
-    format: Literal[1]
+    format: Literal[2]
     cree_le: str
     commit: str
     extracteurs: dict[str, str]
     obligations: dict[str, list[Document]]
     indicateurs: dict[str, Indicateurs]
+    # Mémoire de la collecte : documents déjà examinés, écartés compris, et bilans.
+    documents_vus: list[str]
+    collectes: list[Collecte]
 
 
 class Obligation(_Strict):
@@ -115,6 +135,8 @@ class Sante(_Strict):
     commit: str
     extracteurs: dict[str, str]
     obligations: int
+    # Une collecte arrêtée (workflow désactivé, panne) se voit ici : la date ne bouge plus.
+    derniere_collecte: str | None
 
 
 class RateLimiter:
@@ -207,6 +229,7 @@ def create_app(snapshot_path: Path | None = None, limiter: RateLimiter | None = 
             commit=snapshot.commit,
             extracteurs=snapshot.extracteurs,
             obligations=len(snapshot.obligations),
+            derniere_collecte=snapshot.collectes[-1].date if snapshot.collectes else None,
         )
 
     @v1.get("/obligations/{isin}")

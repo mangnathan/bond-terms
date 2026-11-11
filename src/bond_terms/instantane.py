@@ -8,6 +8,10 @@ construit ici. Pour chaque ISIN, il donne les documents lus par le LLM, chaque v
 citation, sa page et son statut, le statut de revue du document et ses exceptions avec FIRDS ;
 il donne aussi les indicateurs de surveillance par jeu. Il ne contient ni PDF ni texte de
 document, seulement des citations courtes.
+
+L'instantané sert aussi de mémoire à la collecte hebdomadaire (`bond_terms.collecte`) : la liste
+des documents déjà vus, écartés compris, et l'historique des collectes. Le premier instantané est
+construit ici à partir des extractions déjà faites, sans aucune requête au modèle.
 """
 
 from __future__ import annotations
@@ -16,10 +20,12 @@ import argparse
 import datetime as dt
 import json
 from collections import defaultdict
+from collections.abc import Iterable
 from pathlib import Path
 from typing import Any
 
 import duckdb
+import pyarrow.parquet as pq
 
 from bond_terms import llm, regles
 from bond_terms.evaluation import load_extractions
@@ -30,7 +36,7 @@ from bond_terms.revue import queue
 
 MODEL = "gemini-3.5-flash-lite"
 SETS = (*KNOWN_SETS, "test_v04")
-FORMAT = 1
+FORMAT = 2
 
 
 def status(value: Value | None) -> str:
@@ -102,9 +108,12 @@ def build(
     sets: dict[str, tuple[list[dict[str, Any]], dict[str, Extraction], dict[str, Extraction]]],
     created: dt.datetime,
     commit: str,
+    seen: Iterable[str] = (),
 ) -> dict[str, Any]:
     """`sets` : pour chaque jeu, la vérité terrain (couples document-ISIN), les sorties du LLM
-    et celles des règles."""
+    et celles des règles. `seen` : documents déjà examinés sans entrer dans un jeu (rattachement
+    erroné, produit structuré), à ne pas reprendre."""
+    examined = set(seen) | {c["document_id"] for truth, _, _ in sets.values() for c in truth}
     bonds: dict[str, list[dict[str, Any]]] = defaultdict(list)
     indicators = {}
     for name, (truth, model, rules) in sets.items():
@@ -129,7 +138,40 @@ def build(
         "extracteurs": {"llm": f"{MODEL}/{llm.PROMPT_VERSION}", "regles": regles.VERSION},
         "obligations": dict(sorted(bonds.items())),
         "indicateurs": indicators,
+        "documents_vus": sorted(examined),
+        "collectes": [],
     }
+
+
+def merge(
+    previous: dict[str, Any], weekly: dict[str, Any], collection: dict[str, Any]
+) -> dict[str, Any]:
+    """Instantané de la semaine : le précédent, plus les documents nouvellement lus. Un document
+    déjà présent pour un ISIN n'est jamais ajouté deux fois."""
+    bonds = {isin: list(documents) for isin, documents in previous["obligations"].items()}
+    for isin, documents in weekly["obligations"].items():
+        known = {d["document_id"] for d in bonds.get(isin, [])}
+        bonds[isin] = bonds.get(isin, []) + [d for d in documents if d["document_id"] not in known]
+    return {
+        **weekly,
+        "obligations": dict(sorted(bonds.items())),
+        "indicateurs": previous["indicateurs"] | weekly["indicateurs"],
+        "documents_vus": sorted(set(previous["documents_vus"]) | set(weekly["documents_vus"])),
+        "collectes": [*previous["collectes"], collection],
+    }
+
+
+def read(path: Path) -> dict[str, Any]:
+    snapshot: dict[str, Any] = json.loads(path.read_text(encoding="utf-8"))
+    if snapshot.get("format") != FORMAT:
+        raise SystemExit(f"{path} : format {snapshot.get('format')}, {FORMAT} attendu")
+    return snapshot
+
+
+def write(snapshot: dict[str, Any], path: Path) -> None:
+    path.parent.mkdir(parents=True, exist_ok=True)
+    text = json.dumps(snapshot, ensure_ascii=False, separators=(",", ":"))
+    path.write_bytes((text + "\n").encode("utf-8"))
 
 
 def main() -> None:  # pragma: no cover - lit les vraies données
@@ -138,6 +180,11 @@ def main() -> None:  # pragma: no cover - lit les vraies données
     parser.add_argument("--extractions", type=Path, default=RUN_DIR)
     parser.add_argument("--commit", default="", help="commit des extracteurs, consigné tel quel")
     parser.add_argument("--sortie", type=Path, default=Path("data/instantane/instantane.json"))
+    # Registre de la collecte de la v0.1 : tous ses documents ont déjà été examinés, même ceux
+    # écartés avant l'extraction.
+    parser.add_argument(
+        "--registre", type=Path, default=Path("data/interim/registre/documents-2026-10-23.parquet")
+    )
     args = parser.parse_args()
 
     prefix = f"llm-{MODEL}-{llm.PROMPT_VERSION}"
@@ -148,13 +195,11 @@ def main() -> None:  # pragma: no cover - lit les vraies données
             model = load_extractions(args.extractions / f"{prefix}-{name}.jsonl")
             rules = load_extractions(args.extractions / f"{regles.VERSION}-{name}.jsonl")
             sets[name] = (truth, model, rules)
-    snapshot = build(sets, dt.datetime.now(dt.UTC), args.commit)
-    args.sortie.parent.mkdir(parents=True, exist_ok=True)
-    args.sortie.write_bytes(
-        (json.dumps(snapshot, ensure_ascii=False, separators=(",", ":")) + "\n").encode("utf-8")
-    )
+    seen = pq.read_table(args.registre, columns=["document_id"]).column("document_id").to_pylist()
+    snapshot = build(sets, dt.datetime.now(dt.UTC), args.commit, seen)
+    write(snapshot, args.sortie)
     print(
-        f"{len(snapshot['obligations'])} ISIN ; "
+        f"{len(snapshot['obligations'])} ISIN, {len(snapshot['documents_vus'])} documents vus ; "
         + json.dumps(snapshot["indicateurs"], ensure_ascii=False)
     )
 
