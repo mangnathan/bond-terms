@@ -146,9 +146,11 @@ def measure(
 
 
 def main() -> None:  # pragma: no cover - lit les vrais documents
+    import duckdb
     import pyarrow.parquet as pq
 
     from bond_terms.evaluation import load_extractions
+    from bond_terms.lancement import TRUTH_SQL
     from bond_terms.ocr import pages_by_document
 
     parser = argparse.ArgumentParser(description=__doc__.splitlines()[0])
@@ -157,6 +159,7 @@ def main() -> None:  # pragma: no cover - lit les vrais documents
     parser.add_argument("--pages", type=Path, required=True)
     parser.add_argument("--ocr-pages", type=Path, required=True)
     parser.add_argument("--pdf-dir", type=Path, default=Path("data/raw/pdf"))
+    parser.add_argument("--database", type=Path, default=Path("data/entrepot/bond_terms.duckdb"))
     parser.add_argument("--fiche", type=Path, default=Path("data/interim/niveau-b/fiche.csv"))
     parser.add_argument("--extractions", type=Path, help="sorties du LLM (JSONL), pour la mesure")
     parser.add_argument("--resume", type=Path, help="résumé versionné de la mesure")
@@ -166,7 +169,14 @@ def main() -> None:  # pragma: no cover - lit les vrais documents
     if args.etape == "fiche":
         if args.fiche.exists():
             raise SystemExit(f"{args.fiche} existe : la fiche n'est tirée qu'une fois")
-        found = {d: rubric(p) for d, p in pages.items()}
+        # Seuls les documents qui comptent dans le test : rattachement juste, pas de produit
+        # structuré.
+        with duckdb.connect(str(args.database), read_only=True) as connection:
+            kept = {
+                row["document_id"]
+                for row in connection.sql(TRUTH_SQL, params=[args.jeu]).to_arrow_table().to_pylist()
+            }
+        found = {d: rubric(p) for d, p in pages.items() if d in kept}
         chosen = draw(found)
         write_sheet(chosen, found, args.pdf_dir, args.fiche)
         counts = Counter(found[d][0] for d in chosen)
