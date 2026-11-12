@@ -36,18 +36,20 @@ def test_opening_record_names_the_frozen_extractors() -> None:
     record = opening_record("abc123", dt.datetime(2026, 10, 27, 12, tzinfo=dt.UTC))
     assert record["commit"] == "abc123"
     assert record["llm"] == f"gemini-3.5-flash-lite/{PROMPT_VERSION}"
-    assert record["jeux"] == ["test_v04"]
+    assert record["jeux"] == ["test_v10"]
+    assert record["verification"].startswith("v4")
 
 
 def test_previous_verification_replay_does_not_touch_the_original() -> None:
     from bond_terms.extraction import Value, verify
     from bond_terms.ouverture import with_previous_verification
 
-    pages = {"1": ["Emission de EUR 1 000 000,000 d'Obligations"]}
-    value = Value("1000000000", "Emission de EUR 1 000 000,000 d'Obligations")
-    original = {"1": Extraction("1", "llm", "v", {"montant": value})}
+    # « 2,000 % » lu 2 000 : refusé par la vérification v4, accepté par celle de la v0.4.
+    pages = {"1": ["10. Base d'Intérêt : Taux Fixe de 2,000 % l'an"]}
+    value = Value("2000", "Taux Fixe de 2,000 % l'an")
+    original = {"1": Extraction("1", "llm", "v", {"taux_fixe": value})}
     verify(original["1"], pages["1"])
-    assert original["1"].champs["montant"].refusee
+    assert original["1"].champs["taux_fixe"].refusee
     replay = with_previous_verification(original, pages)
-    assert not replay["1"].champs["montant"].refusee
-    assert original["1"].champs["montant"].refusee
+    assert not replay["1"].champs["taux_fixe"].refusee
+    assert original["1"].champs["taux_fixe"].refusee
