@@ -1,0 +1,10 @@
+{
+  "graine": 20261112,
+  "collecte_le": "2026-11-12",
+  "vivier_obligations": 4405,
+  "obligations_exclues": 1200,
+  "obligations_tirees": 450,
+  "obligations_avec_document": 222,
+  "documents_trouves": 248,
+  "documents_gardes": 150
+}

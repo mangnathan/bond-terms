@@ -1,17 +1,17 @@
-"""Ouverture unique du nouveau jeu de test de la v0.3 (ADR 0003).
+"""Ouverture unique du quatrième jeu de test, celui de la v1.0 (ADR 0005).
 
 Usage :
     uv run --group llm --env-file .env python -m bond_terms.ouverture --ouvrir-le-test
 
-Les extracteurs sont figés (versions consignées dans l'ADR 0003). Avant toute extraction, un
+Les extracteurs sont figés (versions consignées dans l'ADR 0005). Avant toute extraction, un
 registre daté est écrit avec le commit et les versions : une seconde ouverture est refusée. Si le
 service tombe en cours de route, `--reprendre` relance l'extraction tant qu'aucun résultat n'a été
 produit ; le cache évite tout second envoi d'un document.
 
 Une seule extraction donne quatre résultats : l'évaluation (LLM contre règles), la même mesure
-avec la vérification de la v0.2 (la vérification v2 n'est gardée que si elle n'accepte pas plus
+avec la vérification de la v0.4 (la vérification v4 n'est gardée que si elle n'accepte pas plus
 de valeurs fausses), les indicateurs de la file de revue, et la fiche des exceptions, que le
-relecteur remplit ensuite. L'ouverture des jeux de la v0.2 se rejoue avec le tag v0.2.
+relecteur remplit ensuite. Les ouvertures des versions précédentes se rejouent avec leur tag.
 """
 
 from __future__ import annotations
@@ -49,7 +49,7 @@ from bond_terms.lancement import (
 from bond_terms.ocr import pages_by_document
 from bond_terms.revue import indicators, queue, wrong_documents
 
-TEST_SETS = ("test_v04",)
+TEST_SETS = ("test_v10",)
 MODEL = "gemini-3.5-flash-lite"
 
 
@@ -80,7 +80,7 @@ def opening_record(commit: str, now: dt.datetime) -> dict[str, Any]:
         "commit": commit,
         "regles": regles.VERSION,
         "llm": f"{MODEL}/{llm.PROMPT_VERSION}",
-        "verification": "v3 (citation en deux morceaux, montants écrits sans ambiguïté)",
+        "verification": "v4 (citation en deux morceaux ; montant, taux, échéance écrits)",
         "jeux": list(TEST_SETS),
     }
 
@@ -99,10 +99,10 @@ def wrong_accepted(extractions: dict[str, Extraction], truth: list[dict[str, Any
 def with_previous_verification(
     extractions: dict[str, Extraction], pages: dict[str, list[str]]
 ) -> dict[str, Extraction]:
-    """Les mêmes sorties, vérifiées comme en v0.3 (sans contrôle des montants)."""
+    """Les mêmes sorties, vérifiées comme en v0.4 (sans contrôle des taux et des échéances)."""
     replay = copy.deepcopy(extractions)
     for document_id, extraction in replay.items():
-        verify(extraction, pages[document_id], amounts=False)
+        verify(extraction, pages[document_id], rates_and_dates=False)
     return replay
 
 
@@ -139,14 +139,14 @@ def main() -> None:  # pragma: no cover - ouvre le vrai jeu de test
     # Répétition : la même commande sur un jeu déjà connu, sorties dans un dossier temporaire.
     parser.add_argument("--repetition-sur", choices=KNOWN_SETS)
     parser.add_argument("--database", type=Path, default=Path("data/entrepot/bond_terms.duckdb"))
-    parser.add_argument("--pages", type=Path, default=Path("data/interim/textes/pages-v04.parquet"))
+    parser.add_argument("--pages", type=Path, default=Path("data/interim/textes/pages-v10.parquet"))
     parser.add_argument(
-        "--ocr-pages", type=Path, default=Path("data/interim/textes/pages-ocr-v04.parquet")
+        "--ocr-pages", type=Path, default=Path("data/interim/textes/pages-ocr-v10.parquet")
     )
     parser.add_argument("--llm-cache", type=Path, default=Path("data/interim/llm"))
     parser.add_argument("--output-dir", type=Path, default=RUN_DIR)
     parser.add_argument("--sheet-dir", type=Path, default=Path("data/interim/exceptions"))
-    parser.add_argument("--summary-dir", type=Path, default=Path("docs/v0.4-service/data"))
+    parser.add_argument("--summary-dir", type=Path, default=Path("docs/v1.0-publique/data"))
     args = parser.parse_args()
 
     sets: tuple[str, ...] = TEST_SETS
@@ -161,7 +161,7 @@ def main() -> None:  # pragma: no cover - ouvre le vrai jeu de test
         args.summary_dir.mkdir(parents=True, exist_ok=True)
         sets = (args.repetition_sur,)
     register = args.summary_dir / "ouverture-du-test.json"
-    results = args.summary_dir / "evaluation-test-v04.json"
+    results = args.summary_dir / "evaluation-test-v10.json"
     check_opening(register, results, args.reprendre)
     commit = current_commit()
     if not register.exists():
@@ -198,10 +198,10 @@ def main() -> None:  # pragma: no cover - ouvre le vrai jeu de test
         summary[name] = {
             **evaluate(truth, rules, model),
             "verification": {
-                "v3": global_accuracy(score(model, truth)),
-                "v2_de_la_v0.3": global_accuracy(score(replay, truth)),
-                "valeurs_fausses_acceptees_v3": wrong_accepted(model, truth),
-                "valeurs_fausses_acceptees_v2": wrong_accepted(replay, truth),
+                "v4": global_accuracy(score(model, truth)),
+                "v3_de_la_v0.4": global_accuracy(score(replay, truth)),
+                "valeurs_fausses_acceptees_v4": wrong_accepted(model, truth),
+                "valeurs_fausses_acceptees_v3": wrong_accepted(replay, truth),
             },
             "revue": indicators(flagged, len(documents), wrong_documents(model, truth)),
             "exceptions": summarize(sheets[name]),

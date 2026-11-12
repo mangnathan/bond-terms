@@ -148,6 +148,7 @@ def extra_sets(data_dir: Path) -> list[ExtraSet]:
     for folder, version, collected in (
         (Path("docs/v0.3-revue/data"), "v03", "2026-10-28"),
         (Path("docs/v0.4-service/data"), "v04", "2026-11-10"),
+        (Path("docs/v1.0-publique/data"), "v10", "2026-11-12"),
     ):
         added = ExtraSet(
             decoupage=folder / "nouveau-test-documents.csv",
