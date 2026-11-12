@@ -1,0 +1,8 @@
+{
+  "test_v10": {
+    "documents_avec_pages_sans_texte": 12,
+    "pages_lues_par_ocr": 87,
+    "pages_toujours_vides": 4
+  },
+  "secondes_par_page_mediane": 3.7
+}
