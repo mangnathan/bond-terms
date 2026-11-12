@@ -35,6 +35,11 @@ FIELDS = (
     "montant",
     "rang",
 )
+# Niveau B (ADR 0005) : clause absente de FIRDS, comparée à une annotation humaine et jamais
+# mêlée à l'évaluation du niveau A.
+CLAUSE_FIELDS = ("remboursement_emetteur", "date_premier_remboursement")
+MODEL_FIELDS = FIELDS + CLAUSE_FIELDS
+DATE_FIELDS = ("date_echeance", "date_premier_remboursement")
 PERPETUAL = "perpetuelle"
 # Type de taux d'un titre à taux fixe puis variable, ou révisable (ADR 0003).
 HYBRID = "fixe_puis_variable"
@@ -170,6 +175,10 @@ def verify(
             # Valeur convertie qui n'est pas celle de la citation : « 2,000 % » lu 2 000, année
             # mal recopiée (ADR 0005).
             page = None
+        if page is not None and name == "remboursement_emetteur" and not _clause_cited(value):
+            # Option exclue du niveau B (make-whole, residual, clean-up) prise pour l'option
+            # générale de l'émetteur.
+            page = None
         if page is None:
             value.refusee = True
         else:
@@ -178,6 +187,29 @@ def verify(
 
 
 AMOUNT_FIELDS = ("montant", "valeur_nominale")
+
+# Options de remboursement de l'émetteur exclues du niveau B (ADR 0005), qui contiennent
+# pourtant les mots « call option ».
+_OTHER_OPTIONS = re.compile(
+    r"make.?whole(?: redemption| call option| call)?(?: by the issuer)?"
+    r"|residual(?: maturity)? call(?: option)?|clean.?up call(?: option)?"
+)
+# Option générale de remboursement au gré de l'émetteur, en anglais ou en français, sous forme
+# de rubrique ou de phrase des modalités.
+_GENERAL_OPTION = re.compile(
+    r"issuer call|call option|redemption at the option of the issuer|optional redemption"
+    r"|option de remboursement (?:anticipe )?au gre de l.emetteur"
+    r"|issuer may,? at its option,? (?:\(\w+\) )?redeem"
+)
+
+
+def _clause_cited(value: Value) -> bool:
+    """Un « oui » n'est accepté que si sa citation nomme l'option générale de l'émetteur, une fois
+    retirées les options exclues ; un « non » se justifie par sa seule citation."""
+    if value.valeur != "oui":
+        return True
+    text = _OTHER_OPTIONS.sub(" ", re.sub(r"\s+", " ", normalize(value.citation or "")))
+    return _GENERAL_OPTION.search(text) is not None
 
 
 def _amount_cited(value: Value) -> bool:
@@ -189,15 +221,16 @@ def _amount_cited(value: Value) -> bool:
 
 
 def _value_cited(name: str, value: Value) -> bool:
-    """Un taux fixe ou une échéance doit être écrit dans sa citation ; les autres champs ne sont
-    pas contrôlés ici. Une échéance perpétuelle n'a pas de date à retrouver."""
+    """Un taux fixe ou une date (échéance, premier remboursement anticipé) doit être écrit dans
+    sa citation ; les autres champs ne sont pas contrôlés ici. Une échéance perpétuelle n'a pas
+    de date à retrouver."""
     citation = re.sub(r"\s+", " ", normalize(value.citation or ""))
     try:
         if name == "taux_fixe":
             # « 3. 625 per cent » : nombre coupé après sa virgule par l'extraction de texte.
             variants = [citation, re.sub(r"(?<=\d[.,]) (?=\d)", "", citation)]
             return any(contains(rate_pattern(float(value.valeur or "")), v) for v in variants)
-        if name != "date_echeance" or value.valeur == PERPETUAL:
+        if name not in DATE_FIELDS or value.valeur == PERPETUAL:
             return True
         day = dt.date.fromisoformat(value.valeur or "")
     except ValueError:

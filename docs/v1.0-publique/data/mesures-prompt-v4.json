@@ -1,0 +1,120 @@
+{
+  "prompt": "extraction-v4",
+  "test_v03": {
+    "prompt_v3": {
+      "exactitude": {
+        "justes": 742,
+        "compares": 790,
+        "exactitude": 0.9392405063291139,
+        "intervalle_95": [
+          0.9170792079207921,
+          0.958904109589041
+        ]
+      },
+      "justes_acceptees": 742,
+      "fausses_acceptees": 23,
+      "revue": {
+        "documents": 116,
+        "envoyes_en_revue": 18,
+        "part_en_revue": 0.1552,
+        "sous_le_plafond": true,
+        "documents_errones": 20,
+        "errones_attrapes": 16,
+        "part_des_errones_attrapes": 0.8
+      },
+      "exceptions": 23
+    },
+    "prompt_v4": {
+      "exactitude": {
+        "justes": 734,
+        "compares": 790,
+        "exactitude": 0.9291139240506329,
+        "intervalle_95": [
+          0.90625,
+          0.9495472186287193
+        ]
+      },
+      "justes_acceptees": 734,
+      "fausses_acceptees": 24,
+      "revue": {
+        "documents": 116,
+        "envoyes_en_revue": 25,
+        "part_en_revue": 0.2155,
+        "sous_le_plafond": true,
+        "documents_errones": 25,
+        "errones_attrapes": 21,
+        "part_des_errones_attrapes": 0.84
+      },
+      "exceptions": 24
+    },
+    "replis": 0,
+    "arret_quota": false,
+    "rubrique_contre_lecture_du_modele": {
+      "absente / None": 19,
+      "absente / oui": 14,
+      "non / None": 8,
+      "non / non": 54,
+      "non / oui": 1,
+      "oui / oui": 20
+    }
+  },
+  "test_v04": {
+    "prompt_v3": {
+      "exactitude": {
+        "justes": 728,
+        "compares": 796,
+        "exactitude": 0.914572864321608,
+        "intervalle_95": [
+          0.8869778869778869,
+          0.9394313967861557
+        ]
+      },
+      "justes_acceptees": 728,
+      "fausses_acceptees": 23,
+      "revue": {
+        "documents": 116,
+        "envoyes_en_revue": 22,
+        "part_en_revue": 0.1897,
+        "sous_le_plafond": true,
+        "documents_errones": 28,
+        "errones_attrapes": 21,
+        "part_des_errones_attrapes": 0.75
+      },
+      "exceptions": 23
+    },
+    "prompt_v4": {
+      "exactitude": {
+        "justes": 728,
+        "compares": 796,
+        "exactitude": 0.914572864321608,
+        "intervalle_95": [
+          0.8873591989987485,
+          0.9397435897435897
+        ]
+      },
+      "justes_acceptees": 728,
+      "fausses_acceptees": 23,
+      "revue": {
+        "documents": 116,
+        "envoyes_en_revue": 24,
+        "part_en_revue": 0.2069,
+        "sous_le_plafond": true,
+        "documents_errones": 31,
+        "errones_attrapes": 24,
+        "part_des_errones_attrapes": 0.7742
+      },
+      "exceptions": 23
+    },
+    "replis": 0,
+    "arret_quota": false,
+    "rubrique_contre_lecture_du_modele": {
+      "absente / None": 13,
+      "absente / non": 4,
+      "absente / oui": 5,
+      "non / None": 8,
+      "non / non": 69,
+      "oui / None": 1,
+      "oui / oui": 16
+    }
+  }
+}
