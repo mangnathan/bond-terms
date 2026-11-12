@@ -62,3 +62,11 @@ Une page, pour un décideur : problème, solution, chiffres mesurés, limites, c
 - Le prompt passe en version `extraction-v4` et la vérification en v4 ; le niveau A est remesuré sur le quatrième test, avec le niveau B dans le même appel au modèle.
 - Le quatrième test demande environ 150 requêtes au modèle à son ouverture, une heure de vérification des exceptions, une heure et demie d'annotation du niveau B et trois quarts d'heure de revue chronométrée.
 - Le service en ligne passe à la v1.0 après l'ouverture : les collectes suivantes utilisent le nouvel extracteur ; les fiches déjà publiées ne sont pas relues.
+
+## Précisions : mesure des corrections de qualité
+
+Ajoutées le 12 novembre 2026. Les réponses du modèle ont été relues dans le cache avec le code de la v1.0, sur les cinq jeux déjà ouverts (le test de la v0.4 compris) : aucune requête n'a été envoyée (`docs/v1.0-publique/data/mesures-adr0005.json`, produit par `scripts/adr0005/mesures_corrections.py`).
+
+- **Taux à la française.** Les trois taux « 2,000 » du test de la v0.4 sont désormais lus 2 : trois valeurs fausses deviennent justes.
+- **Vérification v4.** Sur les cinq jeux, elle bloque quatre échéances fausses (année mal recopiée, date d'émission lue à la place de l'échéance) et un taux faux. Une première version refusait aussi cinq valeurs justes ; trois causes ont été corrigées avant le gel : un nombre coupé après sa virgule par l'extraction de texte (« 3. 625 per cent »), un espace perdu entre le jour et le mois (« 8November 2051 »), une échéance qui ne donne que le mois et l'année (« Interest Payment Date falling in or nearest to February 2028 »). Une date en danois (« 6. juli 2027 ») reste refusée et part en revue.
+- **Effet global.** Valeurs justes acceptées : 5 334 en v0.4, 5 336 en v1.0. Valeurs fausses acceptées : 131, puis 123. Sur le test de la v0.4 : exactitude du LLM de 91,1 % à 91,5 %, exceptions de 27 à 23, documents erronés attrapés par la revue de 19 sur 29 à 21 sur 28, pour 22 documents en revue au lieu de 20.

@@ -4,6 +4,15 @@ Les évolutions notables du projet sont notées ici, selon le format [Keep a Cha
 
 ## [Non publié]
 
+### Ajouté
+- ADR 0005, cadrage de la v1.0 : corrections mesurées sur un quatrième test, niveau B réduit au remboursement au gré de l'émetteur, business case mesuré, démonstration et note de synthèse.
+- Vérification v4 : un taux fixe et une échéance ne sont acceptés que si leur citation les écrit.
+- Chaque fiche lue par les règles garde la raison du repli ; le bilan de la semaine compte les replis par raison.
+
+### Corrigé
+- Un taux écrit à la française (« 2,000 ») était lu 2 000 ; sa virgule est désormais décimale.
+- Le code ISIN de l'indice €STR, que FIRDS donne parfois à la place de son nom, est reconnu.
+
 ## [v0.4] - 2026-11-11
 
 Bilan ([ADR 0004](docs/adr/0004-service.md)) : sur un troisième test de 116 documents d'émetteurs jamais vus, ouvert une seule fois, le LLM est juste sur 91,1 % des paires document-champ contre 67,1 % pour les règles ; seule la valeur nominale passe son seuil avec une marge suffisante. Le rapport d'exceptions compte 63,0 % de vrais écarts, sous le seuil de 80 %. Le projet est en service : collecte hebdomadaire, surveillance avec alertes et API en ligne, à coût nul.
