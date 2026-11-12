@@ -74,7 +74,7 @@ Un document part en revue selon la règle mesurée ci-dessus. Indicateurs sur le
 
 ### 5. Rapport d'exceptions
 
-Le rapport liste, pour chaque exception, le document, le champ, la valeur de FIRDS, la valeur lue et sa citation. Le seuil du cadrage, au moins 80 % de vrais écarts, se mesure par une vérification humaine : pour chaque exception du nouveau test, Nathan Mang ouvre le PDF à la page citée et note si le document dit bien la valeur lue. C'est une vérification littérale, qui ne demande pas d'expertise financière. Les exceptions sur le type de taux d'un titre hybride ne sont plus des exceptions (décision 3).
+Le rapport liste, pour chaque exception, le document, le champ, la valeur de FIRDS, la valeur lue et sa citation. Le seuil du cadrage, au moins 80 % de vrais écarts, se mesure par une vérification humaine : pour chaque exception du nouveau test, un relecteur ouvre le PDF à la page citée et note si le document dit bien la valeur lue. C'est une vérification littérale, qui ne demande pas d'expertise financière. Les exceptions sur le type de taux d'un titre hybride ne sont plus des exceptions (décision 3).
 
 ### 6. Clauses littérales, niveau B : reportées à la v0.4
 
