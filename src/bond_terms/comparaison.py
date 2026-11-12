@@ -29,6 +29,8 @@ SENIORITY = {
 
 _REFERENCE_PREFIXES = {
     "EU00096527": "EURIBOR",
+    # Code ISIN de l'indice €STR, que FIRDS donne parfois à la place de son nom (test v0.4).
+    "EU000A2X2A25": "ESTR",
     "EURI": "EURIBOR",
     "ESTR": "ESTR",
     "EONA": "ESTR",
