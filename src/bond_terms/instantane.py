@@ -30,7 +30,7 @@ import pyarrow.parquet as pq
 from bond_terms import llm, regles
 from bond_terms.evaluation import load_extractions
 from bond_terms.exceptions import exceptions
-from bond_terms.extraction import FIELDS, Extraction, Value
+from bond_terms.extraction import MODEL_FIELDS, Extraction, Value
 from bond_terms.lancement import FALLBACK, KNOWN_SETS, RUN_DIR, TRUTH_SQL
 from bond_terms.revue import queue
 
@@ -68,7 +68,7 @@ def document_entry(
     extraction: Extraction, set_name: str, reasons: list[str], gaps: list[dict[str, Any]]
 ) -> dict[str, Any]:
     champs = {}
-    for name in FIELDS:
+    for name in MODEL_FIELDS:
         value = extraction.champs.get(name)
         champs[name] = {
             "valeur": value.valeur if value else None,

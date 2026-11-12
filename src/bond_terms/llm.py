@@ -20,10 +20,10 @@ from pathlib import Path
 from typing import Any, Protocol
 
 from bond_terms.documents import normalize
-from bond_terms.extraction import FIELDS, HYBRID, PERPETUAL, Extraction, Value, verify
+from bond_terms.extraction import HYBRID, MODEL_FIELDS, PERPETUAL, Extraction, Value, verify
 from bond_terms.valeurs import several_bonds
 
-PROMPT_VERSION = "extraction-v3"
+PROMPT_VERSION = "extraction-v4"
 SYSTEM_PROMPT = (Path(__file__).parent / "prompts" / f"{PROMPT_VERSION}.txt").read_text(
     encoding="utf-8"
 )
@@ -74,9 +74,9 @@ SCHEMA: dict[str, Any] = {
             },
             "required": ["valeur", "citation"],
         }
-        for name in FIELDS
+        for name in MODEL_FIELDS
     },
-    "required": list(FIELDS),
+    "required": list(MODEL_FIELDS),
 }
 
 _NUMBER = re.compile(r"[+-]?\d+(?:\.\d+)?")
@@ -91,6 +91,8 @@ FORMATS = {
     "valeur_nominale": _NUMBER,
     "montant": _NUMBER,
     "rang": re.compile(r"senior|senior_non_prefere|subordonne|subordonne_profond"),
+    "remboursement_emetteur": re.compile(r"oui|non"),
+    "date_premier_remboursement": re.compile(r"\d{4}-\d{2}-\d{2}"),
 }
 
 
@@ -214,12 +216,12 @@ def parse(text: str) -> tuple[dict[str, Value], str]:
     try:
         data = json.loads(text)
     except json.JSONDecodeError:
-        return {name: Value() for name in FIELDS}, "réponse illisible"
+        return {name: Value() for name in MODEL_FIELDS}, "réponse illisible"
     if not isinstance(data, dict):
-        return {name: Value() for name in FIELDS}, "réponse illisible"
+        return {name: Value() for name in MODEL_FIELDS}, "réponse illisible"
     champs: dict[str, Value] = {}
     rejected = []
-    for name in FIELDS:
+    for name in MODEL_FIELDS:
         item = data.get(name)
         item = item if isinstance(item, dict) else {}
         value = clean(name, item.get("valeur"))
