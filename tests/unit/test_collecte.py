@@ -101,5 +101,6 @@ def test_weekly_summary_counts_what_was_set_aside() -> None:
         "produits_structures": 1,
         "documents_extraits": 1,
         "documents_en_repli": 1,
+        "replis_par_raison": {"quota": 1},
         "arret_quota": True,
     }

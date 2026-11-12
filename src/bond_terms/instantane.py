@@ -45,6 +45,25 @@ def status(value: Value | None) -> str:
     return "refusee" if value.refusee else "acceptee"
 
 
+def fallback_reason(extraction: Extraction) -> str | None:
+    """Pourquoi le LLM n'a pas lu le document, quand les règles l'ont lu à sa place."""
+    prefix = f"{FALLBACK} : "
+    if not extraction.remarque.startswith(FALLBACK):
+        return None
+    return extraction.remarque.removeprefix(prefix)
+
+
+def fallback_kind(reason: str) -> str:
+    """Famille d'une raison de repli, pour compter les replis dans le bilan de la semaine."""
+    if "quota" in reason or "plafond" in reason:
+        return "quota"
+    if reason.startswith("pas de réponse"):
+        return "délai dépassé"
+    if reason.startswith("service indisponible"):
+        return "service indisponible"
+    return "autre"
+
+
 def document_entry(
     extraction: Extraction, set_name: str, reasons: list[str], gaps: list[dict[str, Any]]
 ) -> dict[str, Any]:
@@ -63,6 +82,7 @@ def document_entry(
         # « regles » quand le LLM n'a pas pu lire le document (quota, service indisponible) :
         # l'utilisateur doit savoir que la fiche vient de l'extracteur le moins exact.
         "extracteur": extraction.extracteur,
+        "repli": fallback_reason(extraction),
         "champs": champs,
         # Les raisons commencent par les valeurs non justifiées ; les désaccords avec les règles
         # suivent, à titre d'information.

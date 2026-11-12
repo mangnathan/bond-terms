@@ -27,7 +27,7 @@ from typing import Literal
 
 from fastapi import APIRouter, FastAPI, HTTPException, Request, Response
 from fastapi.responses import JSONResponse, RedirectResponse
-from pydantic import BaseModel, ConfigDict
+from pydantic import BaseModel, ConfigDict, Field
 
 API_VERSION = "0.4"
 DEFAULT_SNAPSHOT = Path("data/instantane/instantane.json")
@@ -101,6 +101,8 @@ class Document(_Strict):
     # « llm », ou « regles » quand le LLM n'a pas pu lire le document : fiche moins sûre, relue
     # la semaine suivante. Absent des instantanés publiés avant que l'extracteur ne soit noté.
     extracteur: Literal["llm", "regles"] | None = None
+    # Raison du repli sur les règles (quota, service indisponible, délai dépassé), sinon absente.
+    repli: str | None = None
     champs: dict[str, Champ]
     en_revue: bool
     raisons_revue: list[str]
@@ -129,6 +131,8 @@ class Collecte(_Strict):
     produits_structures: int
     documents_extraits: int
     documents_en_repli: int
+    # Replis comptés par raison ; absent des bilans antérieurs à la v1.0.
+    replis_par_raison: dict[str, int] = Field(default_factory=dict)
     arret_quota: bool
 
 
