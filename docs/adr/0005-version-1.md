@@ -1,6 +1,6 @@
 # ADR 0005 : la version 1.0, qualité mesurée et outil présentable
 
-- Statut : proposé
+- Statut : accepté
 - Date : 12 novembre 2026
 - Version : v1.0
 
@@ -35,11 +35,11 @@ Chaque correction est réglée sur les jeux connus, puis gelée avant l'ouvertur
 
 Une seule clause, absente de FIRDS : le **remboursement anticipé au gré de l'émetteur** (*Issuer Call*). Deux valeurs : la clause est-elle applicable, et si oui, la première date à laquelle l'émetteur peut rembourser. Chaque valeur porte sa citation, vérifiée comme au niveau A.
 
-Trente documents du quatrième test sont annotés une fois par Nathan Mang, sur le PDF, après le gel des extracteurs et avant l'ouverture du test : l'annotation ne peut pas influencer les extracteurs, et les extractions ne peuvent pas influencer l'annotation. L'échantillon est équilibré entre documents où la rubrique semble applicable et documents où elle ne l'est pas, d'après la seule recherche de la rubrique. La mesure n'a pas de seuil : l'annotateur est unique et non spécialiste, ce que le rapport dira.
+Trente documents du quatrième test sont annotés une fois à la main, sur le PDF, après le gel des extracteurs et avant l'ouverture du test : l'annotation ne peut pas influencer les extracteurs, et les extractions ne peuvent pas influencer l'annotation. L'échantillon est équilibré entre documents où la rubrique semble applicable et documents où elle ne l'est pas, d'après la seule recherche de la rubrique. La mesure n'a pas de seuil : l'annotateur est unique et non spécialiste, ce que le rapport dira.
 
 ### 3. Business case mesuré
 
-Nathan Mang relit, chronomètre en main, une vingtaine de documents envoyés en revue par l'outil sur le quatrième test, avec les citations de l'outil à côté du PDF. Le business case compare alors deux mesures réelles : la saisie manuelle (3 minutes et 82 % de champs justes par document) et « outil plus revue humaine » (temps de revue rapporté à la part des documents en revue, exactitude après revue). Le volume de référence est celui mesuré pour les huit émetteurs (130 à 140 documents par an), puis un ordre de grandeur pour un référentiel de banque, présenté comme une extrapolation.
+Un relecteur humain relit, chronomètre en main, une vingtaine de documents envoyés en revue par l'outil sur le quatrième test, avec les citations de l'outil à côté du PDF. Le business case compare alors deux mesures réelles : la saisie manuelle (3 minutes et 82 % de champs justes par document) et « outil plus revue humaine » (temps de revue rapporté à la part des documents en revue, exactitude après revue). Le volume de référence est celui mesuré pour les huit émetteurs (130 à 140 documents par an), puis un ordre de grandeur pour un référentiel de banque, présenté comme une extrapolation.
 
 ### 4. Démonstration lisible par un non-technicien
 
