@@ -186,11 +186,18 @@ def cache_key(model: str, user: str) -> str:
     return hashlib.sha256(material.encode("utf-8")).hexdigest()
 
 
+RATE_FIELDS = ("taux_fixe", "marge_pb")
+
+
 def clean(name: str, raw: Any) -> str | None:
     """Valeur au format attendu, ou None : la réponse du modèle est une entrée non fiable."""
     if not isinstance(raw, str):
         return None
     value = raw.strip()
+    if name in RATE_FIELDS:
+        # Un taux n'a jamais de séparateur de milliers : sa virgule est décimale. Le modèle
+        # recopie parfois « 2,000 » à la française, qui vaut 2 et non 2 000 (test de la v0.4).
+        value = value.replace(",", ".")
     if name in ("taux_fixe", "marge_pb", "valeur_nominale", "montant"):
         value = value.replace(",", "").replace(" ", "").replace("+", "")
     if name in ("devise", "reference_taux", "duree_reference"):
