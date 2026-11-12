@@ -8,12 +8,20 @@ espaces, que l'extraction de texte des PDF et l'OCR rendent de façon irréguli�
 
 from __future__ import annotations
 
+import datetime as dt
 import re
 from dataclasses import asdict, dataclass, field
 from typing import Any
 
 from bond_terms.documents import normalize
-from bond_terms.valeurs import amount_matches_citation
+from bond_terms.valeurs import (
+    MONTHS_EN,
+    MONTHS_FR,
+    amount_matches_citation,
+    contains,
+    date_pattern,
+    rate_pattern,
+)
 
 FIELDS = (
     "devise",
@@ -135,12 +143,18 @@ def two_part_page(citation: str, pages: list[str]) -> int | None:
 
 
 def verify(
-    extraction: Extraction, pages: list[str], two_parts: bool = True, amounts: bool = True
+    extraction: Extraction,
+    pages: list[str],
+    two_parts: bool = True,
+    amounts: bool = True,
+    rates_and_dates: bool = True,
 ) -> Extraction:
     """Refuse toute valeur sans citation retrouvée ; renseigne la page des autres. Avec
     `two_parts`, une citation peut être retrouvée en deux morceaux (vérification v2, ADR 0003) ;
-    avec `amounts`, un montant doit être écrit sans ambiguïté dans sa citation (ADR 0004). Sans
-    les deux, c'est la vérification de la v0.2 ; sans `amounts`, celle de la v0.3."""
+    avec `amounts`, un montant doit être écrit sans ambiguïté dans sa citation (v3, ADR 0004) ;
+    avec `rates_and_dates`, un taux fixe et une échéance doivent l'être aussi (v4, ADR 0005).
+    Sans les trois, c'est la vérification de la v0.2 ; sans les deux derniers, celle de la v0.3 ;
+    sans le dernier, celle de la v0.4."""
     for name, value in extraction.champs.items():
         value.refusee, value.page, value.deux_morceaux = False, None, False
         if value.valeur is None:
@@ -151,6 +165,10 @@ def verify(
             value.deux_morceaux = page is not None
         if page is not None and amounts and name in AMOUNT_FIELDS and not _amount_cited(value):
             # Fourchette, ou montant mal lu (« 1 000 000,000 » vaut un million) : refusé (ADR 0004).
+            page = None
+        if page is not None and rates_and_dates and not _value_cited(name, value):
+            # Valeur convertie qui n'est pas celle de la citation : « 2,000 % » lu 2 000, année
+            # mal recopiée (ADR 0005).
             page = None
         if page is None:
             value.refusee = True
@@ -168,6 +186,38 @@ def _amount_cited(value: Value) -> bool:
     except ValueError:
         return False
     return amount_matches_citation(number, value.citation or "")
+
+
+def _value_cited(name: str, value: Value) -> bool:
+    """Un taux fixe ou une échéance doit être écrit dans sa citation ; les autres champs ne sont
+    pas contrôlés ici. Une échéance perpétuelle n'a pas de date à retrouver."""
+    citation = re.sub(r"\s+", " ", normalize(value.citation or ""))
+    try:
+        if name == "taux_fixe":
+            # « 3. 625 per cent » : nombre coupé après sa virgule par l'extraction de texte.
+            variants = [citation, re.sub(r"(?<=\d[.,]) (?=\d)", "", citation)]
+            return any(contains(rate_pattern(float(value.valeur or "")), v) for v in variants)
+        if name != "date_echeance" or value.valeur == PERPETUAL:
+            return True
+        day = dt.date.fromisoformat(value.valeur or "")
+    except ValueError:
+        return False
+    variants = [
+        citation,
+        # « 8 july 202 7 » : année coupée par l'extraction de texte.
+        re.sub(r"(?<=\d) (?=\d)", "", citation),
+        # « 8november 2051 » : espace perdu entre le jour et le mois.
+        re.sub(r"(?<=\d)(?=[a-z]{3})", " ", citation),
+    ]
+    if any(contains(date_pattern(day), v) for v in variants):
+        return True
+    # « Interest Payment Date falling in or nearest to February 2028 » : le document ne donne
+    # que le mois et l'année, que la citation doit écrire.
+    month = f"(?:{MONTHS_EN[day.month - 1]}|{MONTHS_FR[day.month - 1]})"
+    return bool(
+        re.search(r"nearest|falling in|tombant", citation)
+        and re.search(rf"{month}\s+{day.year}\b", citation)
+    )
 
 
 def accepted(value: Value | None) -> str | None:

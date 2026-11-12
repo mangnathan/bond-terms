@@ -25,7 +25,7 @@ import datetime as dt
 import json
 import logging
 import os
-from collections import defaultdict
+from collections import Counter, defaultdict
 from collections.abc import Iterable
 from pathlib import Path
 from typing import Any
@@ -187,6 +187,13 @@ def summary(
         "produits_structures": sum(link["produit_structure"] == "True" for link in links),
         "documents_extraits": len(model),
         "documents_en_repli": sum(e.remarque.startswith(FALLBACK) for e in model.values()),
+        "replis_par_raison": dict(
+            Counter(
+                instantane.fallback_kind(reason)
+                for e in model.values()
+                if (reason := instantane.fallback_reason(e)) is not None
+            )
+        ),
         "arret_quota": bool(stopped),
     }
 
