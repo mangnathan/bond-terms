@@ -47,6 +47,8 @@ class Draw:
 DRAWS = {
     "v03": Draw(SEED, SET_NAME, Path("docs/v0.3-revue/data")),
     "v04": Draw(20261110, "test_v04", Path("docs/v0.4-service/data")),
+    # Quatrième test (ADR 0005) : mêmes règles, parmi les obligations jamais tirées.
+    "v10": Draw(20261112, "test_v10", Path("docs/v1.0-publique/data")),
 }
 COLUMNS = (
     "document_id",
@@ -125,7 +127,7 @@ def main() -> None:  # pragma: no cover - interroge le registre
     parser.add_argument(
         "--split-v01", type=Path, default=Path("docs/v0.1-collecte/data/decoupage-documents.csv")
     )
-    parser.add_argument("--version", choices=sorted(DRAWS), default="v04")
+    parser.add_argument("--version", choices=sorted(DRAWS), default="v10")
     args = parser.parse_args()
 
     chosen = DRAWS[args.version]
