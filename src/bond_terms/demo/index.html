@@ -1,0 +1,72 @@
+<!doctype html>
+<html lang="fr">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>bond-terms</title>
+  <meta name="description" content="Lecture automatique des conditions d'une obligation dans son document officiel, avec la preuve de chaque valeur.">
+  <link rel="stylesheet" href="/demo.css">
+  <script src="/demo.js" defer></script>
+</head>
+<body>
+  <header class="bandeau">
+    <div class="contenu">
+      <p class="marque">bond-terms</p>
+      <h1>Lire les conditions d'une obligation, avec la preuve de chaque valeur</h1>
+      <p class="chapeau">
+        Quand une entreprise ou une banque emprunte sur les marchés, elle émet une
+        <strong>obligation</strong> : une dette avec un montant, un taux d'intérêt et une date de
+        remboursement. Ces conditions sont écrites dans un document officiel de 10 à 200 pages.
+      </p>
+      <p class="chapeau">
+        Dans une banque, on les recopie souvent à la main : environ 3 minutes par document, avec
+        des erreurs. <strong>bond-terms les lit automatiquement</strong>, cite la phrase exacte du
+        document pour chaque valeur, et signale quand la base officielle de l'autorité européenne
+        des marchés (ESMA) dit autre chose.
+      </p>
+    </div>
+  </header>
+
+  <main class="contenu">
+    <section aria-labelledby="titre-recherche" class="carte">
+      <h2 id="titre-recherche">Essayer</h2>
+      <p>Choisissez un exemple, ou saisissez le code d'une obligation (son <abbr title="International Securities Identification Number : le code unique d'un titre financier, par exemple FR0014007NG9">ISIN</abbr>).</p>
+      <div id="exemples" class="exemples" aria-live="polite"></div>
+      <form id="recherche" class="recherche">
+        <label for="isin">Code ISIN</label>
+        <input id="isin" name="isin" autocomplete="off" spellcheck="false" maxlength="12" placeholder="FR0014007NG9">
+        <button type="submit">Afficher la fiche</button>
+      </form>
+      <p id="message" class="message" role="status"></p>
+    </section>
+
+    <section id="fiche" aria-live="polite"></section>
+
+    <section class="carte aide" aria-labelledby="titre-aide">
+      <h2 id="titre-aide">Comment lire une fiche</h2>
+      <ul>
+        <li><span class="pastille ok">Vérifiée</span> La valeur a été lue, et la phrase citée a été retrouvée telle quelle dans le document.</li>
+        <li><span class="pastille alerte">À contrôler</span> La valeur a été lue, mais sa preuve n'a pas pu être vérifiée : elle n'est pas retenue.</li>
+        <li><span class="pastille neutre">Non trouvée</span> Le document ne donne pas cette information, ou l'outil ne l'a pas trouvée.</li>
+        <li><span class="pastille ecart">Écart</span> La base officielle de l'ESMA indique une autre valeur. Ce n'est pas forcément une erreur de l'outil : souvent, la base est mise à jour après le document (montant réellement placé, abondement).</li>
+        <li><strong>Relecture humaine</strong> : quand une valeur importante n'a pas pu être prouvée, le document est signalé pour qu'une personne le vérifie.</li>
+      </ul>
+    </section>
+
+    <section class="carte chiffres" aria-labelledby="titre-chiffres">
+      <h2 id="titre-chiffres">Ce que l'outil vaut, mesuré</h2>
+      <dl>
+        <div><dt>91 %</dt><dd>de valeurs justes sur des documents jamais vus pendant sa mise au point, contre 67 % pour des règles écrites à la main</dd></div>
+        <div><dt>2 s</dt><dd>par document, contre environ 3 minutes de saisie manuelle</dd></div>
+        <div><dt>Chaque lundi</dt><dd>les nouveaux documents des obligations suivies sont lus et ajoutés</dd></div>
+        <div><dt>0 €</dt><dd>de coût de fonctionnement</dd></div>
+      </dl>
+      <p id="fraicheur" class="petit"></p>
+    </section>
+  </main>
+
+  <footer class="contenu pied">
+    <p>Projet personnel, données publiques de l'ESMA. Pour les développeurs : <a href="/docs">documentation de l'API</a>.</p>
+  </footer>
+</body>
+</html>

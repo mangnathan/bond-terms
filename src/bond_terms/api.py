@@ -26,11 +26,17 @@ from pathlib import Path
 from typing import Literal
 
 from fastapi import APIRouter, FastAPI, HTTPException, Request, Response
-from fastapi.responses import JSONResponse, RedirectResponse
+from fastapi.responses import FileResponse, JSONResponse
 from pydantic import BaseModel, ConfigDict, Field
 
 API_VERSION = "0.4"
 DEFAULT_SNAPSHOT = Path("data/instantane/instantane.json")
+DEMO_DIR = Path(__file__).parent / "demo"
+# Page de démonstration : seulement ses propres fichiers et les appels à l'API elle-même.
+CSP = (
+    "default-src 'none'; script-src 'self'; style-src 'self'; connect-src 'self'; "
+    "img-src 'self'; base-uri 'none'; form-action 'self'; frame-ancestors 'none'"
+)
 # Appels par client et par minute : large pour un humain ou un script raisonnable.
 MAX_CALLS = 60
 WINDOW_S = 60.0
@@ -152,6 +158,92 @@ class Obligation(_Strict):
     isin: str
     instantane: str
     documents: list[Document]
+
+
+class Exemple(_Strict):
+    isin: str
+    titre: str
+    explication: str
+
+
+# Champs que toute fiche complète doit avoir lus et vérifiés.
+_CORE = ("devise", "date_echeance", "type_taux", "valeur_nominale", "montant", "rang")
+
+
+# Produit structuré passé au travers du contrôle du libellé (« Fixed Coupon Autocall Notes ») :
+# jamais montré en exemple. Le contrôle lui-même est figé pour le test de la v1.0.
+_STRUCTURED_WORDS = re.compile(r"autocall|linked|index[ée]|structur", re.IGNORECASE)
+
+
+def _looks_structured(doc: Document) -> bool:
+    return any(_STRUCTURED_WORDS.search(c.citation or "") for c in doc.champs.values())
+
+
+def examples(snapshot: Instantane) -> list[Exemple]:
+    """Quelques obligations choisies dans l'instantané pour la page de démonstration : une
+    fiche entièrement vérifiée, un écart avec FIRDS, un document en revue, une clause lue au-delà
+    de FIRDS. Une obligation différente par cas, toujours lue par le LLM : un document lu par les
+    règles faute de LLM ferait une mauvaise vitrine. Les documents de la collecte passent
+    d'abord ; un cas absent est omis."""
+    ordered = sorted(
+        snapshot.obligations.items(),
+        key=lambda item: (not item[1][0].jeu.startswith("collecte-"), item[0]),
+    )
+    used: set[str] = set()
+
+    def first(test: Callable[[Document], bool]) -> str | None:
+        return next(
+            (
+                isin
+                for isin, docs in ordered
+                if isin not in used
+                and docs[0].extracteur != "regles"
+                and not _looks_structured(docs[0])
+                and test(docs[0])
+            ),
+            None,
+        )
+
+    def complete(doc: Document) -> bool:
+        return (
+            not doc.en_revue
+            and not doc.exceptions
+            and all(doc.champs[name].statut == "acceptee" for name in _CORE)
+        )
+
+    def clause(doc: Document) -> bool:
+        champ = doc.champs.get("remboursement_emetteur")
+        return champ is not None and champ.statut == "acceptee" and champ.valeur == "oui"
+
+    candidates = [
+        (
+            complete,
+            "Une fiche entièrement vérifiée",
+            "Chaque valeur a été retrouvée dans le document et concorde avec la base officielle.",
+        ),
+        (
+            lambda doc: any(e.champ != "montant" for e in doc.exceptions),
+            "Un écart avec la base officielle",
+            "Le document et la base de l'ESMA ne disent pas la même chose : l'outil le signale.",
+        ),
+        (
+            lambda doc: doc.en_revue,
+            "Un document à faire relire",
+            "Une valeur importante n'a pas pu être prouvée : un humain doit vérifier.",
+        ),
+        (
+            clause,
+            "Une clause absente de la base officielle",
+            "L'émetteur peut rembourser avant l'échéance : seule la lecture du document le dit.",
+        ),
+    ]
+    found = []
+    for test, title, explanation in candidates:
+        isin = first(test)
+        if isin is not None:
+            used.add(isin)
+            found.append(Exemple(isin=isin, titre=title, explication=explanation))
+    return found
 
 
 class Sante(_Strict):
@@ -293,13 +385,35 @@ def create_app(
     def indicateurs() -> dict[str, Indicateurs]:
         return state["instantane"].indicateurs
 
+    @v1.get("/exemples")
+    def exemples() -> list[Exemple]:
+        return examples(state["instantane"])
+
     app.include_router(v1)
 
-    # La racine mène à la documentation interactive : un visiteur qui ouvre l'adresse du
-    # service voit ce que l'API sait faire, plutôt qu'une erreur 404.
+    # La racine sert la page de démonstration, lisible sans connaître le sujet ; /docs reste la
+    # documentation des développeurs. La page n'a ni bibliothèque externe ni script en ligne :
+    # sa politique de sécurité de contenu n'autorise que ses propres fichiers.
     @app.get("/", include_in_schema=False)
-    def racine() -> RedirectResponse:
-        return RedirectResponse("/docs")
+    def racine() -> FileResponse:
+        return FileResponse(
+            DEMO_DIR / "index.html",
+            media_type="text/html",
+            headers={"Content-Security-Policy": CSP},
+        )
+
+    @app.get("/demo.css", include_in_schema=False)
+    def demo_css() -> FileResponse:
+        return FileResponse(DEMO_DIR / "demo.css", media_type="text/css")
+
+    @app.get("/demo.js", include_in_schema=False)
+    def demo_js() -> FileResponse:
+        return FileResponse(DEMO_DIR / "demo.js", media_type="text/javascript")
+
+    # Les navigateurs demandent une icône : une réponse vide évite une erreur 404 à chaque visite.
+    @app.get("/favicon.ico", include_in_schema=False)
+    def favicon() -> Response:
+        return Response(status_code=204)
 
     return app
 

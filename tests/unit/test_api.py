@@ -229,9 +229,62 @@ def test_the_extractor_of_each_document_is_served(tmp_path: Path) -> None:
     assert document["extracteur"] == "regles"
 
 
-def test_the_root_leads_to_the_documentation(tmp_path: Path) -> None:
+def test_the_root_serves_the_demonstration_page(tmp_path: Path) -> None:
     with client(tmp_path, snapshot()) as api:
-        response = api.get("/", follow_redirects=False)
-        assert response.status_code == 307
-        assert response.headers["location"] == "/docs"
+        page = api.get("/")
+        assert page.status_code == 200
+        assert page.headers["content-type"].startswith("text/html")
+        assert "obligation" in page.text and 'href="/docs"' in page.text
+        # Ni bibliothèque externe ni script en ligne : seuls les fichiers de la page.
+        policy = page.headers["Content-Security-Policy"]
+        assert "script-src 'self'" in policy and "default-src 'none'" in policy
+        assert "http" not in page.text.split("<body>")[0]
+        assert api.get("/demo.js").headers["content-type"].startswith("text/javascript")
+        assert api.get("/demo.css").headers["content-type"].startswith("text/css")
         assert api.get("/docs").status_code == 200
+
+
+def test_the_demonstration_script_never_injects_document_text_as_html() -> None:
+    from bond_terms.api import DEMO_DIR
+
+    script = (DEMO_DIR / "demo.js").read_text(encoding="utf-8")
+    assert "innerHTML" not in script and "insertAdjacentHTML" not in script
+
+
+def test_examples_pick_one_bond_per_case(tmp_path: Path) -> None:
+    data = snapshot()
+    complete = {name: dict(FIELD) for name in ("devise", "date_echeance", "type_taux")}
+    complete |= {name: dict(FIELD) for name in ("valeur_nominale", "montant", "rang")}
+    clean = {
+        **data["obligations"]["FR0014007NG9"][0],
+        "document_id": "2",
+        "champs": complete,
+        "exceptions": [],
+    }
+    review = {**clean, "document_id": "3", "en_revue": True}
+    gap = {
+        **clean,
+        "document_id": "4",
+        "exceptions": [{"champ": "date_echeance", "valeur_firds": "2031-01-01", "valeur_lue": "x"}],
+    }
+    data["obligations"] = {"US0378331005": [clean], "FR001400IIR9": [review], "DE000BAY0017": [gap]}
+    with client(tmp_path, data) as api:
+        found = {e["titre"]: e["isin"] for e in api.get("/v1/exemples").json()}
+    assert found == {
+        "Une fiche entièrement vérifiée": "US0378331005",
+        "Un écart avec la base officielle": "DE000BAY0017",
+        "Un document à faire relire": "FR001400IIR9",
+    }
+
+
+def test_examples_never_reuse_a_bond_nor_show_a_sheet_read_by_the_rules(tmp_path: Path) -> None:
+    data = snapshot()
+    doc = data["obligations"]["FR0014007NG9"][0]
+    both = {**doc, "en_revue": True}
+    both["exceptions"] = [{"champ": "rang", "valeur_firds": "SNDB", "valeur_lue": "senior"}]
+    fallback = {**both, "document_id": "9", "extracteur": "regles"}
+    data["obligations"] = {"US0378331005": [both], "FR001400IIR9": [fallback]}
+    with client(tmp_path, data) as api:
+        found = api.get("/v1/exemples").json()
+        assert api.get("/favicon.ico").status_code == 204
+    assert [e["isin"] for e in found] == ["US0378331005"]
