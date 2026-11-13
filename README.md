@@ -8,7 +8,7 @@ Dans une banque, l'équipe qui tient à jour la base des titres recopie ces cond
 
 **Résultat**, mesuré sur des documents jamais vus pendant le développement : **91 % de valeurs justes**, contre 67 % pour une approche par règles écrites à la main, en 2 secondes par document et à coût nul.
 
-**Le service tourne** : chaque lundi, les nouveaux documents des 840 obligations suivies sont collectés, lus et comparés à FIRDS. L'API est en ligne sur **[bond-terms.onrender.com](https://bond-terms.onrender.com)**, avec sa documentation interactive. Elle est hébergée sur l'offre gratuite de Render : si personne ne l'a appelée depuis un quart d'heure, la première réponse prend environ une minute.
+**Le service tourne** : chaque lundi, les nouveaux documents des 840 obligations suivies sont collectés, lus et comparés à FIRDS. L'outil est en ligne sur **[bond-terms.onrender.com](https://bond-terms.onrender.com)** : une page explique le sujet et propose des exemples, et chaque fiche montre la phrase du document qui prouve chaque valeur. La documentation de l'API est sur `/docs`. Elle est hébergée sur l'offre gratuite de Render : si personne ne l'a appelée depuis un quart d'heure, la première réponse prend environ une minute.
 
 ## Avancement
 

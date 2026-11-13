@@ -10,6 +10,7 @@ Les évolutions notables du projet sont notées ici, selon le format [Keep a Cha
 - Chaque fiche lue par les règles garde la raison du repli ; le bilan de la semaine compte les replis par raison.
 - Niveau B : le prompt v4 lit le remboursement anticipé au gré de l'émetteur et sa première date, avec citation ; un « oui » fondé sur une option exclue (make-whole, residual, clean-up) est refusé. Module `bond_terms.niveau_b` : tirage équilibré, fiche d'annotation sans valeur proposée, mesure de l'accord.
 - Prompt v4 : le montant d'un abondement est celui de la série entière.
+- Page de démonstration à la racine de l'API, lisible sans connaître le sujet : explication, exemples choisis dans les données, fiche en langage courant avec la preuve de chaque valeur et les écarts expliqués. Sans bibliothèque externe, avec une politique de sécurité de contenu stricte ; route `/v1/exemples`.
 
 ### Corrigé
 - Un taux écrit à la française (« 2,000 ») était lu 2 000 ; sa virgule est désormais décimale.
