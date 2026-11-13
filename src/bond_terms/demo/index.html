@@ -10,87 +10,111 @@
   <script src="/demo.js" defer></script>
 </head>
 <body>
-  <header class="bandeau">
-    <div class="contenu">
-      <p class="marque">bond-terms</p>
-      <h1>Lire les conditions d'une obligation, avec la preuve de chaque valeur</h1>
-      <p class="chapeau">
-        Quand une entreprise ou une banque emprunte sur les marchés, elle émet une
-        <strong>obligation</strong> : une dette avec un montant, un taux d'intérêt et une date de
-        remboursement. Ces conditions sont écrites dans un document officiel de 10 à 200 pages.
-      </p>
-      <p class="chapeau">
-        Dans une banque, on les recopie souvent à la main : environ 3 minutes par document, avec
-        des erreurs. <strong>bond-terms les lit automatiquement</strong>, cite la phrase exacte du
-        document pour chaque valeur, et signale quand la base officielle de l'autorité européenne
-        des marchés (ESMA) dit autre chose.
-      </p>
-      <p><a class="action" href="#titre-recherche">Essayer un exemple</a></p>
+  <header class="barre">
+    <div class="large barre-contenu">
+      <a class="marque" href="/">bond-terms</a>
+      <nav aria-label="Navigation principale">
+        <a href="#comment">Comment ça marche</a>
+        <a href="#apropos">À propos</a>
+        <a href="/docs">API</a>
+      </nav>
     </div>
   </header>
 
-  <main class="contenu">
-    <section aria-labelledby="titre-recherche" class="carte">
-      <h2 id="titre-recherche">Essayer</h2>
-      <p>Choisissez un exemple, ou saisissez le code d'une obligation (son <abbr title="International Securities Identification Number : le code unique d'un titre financier, par exemple FR0014007NG9">ISIN</abbr>).</p>
-      <div id="exemples" class="exemples" aria-live="polite"></div>
-      <form id="recherche" class="recherche">
-        <label for="isin">Code ISIN</label>
-        <input id="isin" name="isin" autocomplete="off" spellcheck="false" maxlength="12" placeholder="FR0014007NG9">
-        <button type="submit">Afficher la fiche</button>
-      </form>
-      <p id="message" class="message" role="status"></p>
+  <main>
+    <section class="hero">
+      <div class="large hero-grille">
+        <div class="hero-texte">
+          <h1>Les conditions d'une obligation, avec la preuve de chaque valeur</h1>
+          <p class="chapeau">
+            Une <strong>obligation</strong> est un emprunt sur les marchés : un montant, un taux et
+            une date de remboursement, écrits dans un document officiel de 10 à 200 pages.
+            bond-terms les lit automatiquement et cite, pour chaque valeur, la phrase du document
+            qui la prouve.
+          </p>
+          <dl class="chiffres">
+            <div><dt>91 %</dt><dd>de valeurs justes sur des documents jamais vus</dd></div>
+            <div><dt>2 s</dt><dd>par document, contre 3 min à la main</dd></div>
+            <div><dt>0 €</dt><dd>de coût de fonctionnement</dd></div>
+          </dl>
+          <p id="fraicheur" class="petit"></p>
+        </div>
+
+        <div class="carte essai" aria-labelledby="titre-recherche">
+          <h2 id="titre-recherche">Essayer</h2>
+          <p class="petit-intro">Choisissez un exemple, ou saisissez le code d'une obligation (son <abbr title="International Securities Identification Number : le code unique d'un titre financier, par exemple FR0014007NG9">ISIN</abbr>).</p>
+          <div id="exemples" class="exemples" aria-live="polite"></div>
+          <form id="recherche" class="recherche">
+            <label for="isin">Code ISIN</label>
+            <div class="champ-saisie">
+              <input id="isin" name="isin" autocomplete="off" spellcheck="false" maxlength="12" placeholder="FR0014007NG9">
+              <button type="submit">Afficher</button>
+            </div>
+          </form>
+          <p id="message" class="message" role="status"></p>
+        </div>
+      </div>
     </section>
 
-    <section id="fiche" aria-live="polite"></section>
+    <div class="etroit">
+      <section id="fiche" aria-live="polite"></section>
 
-    <section class="carte aide" aria-labelledby="titre-aide">
-      <h2 id="titre-aide">Comment lire une fiche</h2>
-      <ul>
-        <li><span class="pastille ok">Vérifiée</span> La valeur a été lue, et la phrase citée a été retrouvée telle quelle dans le document.</li>
-        <li><span class="pastille alerte">À contrôler</span> La valeur a été lue, mais sa preuve n'a pas pu être vérifiée : elle n'est pas retenue.</li>
-        <li><span class="pastille neutre">Non trouvée</span> Le document ne donne pas cette information, ou l'outil ne l'a pas trouvée.</li>
-        <li><span class="pastille ecart">Écart</span> La base officielle de l'ESMA indique une autre valeur. Ce n'est pas forcément une erreur de l'outil : souvent, la base est mise à jour après le document (montant réellement placé, abondement).</li>
-        <li><strong>Relecture humaine</strong> : quand une valeur importante n'a pas pu être prouvée, le document est signalé pour qu'une personne le vérifie.</li>
-      </ul>
-    </section>
+      <section id="comment" class="section" aria-labelledby="titre-comment">
+        <h2 id="titre-comment">Comment ça marche</h2>
+        <ol class="etapes">
+          <li>
+            <span class="numero" aria-hidden="true">1</span>
+            <h3>Lire</h3>
+            <p>Chaque lundi, les nouveaux documents des obligations suivies sont téléchargés depuis le registre de l'autorité européenne des marchés (ESMA) et lus par une IA.</p>
+          </li>
+          <li>
+            <span class="numero" aria-hidden="true">2</span>
+            <h3>Prouver</h3>
+            <p>Chaque valeur doit venir avec la phrase exacte du document. Le programme vérifie qu'elle s'y trouve ; sinon, la valeur est refusée.</p>
+          </li>
+          <li>
+            <span class="numero" aria-hidden="true">3</span>
+            <h3>Comparer</h3>
+            <p>Les valeurs sont comparées à la base officielle de l'ESMA. Les écarts et les documents douteux sont signalés pour une relecture humaine.</p>
+          </li>
+        </ol>
+      </section>
 
-    <section class="carte chiffres" aria-labelledby="titre-chiffres">
-      <h2 id="titre-chiffres">Ce que l'outil vaut, mesuré</h2>
-      <dl>
-        <div><dt>91 %</dt><dd>de valeurs justes sur des documents jamais vus pendant sa mise au point, contre 67 % pour des règles écrites à la main</dd></div>
-        <div><dt>2 s</dt><dd>par document, contre environ 3 minutes de saisie manuelle</dd></div>
-        <div><dt>Chaque lundi</dt><dd>les nouveaux documents des obligations suivies sont lus et ajoutés</dd></div>
-        <div><dt>0 €</dt><dd>de coût de fonctionnement</dd></div>
-      </dl>
-      <p id="fraicheur" class="petit"></p>
-    </section>
-    <section class="carte" aria-labelledby="titre-apropos">
-      <h2 id="titre-apropos">À propos</h2>
-      <p>
-        bond-terms est un projet personnel de Nathan Mang, ingénieur diplômé de l'ESIEE Paris
-        (2026). Il montre comment lire des documents réglementaires avec une IA de façon
-        vérifiable : chaque valeur est prouvée par une citation, et la qualité est mesurée sur des
-        documents jamais vus, avec des seuils fixés avant de mesurer.
-      </p>
-      <p>
-        Le code, la méthode d'évaluation et les rapports de chaque version sont publics :
-        <a href="https://github.com/mangnathan/bond-terms">dépôt GitHub</a>,
-        <a href="https://github.com/mangnathan/bond-terms/tree/main/docs/pdf">rapports (PDF)</a>.
-      </p>
-    </section>
+      <details class="section aide">
+        <summary>Comment lire une fiche</summary>
+        <ul>
+          <li><span class="pastille ok">Vérifiée</span> La valeur a été lue, et la phrase citée a été retrouvée telle quelle dans le document.</li>
+          <li><span class="pastille alerte">À contrôler</span> La valeur a été lue, mais sa preuve n'a pas pu être vérifiée : elle n'est pas retenue.</li>
+          <li><span class="pastille neutre">Non trouvée</span> Le document ne donne pas cette information, ou l'outil ne l'a pas trouvée.</li>
+          <li><span class="pastille ecart">Écart</span> La base officielle de l'ESMA indique une autre valeur. Ce n'est pas forcément une erreur de l'outil : souvent, la base est mise à jour après le document (montant réellement placé, abondement).</li>
+          <li><strong>Relecture humaine</strong> : quand une valeur importante n'a pas pu être prouvée, le document est signalé pour qu'une personne le vérifie.</li>
+        </ul>
+      </details>
 
-    <section class="carte petit-texte" aria-labelledby="titre-mentions">
-      <h2 id="titre-mentions">Mentions légales et données</h2>
-      <p><strong>Éditeur</strong> : Nathan Mang, à titre personnel et non commercial. Contact : par le <a href="https://github.com/mangnathan/bond-terms/issues">dépôt GitHub</a>.</p>
-      <p><strong>Hébergement</strong> : Render Services, Inc. (render.com).</p>
-      <p><strong>Données</strong> : publications publiques de l'ESMA (base FIRDS et registre des prospectus). Les valeurs sont lues automatiquement et peuvent contenir des erreurs : cette page n'est pas un conseil en investissement et ne doit pas servir à une décision financière.</p>
-      <p><strong>Confidentialité</strong> : ni cookie, ni mesure d'audience, ni compte. L'application n'enregistre pas l'adresse des visiteurs ; l'hébergeur peut conserver des journaux techniques.</p>
-    </section>
+      <section id="apropos" class="section" aria-labelledby="titre-apropos">
+        <h2 id="titre-apropos">À propos</h2>
+        <p>
+          bond-terms est un projet personnel de Nathan Mang, ingénieur diplômé de l'ESIEE Paris
+          (2026). Il montre comment lire des documents réglementaires avec une IA de façon
+          vérifiable : chaque valeur est prouvée par une citation, et la qualité est mesurée sur des
+          documents jamais vus, avec des seuils fixés avant de mesurer.
+        </p>
+        <p>
+          Le code, la méthode d'évaluation et les rapports de chaque version sont publics :
+          <a href="https://github.com/mangnathan/bond-terms">dépôt GitHub</a>,
+          <a href="https://github.com/mangnathan/bond-terms/tree/main/docs/pdf">rapports (PDF)</a>.
+        </p>
+      </section>
+    </div>
   </main>
 
-  <footer class="contenu pied">
-    <p>Pour les développeurs : <a href="/docs">documentation de l'API</a>.</p>
+  <footer class="pied">
+    <div class="etroit">
+      <h2 class="titre-pied">Mentions légales et données</h2>
+      <p><strong>Éditeur</strong> : Nathan Mang, à titre personnel et non commercial. Contact : par le <a href="https://github.com/mangnathan/bond-terms/issues">dépôt GitHub</a>. <strong>Hébergement</strong> : Render Services, Inc. (render.com).</p>
+      <p><strong>Données</strong> : publications publiques de l'ESMA (base FIRDS et registre des prospectus). Les valeurs sont lues automatiquement et peuvent contenir des erreurs : cette page n'est pas un conseil en investissement et ne doit pas servir à une décision financière.</p>
+      <p><strong>Confidentialité</strong> : ni cookie, ni mesure d'audience, ni compte. L'application n'enregistre pas l'adresse des visiteurs ; l'hébergeur peut conserver des journaux techniques.</p>
+    </div>
   </footer>
 </body>
 </html>
