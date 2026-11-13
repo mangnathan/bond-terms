@@ -3,8 +3,9 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>bond-terms</title>
+  <title>bond-terms : les conditions d'une obligation, avec leur preuve</title>
   <meta name="description" content="Lecture automatique des conditions d'une obligation dans son document officiel, avec la preuve de chaque valeur.">
+  <link rel="icon" href="/favicon.svg" type="image/svg+xml">
   <link rel="stylesheet" href="/demo.css">
   <script src="/demo.js" defer></script>
 </head>
@@ -24,6 +25,7 @@
         document pour chaque valeur, et signale quand la base officielle de l'autorité européenne
         des marchés (ESMA) dit autre chose.
       </p>
+      <p><a class="action" href="#titre-recherche">Essayer un exemple</a></p>
     </div>
   </header>
 
@@ -63,10 +65,32 @@
       </dl>
       <p id="fraicheur" class="petit"></p>
     </section>
+    <section class="carte" aria-labelledby="titre-apropos">
+      <h2 id="titre-apropos">À propos</h2>
+      <p>
+        bond-terms est un projet personnel de Nathan Mang, ingénieur diplômé de l'ESIEE Paris
+        (2026). Il montre comment lire des documents réglementaires avec une IA de façon
+        vérifiable : chaque valeur est prouvée par une citation, et la qualité est mesurée sur des
+        documents jamais vus, avec des seuils fixés avant de mesurer.
+      </p>
+      <p>
+        Le code, la méthode d'évaluation et les rapports de chaque version sont publics :
+        <a href="https://github.com/mangnathan/bond-terms">dépôt GitHub</a>,
+        <a href="https://github.com/mangnathan/bond-terms/tree/main/docs/pdf">rapports (PDF)</a>.
+      </p>
+    </section>
+
+    <section class="carte petit-texte" aria-labelledby="titre-mentions">
+      <h2 id="titre-mentions">Mentions légales et données</h2>
+      <p><strong>Éditeur</strong> : Nathan Mang, à titre personnel et non commercial. Contact : par le <a href="https://github.com/mangnathan/bond-terms/issues">dépôt GitHub</a>.</p>
+      <p><strong>Hébergement</strong> : Render Services, Inc. (render.com).</p>
+      <p><strong>Données</strong> : publications publiques de l'ESMA (base FIRDS et registre des prospectus). Les valeurs sont lues automatiquement et peuvent contenir des erreurs : cette page n'est pas un conseil en investissement et ne doit pas servir à une décision financière.</p>
+      <p><strong>Confidentialité</strong> : ni cookie, ni mesure d'audience, ni compte. L'application n'enregistre pas l'adresse des visiteurs ; l'hébergeur peut conserver des journaux techniques.</p>
+    </section>
   </main>
 
   <footer class="contenu pied">
-    <p>Projet personnel, données publiques de l'ESMA. Pour les développeurs : <a href="/docs">documentation de l'API</a>.</p>
+    <p>Pour les développeurs : <a href="/docs">documentation de l'API</a>.</p>
   </footer>
 </body>
 </html>

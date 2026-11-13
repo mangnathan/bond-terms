@@ -287,4 +287,5 @@ def test_examples_never_reuse_a_bond_nor_show_a_sheet_read_by_the_rules(tmp_path
     with client(tmp_path, data) as api:
         found = api.get("/v1/exemples").json()
         assert api.get("/favicon.ico").status_code == 204
+        assert api.get("/favicon.svg").headers["content-type"].startswith("image/svg+xml")
     assert [e["isin"] for e in found] == ["US0378331005"]

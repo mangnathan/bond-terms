@@ -170,3 +170,18 @@ a { color: var(--accent); }
   h1 { font-size: 1.35rem; }
   .carte { padding: 16px; }
 }
+
+.action {
+  display: inline-block;
+  margin-top: 4px;
+  padding: 10px 18px;
+  border-radius: 8px;
+  background: var(--accent);
+  color: #fff;
+  font-weight: 600;
+  text-decoration: none;
+}
+.action:hover, .action:focus-visible { filter: brightness(1.1); }
+@media (prefers-color-scheme: dark) { .action { color: #0d1622; } }
+.petit-texte p { font-size: .92rem; color: var(--texte-doux); margin: 0 0 8px; }
+.petit-texte strong { color: var(--texte); }

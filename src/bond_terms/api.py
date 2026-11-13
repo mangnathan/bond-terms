@@ -410,7 +410,11 @@ def create_app(
     def demo_js() -> FileResponse:
         return FileResponse(DEMO_DIR / "demo.js", media_type="text/javascript")
 
-    # Les navigateurs demandent une icône : une réponse vide évite une erreur 404 à chaque visite.
+    @app.get("/favicon.svg", include_in_schema=False)
+    def favicon_svg() -> FileResponse:
+        return FileResponse(DEMO_DIR / "favicon.svg", media_type="image/svg+xml")
+
+    # Certains navigateurs demandent encore /favicon.ico : une réponse vide évite une erreur 404.
     @app.get("/favicon.ico", include_in_schema=False)
     def favicon() -> Response:
         return Response(status_code=204)
