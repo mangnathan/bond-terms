@@ -1,95 +1,100 @@
 # bond-terms
 
-Quand une entreprise ou un État emprunte de l'argent sur les marchés, il émet une **obligation** : un titre de dette avec un montant, un taux d'intérêt et une date de remboursement. Ces conditions sont écrites dans un document officiel de 10 à 200 pages, publié par l'autorité européenne des marchés financiers (ESMA).
+[![CI](https://github.com/mangnathan/bond-terms/actions/workflows/ci.yml/badge.svg)](https://github.com/mangnathan/bond-terms/actions/workflows/ci.yml)
+[![Licence MIT](https://img.shields.io/badge/licence-MIT-blue.svg)](LICENSE)
 
-Dans une banque, l'équipe qui tient à jour la base des titres recopie ces conditions à la main, ou les achète à un fournisseur. J'ai mesuré cette saisie sur moi-même : **3 minutes par document et 18 % de valeurs fausses**.
+**Lire les conditions d'une obligation dans son document officiel, avec la preuve de chaque valeur.**
 
-**bond-terms lit ces documents automatiquement.** Pour chaque valeur, l'outil donne la phrase exacte du document qui la justifie, et vérifie qu'elle s'y trouve bien ; sinon, la valeur est refusée. Les documents douteux partent en revue humaine, et un rapport signale les écarts entre le document et FIRDS, la base de référence officielle de l'ESMA.
+**[Essayer l'outil en ligne : bond-terms.onrender.com](https://bond-terms.onrender.com)** (hébergement gratuit : si personne ne l'a ouvert depuis un quart d'heure, la première réponse prend environ une minute).
 
-**Résultat**, mesuré sur des documents jamais vus pendant le développement : **91 % de valeurs justes**, contre 67 % pour une approche par règles écrites à la main, en 2 secondes par document et à coût nul.
+[![Page de bond-terms : explication à gauche, exemples et recherche par code ISIN à droite](docs/images/page-demonstration.png)](https://bond-terms.onrender.com)
 
-**Le service tourne** : chaque lundi, les nouveaux documents des 840 obligations suivies sont collectés, lus et comparés à FIRDS. L'outil est en ligne sur **[bond-terms.onrender.com](https://bond-terms.onrender.com)** : une page explique le sujet et propose des exemples, et chaque fiche montre la phrase du document qui prouve chaque valeur. La documentation de l'API est sur `/docs`. Elle est hébergée sur l'offre gratuite de Render : si personne ne l'a appelée depuis un quart d'heure, la première réponse prend environ une minute.
+## Le problème
 
-## Avancement
+Quand une entreprise, une banque ou un État emprunte sur les marchés, il émet une **obligation** : un titre de dette avec un montant, un taux d'intérêt et une date de remboursement. Ces conditions sont écrites dans un document officiel de 10 à 200 pages, publié dans le registre de l'autorité européenne des marchés financiers (ESMA).
 
-| Version | Contenu | État |
+Dans une banque ou une société de gestion, l'équipe qui tient la base des titres recopie ces conditions à la main, ou les achète à un fournisseur sans voir d'où vient chaque valeur. J'ai chronométré cette saisie sur dix documents : **3 minutes par document**, et environ **une valeur sur sept fausse**.
+
+## Ce que fait bond-terms
+
+- **Il lit** chaque document avec une IA (Gemini) et en tire les conditions : devise, montant, valeur nominale, échéance, type de taux, taux, référence et marge d'un taux variable, rang de la dette.
+- **Il prouve** chaque valeur : l'IA doit citer la phrase exacte du document, et le programme vérifie qu'elle s'y trouve et qu'elle écrit bien la valeur. Sans preuve, la valeur est refusée.
+- **Il contrôle la base officielle** : chaque valeur est comparée à FIRDS, la base de référence de l'ESMA, et les écarts sont signalés.
+- **Il sait quand il doute** : un document dont une valeur importante n'est pas prouvée part en relecture humaine.
+- **Il va au-delà de FIRDS** : il lit aussi le droit de l'émetteur de rembourser avant l'échéance, que la base officielle ne contient pas.
+- **Il se tient à jour** : chaque lundi, les nouveaux documents des 840 obligations suivies sont collectés, lus et publiés, sans intervention.
+- **Il ne coûte rien** : offres gratuites uniquement, avec des plafonds inscrits dans le code.
+
+## Résultats
+
+Mesurés sur un jeu de **117 documents jamais vus** pendant la mise au point, ouvert une seule fois, avec des seuils fixés avant de mesurer :
+
+| | bond-terms (IA) | Règles écrites à la main | Saisie manuelle |
+|---|---|---|---|
+| Valeurs justes | **93,2 %** [91,0 ; 95,2] | 67,6 % | 85,5 % (10 documents) |
+| Temps par document | 2 secondes | moins d'une seconde | 3 minutes |
+| Documents envoyés en relecture humaine | 19,7 %, qui contiennent 79 % des documents erronés | | |
+
+- **Temps humain** : au moins **80 % économisé**. Seuls les documents signalés sont relus, et relire une fiche dont chaque valeur est citée ne prend pas plus de temps que la saisir.
+- **Par champ** : la devise (100 %) et la valeur nominale (99,2 %) atteignent leur seuil de 98 % et 95 %. L'échéance et le type de taux (95,8 %), le taux fixe (93,1 %) et le rang (88,7 %) restent en dessous ; les taux variables sont trop peu nombreux dans le jeu (16 titres) pour conclure.
+- **Écarts avec FIRDS** : 16 dans 15 documents, surtout des montants. Le document annonce le montant émis, et FIRDS l'encours réellement placé.
+
+La saisie manuelle est comparée sur les mêmes champs que l'outil. Le détail de chaque mesure est dans le [rapport final (PDF)](docs/pdf/bond-terms_v1.0_Rapport-final.pdf), et un résumé d'une page dans la [note de synthèse (PDF)](docs/pdf/bond-terms_v1.0_Note-de-synthese.pdf).
+
+## Comment ça marche
+
+```mermaid
+flowchart LR
+    A[Registre de l'ESMA<br>et base FIRDS] -->|chaque lundi| B[Collecte<br>GitHub Actions]
+    B --> C[Lecture des PDF<br>et OCR des scans]
+    C --> D[Extraction par l'IA<br>avec citations]
+    D --> E[Vérification<br>des citations]
+    E --> F[Comparaison à FIRDS<br>entrepôt dbt]
+    F --> G[Instantané publié<br>en release]
+    G --> H[API et page web<br>sur Render]
+```
+
+1. **Collecte.** La publication de FIRDS de la semaine donne les obligations suivies (huit émetteurs français : BNP Paribas, Société Générale, Crédit Agricole, BPCE, AXA, LVMH, Kering, Air France-KLM). Le registre de l'ESMA donne leurs documents ; seuls les nouveaux sont traités.
+2. **Lecture.** Le texte de chaque PDF est extrait, et les pages scannées passent par une reconnaissance de caractères locale. Un contrôle vérifie que le document cite bien l'obligation, et écarte les produits structurés que FIRDS déclare comme des obligations classiques.
+3. **Extraction et preuve.** L'IA renvoie chaque valeur avec sa citation. Le programme retrouve la citation dans le document et vérifie qu'elle écrit la valeur : montant, taux et date compris. Si l'IA ne répond pas, un extracteur à règles prend le relais, et le document est relu par l'IA la semaine suivante.
+4. **Comparaison et surveillance.** Les valeurs sont comparées à FIRDS par les mêmes modèles dbt que l'évaluation. La part de documents en revue, de valeurs refusées et d'écarts est suivie ; un seuil franchi ou une panne ouvre une issue GitHub.
+5. **Publication.** Le résultat est publié en release GitHub. L'API le charge au démarrage, ne fait que le lire et n'appelle jamais l'IA : aucun visiteur ne peut consommer le quota gratuit.
+
+## Méthode d'évaluation
+
+- **Une vérité officielle** : les valeurs de FIRDS, publiées par l'ESMA, plutôt qu'une annotation faite à la main par un non-spécialiste.
+- **Des seuils fixés avant de mesurer** : au moins 98 % pour la devise, l'échéance, le type de taux et le taux fixe ; 95 % pour les autres champs. L'IA n'est retenue que si elle bat un extracteur à règles d'au moins 2 points.
+- **Quatre ouvertures de test**, chacune sur des documents jamais vus, tirés au hasard avec une graine fixée et figés avant tout téléchargement, ouverts une seule fois depuis un commit consigné dans un registre daté. Chaque réglage s'est fait sur les jeux déjà ouverts.
+- **Des intervalles de confiance** à 95 % par bootstrap sur les documents, et une différence appariée entre l'IA et les règles.
+- **Des décisions écrites** : chaque version a sa note de décision ([ADR](docs/adr)), avec ses précisions et son gel datés avant l'ouverture du test.
+
+## Limites
+
+- Deux champs sur les neuf qui ont un seuil l'atteignent (devise, valeur nominale), et les taux variables sont trop peu nombreux pour être jugés.
+- Le montant n'est comparé qu'à titre indicatif : FIRDS publie l'encours, le document le montant émis.
+- La lecture du remboursement anticipé au gré de l'émetteur est indicative : FIRDS ne la contient pas, aucune base officielle ne permet de la mesurer.
+- Le contrôle des produits structurés repose sur le libellé du document et laisse passer certains cas (« Autocall »).
+- L'IA gratuite refuse ponctuellement un document par surcharge, et ses réponses varient légèrement d'une exécution à l'autre.
+- La saisie manuelle de référence porte sur dix documents, saisis par une seule personne non spécialiste.
+
+## Historique des versions
+
+| Version | Contenu | Rapport |
 |---|---|---|
-| v0.0 | Cadrage : population, vérité terrain, seuils fixés avant toute extraction, référence humaine | Terminé |
-| v0.1 | Collecte (FIRDS, registre, PDF), date de coupure du test, entrepôt de données | Terminé |
-| v0.2 | Extracteur à règles contre LLM sur les champs vérifiables, test ouvert une seule fois | Terminé |
-| v0.3 | File de revue humaine, rapport d'exceptions, nouveau test (clauses littérales reportées) | Terminé |
-| v0.4 | Corrections mesurées sur un nouveau test, collecte hebdomadaire, surveillance et alertes, API en ligne (clauses littérales retirées) | Terminé |
-| v1.0 | Démonstration publique, note de synthèse, business case mesuré | À venir |
+| v0.0 | Cadrage : population, vérité terrain, seuils, saisie manuelle chronométrée | [PDF](docs/pdf/bond-terms_v0.0_Rapport-de-cadrage.pdf) |
+| v0.1 | Collecte (FIRDS, registre, PDF) et entrepôt de données dbt | [PDF](docs/pdf/bond-terms_v0.1_Rapport-de-collecte.pdf) |
+| v0.2 | Extracteur à règles contre IA, premier test ouvert une seule fois | [PDF](docs/pdf/bond-terms_v0.2_Rapport-extraction.pdf) |
+| v0.3 | Relecture humaine, rapport d'écarts avec FIRDS, deuxième test | [PDF](docs/pdf/bond-terms_v0.3_Rapport-revue-exceptions.pdf) |
+| v0.4 | Collecte hebdomadaire, surveillance et alertes, API en ligne, troisième test | [PDF](docs/pdf/bond-terms_v0.4_Rapport-service.pdf) |
+| v1.0 | Vérification des taux et des dates, clause hors FIRDS, page de démonstration, quatrième test | [PDF](docs/pdf/bond-terms_v1.0_Rapport-final.pdf) |
 
-## Résultats du cadrage (v0.0)
+Le détail des changements est dans le [CHANGELOG](CHANGELOG.md).
 
-- **Population** : 838 obligations classiques à ISIN français, émises par BNP Paribas, Société Générale, Crédit Agricole S.A., BPCE, AXA, LVMH, Kering et Air France-KLM. Environ 500 documents attendus.
-- **Vérité terrain officielle** : l'indicateur principal ne porte que sur des valeurs publiées par FIRDS et GLEIF, sans annotation manuelle.
-- **Seuils** : au moins 98 % d'exactitude pour l'échéance, la devise, le type de taux et le taux fixe ; au moins 95 % pour la marge, la valeur nominale, le montant et le rang. Le LLM ne sera retenu que s'il bat un extracteur à règles d'au moins 2 points.
-- **Référence humaine** : une saisie manuelle chronométrée prend 3 minutes par document en médiane, avec 82 % de champs justes (58 sur 71).
-- **Deux corrections avant toute extraction** : lecture des références de taux variable de FIRDS, et exclusion des produits structurés qui se font passer pour des obligations (population ramenée de 1 163 à 838).
+## Technique
 
-Détails : [rapport de cadrage (PDF)](docs/pdf/bond-terms_v0.0_Rapport-de-cadrage.pdf) et [ADR 0001](docs/adr/0001-cadrage.md).
+Python 3.12, uv, DuckDB et dbt (entrepôt, aussi testé sur le bac à sable BigQuery), pypdf et RapidOCR, Gemini (offre gratuite) pour l'extraction, FastAPI pour l'API, GitHub Actions pour la CI et la collecte, Render pour l'hébergement. Le code est typé (mypy strict), vérifié par ruff et couvert par près de 300 tests ; la CI bloque toute fusion qui ne passe pas.
 
-## Résultats de la collecte (v0.1)
-
-- **Documents** : 486 des 838 obligations ont un document d'émission dans le registre, soit 502 documents (475 conditions définitives, 28 prospectus autonomes), dont 41 en français.
-- **Découpage figé avant toute extraction** : coupure au 27 septembre 2024, 351 documents de développement et 151 de test. Un second test de 100 documents porte sur des émetteurs jamais vus.
-- **PDF** : les 602 documents sont lus. 24 sont des scans sans texte, dont 8 dans le test : ils limitent un extracteur qui ne lit que le texte à environ 95 %, sous les seuils de 98 %. La réponse (OCR local et gratuit) sera décidée dans l'ADR 0002, avant la v0.2.
-- **Entrepôt de données** : un projet dbt construit la vérité terrain de la v0.2 avec 26 contrôles. Il tourne sur DuckDB (poste et CI) et sur le bac à sable BigQuery, avec des résultats identiques et aucune dépense.
-
-Détails : [rapport de collecte (PDF)](docs/pdf/bond-terms_v0.1_Rapport-de-collecte.pdf).
-
-## Résultats de l'extraction (v0.2)
-
-- **Le LLM est retenu.** Sur le test principal (148 documents, ouvert une seule fois), `gemini-3.5-flash-lite` est juste sur 90,8 % des paires document-champ, contre 83,3 % pour l'extracteur à règles : écart de 7,5 points [3,9 ; 11,0], au-dessus des 2 points exigés.
-- **Il généralise.** Sur 99 documents d'émetteurs jamais vus, 93,1 % contre 61,5 % pour les règles.
-- **Seuils.** La valeur nominale atteint son seuil (98,6 %) ; le rang l'atteint avec une marge statistique insuffisante (97,4 %) ; devise et échéance restent à 97,3 % pour 98 % exigés.
-- **Baisse expliquée.** 20 taux justes sont refusés par la vérification des citations sur une mise en page à deux colonnes, et FIRDS code désormais en taux variable les titres à taux fixe puis variable qu'il codait en taux fixe.
-- **Coût nul.** 629 requêtes à l'offre gratuite de l'API Gemini, sous des plafonds inscrits dans le code ; chaque valeur est appuyée sur une citation retrouvée dans le document.
-
-Détails : [rapport d'extraction (PDF)](docs/pdf/bond-terms_v0.2_Rapport-extraction.pdf) et [ADR 0002](docs/adr/0002-conception-extracteur.md).
-
-## Résultats de la revue et des exceptions (v0.3)
-
-- **Nouveau test, ouvert une seule fois.** Sur 131 documents d'émetteurs jamais vus, le LLM est juste sur 92,2 % des paires document-champ [89,8 ; 94,5], contre 60,9 % pour l'extracteur à règles.
-- **Seuils.** Devise (99,2 %) et valeur nominale (97,0 %) atteignent leur seuil avec une marge statistique insuffisante ; les autres champs restent en dessous.
-- **File de revue.** 17,6 % des documents partent en revue, sous le plafond de 30 % ; 72 % des documents erronés sont attrapés.
-- **Rapport d'exceptions.** 34 écarts entre FIRDS et le document ; vérifiés à la main, 78,1 % sont réels, pour 80 % exigés. La cause principale des lectures fausses : un prospectus qui décrit plusieurs obligations.
-- **Vérité terrain corrigée.** Des produits structurés que FIRDS déclare comme des obligations classiques sont écartés par un contrôle du libellé (19 documents sur 150 dans le nouveau test).
-
-Détails : [rapport de revue et d'exceptions (PDF)](docs/pdf/bond-terms_v0.3_Rapport-revue-exceptions.pdf) et [ADR 0003](docs/adr/0003-revue-et-exceptions.md).
-
-## Résultats de la mise en service (v0.4)
-
-- **Troisième test, ouvert une seule fois.** Sur 116 documents d'émetteurs jamais vus, le LLM est juste sur 91,1 % des paires document-champ [88,3 ; 93,5], contre 67,1 % pour l'extracteur à règles. Seule la valeur nominale passe son seuil avec une marge suffisante.
-- **Rapport d'exceptions.** Vérifiés à la main, 63,0 % des écarts signalés sont réels, pour 80 % exigés. Trois lectures fausses sur dix viennent d'une conversion du projet (« 2,000 % » lu 2 000) : un taux n'est pas encore contrôlé dans sa citation.
-- **Service.** Collecte hebdomadaire par GitHub Actions, surveillance avec alertes en issue GitHub, API FastAPI en lecture seule sur Render ; trois collectes réelles réussies, 0 €.
-- **Mise en service.** Quatre défauts n'apparaissaient qu'en conditions réelles (ordre des releases, fiches lues par les règles sans le dire, limite d'appels de GitHub, redéploiement) : tous corrigés et décrits dans le rapport.
-
-Détails : [rapport de mise en service (PDF)](docs/pdf/bond-terms_v0.4_Rapport-service.pdf) et [ADR 0004](docs/adr/0004-service.md).
-
-## Structure du dépôt
-
-```
-src/bond_terms/       code du projet : collecte, découpage, entrepôt, OCR, extracteurs, évaluation, API
-entrepot/             projet dbt : modèles, tests de données, profils DuckDB et BigQuery
-scripts/feasibility/  scripts de l'étude de faisabilité et de la saisie chronométrée
-scripts/adr0002/      mesure de l'OCR et de la présence des valeurs de FIRDS (ADR 0002)
-scripts/v0.2/         analyse des erreurs sur le test, après son ouverture
-scripts/adr0003/      mesures de l'ADR 0003 sur les jeux connus
-scripts/docs/         compilation des rapports LaTeX
-tests/                tests unitaires et construction de l'entrepôt sur des données fabriquées
-docs/adr/             décisions d'architecture
-docs/v0.0-cadrage/    rapport de cadrage et chiffres produits par les scripts
-docs/v0.1-collecte/   rapport de collecte et chiffres produits par la collecte
-docs/v0.2-extraction/ rapport d'extraction, résultats et registre d'ouverture du test
-docs/v0.3-revue/      rapport de revue, nouveau test figé, résultats et exceptions vérifiées
-docs/v0.4-service/    rapport de mise en service, nouveau test figé, résultats et exceptions vérifiées
-docs/pdf/             rapports compilés
-```
-
-## Reproduire
+## Lancer le projet
 
 Prérequis : Python 3.12 et [uv](https://docs.astral.sh/uv/). Les rapports se compilent avec [Tectonic](https://tectonic-typesetting.github.io).
 
@@ -97,14 +102,22 @@ Prérequis : Python 3.12 et [uv](https://docs.astral.sh/uv/). Les rapports se co
 uv sync
 uv run pytest
 
+# Instantané des conditions extraites, puis API et page web sur http://localhost:8000
+uv run python -m bond_terms.instantane
+uv run uvicorn bond_terms.api:app --no-access-log
+```
+
+L'extraction par l'IA demande une clé de l'API Gemini, créée dans AI Studio sur un projet sans facturation liée, dans un fichier `.env` jamais versionné (voir [.env.example](.env.example)).
+
+<details>
+<summary>Reproduire chaque étape (collecte, entrepôt, extraction, évaluation, service)</summary>
+
+```bash
 # Étude de faisabilité (les données téléchargées vont dans data/, jamais versionné)
 uv run python scripts/feasibility/build_firds_debt_index.py --date 2026-10-17   # environ 20 minutes
 uv run python scripts/feasibility/measure_register_match.py
 uv run python scripts/feasibility/check_issuer_coverage.py
 uv run python scripts/feasibility/compare_timing_to_firds.py
-
-# Rapport de cadrage
-uv run python scripts/docs/build_report_pdf.py docs/v0.0-cadrage/v0.0-rapport-de-cadrage.tex docs/pdf/bond-terms_v0.0_Rapport-de-cadrage.pdf
 
 # Collecte (v0.1) : requêtes vers l'ESMA espacées d'une seconde et mises en cache
 uv run python -m bond_terms.firds --date 2026-10-17                  # environ 3 minutes
@@ -115,92 +128,74 @@ uv run python -m bond_terms.documents                                # environ 6
 # Entrepôt de données sur DuckDB
 uv run python -m bond_terms.entrepot --firds-date 2026-10-17 --registre-date 2026-10-23
 uv run dbt build --project-dir entrepot --profiles-dir entrepot
-```
 
-### Extraction et évaluation (v0.2)
-
-```bash
 # OCR des pages sans texte, puis contrôle « le document cite l'ISIN »
-uv run --group ocr python -m bond_terms.ocr                         # environ 300 pages
+uv run --group ocr python -m bond_terms.ocr
 uv run python -m bond_terms.rattachement
 
-# Extracteurs sur le développement, puis évaluation (aucune requête : tout sort du cache)
-uv run python -m bond_terms.lancement --extracteur regles
-uv run --group llm --env-file .env python -m bond_terms.lancement --extracteur llm --modele gemini-3.5-flash-lite
-uv run python -m bond_terms.evaluation
-```
-
-### Revue et exceptions (v0.3)
-
-```bash
-# Extracteurs sur les trois jeux connus, puis évaluation, file de revue et exceptions
+# Extracteurs, évaluation, file de revue et écarts avec FIRDS (le cache évite tout second envoi)
 uv run python -m bond_terms.lancement --extracteur regles --jeu test
 uv run --group llm --env-file .env python -m bond_terms.lancement --extracteur llm --modele gemini-3.5-flash-lite --jeu test
 uv run python -m bond_terms.evaluation
 uv run python -m bond_terms.revue
 uv run python -m bond_terms.exceptions
-```
 
-Le nouveau test de la v0.3 a été tiré par `bond_terms.nouveau_test` et ouvert une seule fois par `bond_terms.ouverture` ; les deux commandes refusent d'être relancées.
-
-L'extracteur LLM demande une clé de l'API Gemini, créée dans AI Studio sur un projet sans facturation liée, dans `.env` (voir `.env.example`). Les jeux de test ont été ouverts une seule fois, le 27 octobre 2026 ; la commande `bond_terms.ouverture` refuse une seconde ouverture.
-
-Le découpage et ses chiffres sont versionnés dans `docs/v0.1-collecte/data` : relancer la collecte un autre jour donnerait un autre registre, mais ne doit pas remplacer le découpage figé.
-
-### API en lecture seule (v0.4)
-
-```bash
-# Instantané des conditions extraites, puis API sur http://localhost:8000 (documentation sur /docs)
-uv run python -m bond_terms.instantane
-uv run uvicorn bond_terms.api:app --no-access-log
-```
-
-| Route | Contenu |
-|---|---|
-| `GET /v1/obligations/{isin}` | Pour chaque document de l'obligation : extracteur (LLM, ou règles si le LLM n'a pas pu le lire), valeurs lues avec leur citation, leur page et leur statut, statut de revue, exceptions avec FIRDS |
-| `GET /v1/indicateurs` | Indicateurs de surveillance par jeu : part en revue, part des valeurs refusées, part des documents avec exception, documents lus par les règles faute de quota |
-| `GET /v1/sante` | État du service, version de l'API, date de l'instantané et versions des extracteurs |
-
-L'API ne fait que lire un instantané chargé au démarrage (`BOND_TERMS_INSTANTANE`, par défaut `data/instantane/instantane.json`) : elle n'appelle jamais le modèle. Un ISIN mal formé ou dont la clé de contrôle est fausse est refusé (422) avant toute recherche ; au-delà de 60 appels par minute, un client reçoit une réponse 429. Les routes sont versionnées : un changement incompatible ouvrira `/v2` sans casser les clients de `/v1`. L'API écrit une ligne de journal par appel (méthode, route, code, durée) sans l'adresse du client ; le journal d'accès d'uvicorn, qui la contient, est coupé par `--no-access-log`.
-
-### Déploiement (v0.4)
-
-L'API est décrite pour Render dans [render.yaml](render.yaml), en offre gratuite : seul le groupe `api` est installé, et l'API télécharge au démarrage l'instantané de la release `en-service`, que chaque collecte remplace (`BOND_TERMS_DEPOT`). Aucun secret n'est nécessaire. Render redéploie chaque commit sur `main` une fois la CI passée. Sans trafic depuis un quart d'heure, le service s'endort : le premier appel prend alors environ une minute. La limite de 60 appels par minute et par client s'appuie sur l'en-tête `True-Client-IP` ; un plafond de 600 appels par minute, tous clients confondus, s'y ajoute.
-
-### Collecte hebdomadaire (v0.4)
-
-Chaque lundi, le workflow [Collecte hebdomadaire](.github/workflows/collecte.yml) reprend le dernier instantané publié en release, ne traite que les documents d'émission parus depuis, et publie le nouvel instantané avec le bilan de la semaine ; le bilan est aussi commité sur la branche `donnees`. La même collecte se lance sur le poste :
-
-```bash
+# Collecte hebdomadaire, comme le workflow du lundi
 uv run --group ocr --group llm --env-file .env python -m bond_terms.collecte --precedent data/instantane/instantane.json
+
+# Rapports
+uv run python scripts/docs/build_report_pdf.py docs/v1.0-publique/v1.0-rapport-final.tex docs/pdf/bond-terms_v1.0_Rapport-final.pdf
 ```
 
-Le workflow demande la clé de l'API Gemini comme secret du dépôt (`GEMINI_API_KEY`), sur un projet Google sans facturation liée. Le premier instantané se construit par `bond_terms.instantane`, à partir des extractions déjà faites, et se publie à la main dans une release `instantane-...` ; au-delà de 60 nouveaux documents, la collecte s'arrête sans rien publier.
+Les jeux de test ont été tirés par `bond_terms.nouveau_test` et ouverts une seule fois par `bond_terms.ouverture` ; les deux commandes refusent d'être relancées. Le découpage et les jeux figés sont versionnés dans `docs/` : relancer la collecte un autre jour donnerait un autre registre, mais ne remplace pas ce qui a été figé.
 
-Chaque collecte se termine par la surveillance (`bond_terms.surveillance`) : part des documents en revue (au plus 30 %), des valeurs refusées (10 %) et des documents avec exception (40 %), jugées sur les dernières collectes jusqu'à 20 documents. Un seuil franchi, un arrêt pour quota ou un échec du workflow ouvrent une issue GitHub avec l'étiquette `alerte`.
-
-### Bac à sable BigQuery (facultatif)
-
-Le même entrepôt peut tourner sur le [bac à sable BigQuery](https://cloud.google.com/bigquery/docs/sandbox), sans moyen de paiement. Il faut un projet Google Cloud sans facturation liée et un compte de service (rôles « Éditeur de données BigQuery » et « Utilisateur de job BigQuery ») dont la clé est rangée hors du dépôt. Copier `.env.example` en `.env`, le remplir, puis :
+Le même entrepôt tourne sur le [bac à sable BigQuery](https://cloud.google.com/bigquery/docs/sandbox), sans moyen de paiement, avec un compte de service dont la clé reste hors du dépôt :
 
 ```bash
 uv run --group bigquery --env-file .env python -m bond_terms.bigquery
 uv run --group bigquery --env-file .env dbt build --project-dir entrepot --profiles-dir entrepot --target bigquery
 ```
 
-Le chargeur refuse d'envoyer plus de 20 Mo et s'arrête à la première erreur ; chaque requête dbt est plafonnée à 1 Go lu. Les tables du bac à sable expirent après 60 jours.
+</details>
 
-Le registre des prospectus évolue en continu : les totaux par segment peuvent varier de quelques dizaines de documents d'un jour à l'autre.
+### Service en ligne
+
+| Route | Contenu |
+|---|---|
+| `GET /` | Page de démonstration, lisible sans connaître le sujet |
+| `GET /v1/obligations/{isin}` | Pour chaque document de l'obligation : extracteur, valeurs avec leur citation, leur page et leur statut, relecture, écarts avec FIRDS |
+| `GET /v1/indicateurs` | Indicateurs de surveillance par jeu |
+| `GET /v1/sante` | État du service, date de la dernière collecte, versions des extracteurs |
+| `GET /docs` | Documentation interactive de l'API |
+
+L'API vérifie le format et la clé de contrôle de l'ISIN avant toute recherche, limite chaque client à 60 appels par minute (600 au total), envoie les en-têtes de sécurité usuels et n'enregistre pas l'adresse des visiteurs. Le service est décrit dans [render.yaml](render.yaml) ; la collecte du lundi dans [collecte.yml](.github/workflows/collecte.yml).
+
+## Structure du dépôt
+
+```
+src/bond_terms/          code : collecte, lecture, entrepôt, extracteurs, vérification, évaluation,
+                         revue, écarts, collecte hebdomadaire, surveillance, API
+src/bond_terms/demo/     page de démonstration (HTML, CSS, JavaScript, sans bibliothèque externe)
+entrepot/                projet dbt : modèles, tests de données, profils DuckDB et BigQuery
+scripts/                 étude de faisabilité, mesures des ADR, compilation des rapports
+tests/                   tests unitaires et construction de l'entrepôt sur des données fabriquées
+docs/adr/                notes de décision, une par version
+docs/v0.0-cadrage/ ...   un dossier par version : rapport LaTeX et chiffres produits
+docs/v1.0-publique/      quatrième test figé, résultats, mesures et business case
+docs/pdf/                rapports compilés
+.github/workflows/       CI et collecte hebdomadaire
+render.yaml              description du service hébergé
+```
 
 ## Données
 
 Le projet utilise uniquement des données publiques :
 
-- **ESMA** (Autorité européenne des marchés financiers) : la base de référence des instruments financiers FIRDS et le registre des prospectus. Source : ESMA, reproduction autorisée avec mention de la source ([mentions légales](https://www.esma.europa.eu/legal-notice)). Le dépôt ne contient aucun document de l'ESMA : seulement des identifiants (ISIN, liens) et des chiffres calculés à partir de ces bases.
+- **ESMA** (Autorité européenne des marchés financiers) : la base de référence des instruments financiers FIRDS et le registre des prospectus. Source : ESMA, reproduction autorisée avec mention de la source ([mentions légales](https://www.esma.europa.eu/legal-notice)). Le dépôt ne contient aucun document de l'ESMA : seulement des identifiants (ISIN, liens) et des chiffres calculés à partir de ces bases. Les citations servies par l'API sont de courts extraits des documents publics.
 - **GLEIF** (Global Legal Entity Identifier Foundation) : les identifiants LEI des émetteurs, publiés sous licence CC0 ([conditions d'utilisation](https://www.gleif.org/en/meta/lei-data-terms-of-use)).
 
-Ce projet est indépendant : il n'est ni soutenu ni validé par l'ESMA ou GLEIF.
+Ce projet est indépendant : il n'est ni soutenu ni validé par l'ESMA ou GLEIF. Les valeurs sont lues automatiquement et peuvent contenir des erreurs : elles ne constituent pas un conseil en investissement.
 
-## Licence
+## Auteur et licence
 
-[MIT](LICENSE)
+Projet personnel de Nathan Mang. Code sous licence [MIT](LICENSE).

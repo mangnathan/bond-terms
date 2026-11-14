@@ -1,0 +1,40 @@
+\documentclass[11pt,a4paper]{article}
+
+\newcommand{\rapporttitre}{Note de synthèse}
+\newcommand{\rapportversion}{v1.0}
+\input{../latex/preambule}
+
+\begin{document}
+
+\thispagestyle{empty}
+\noindent{\Large\bfseries bond-terms : les conditions d'une obligation, avec la preuve de chaque valeur\par}
+\vspace{2pt}
+\noindent{\small Note de synthèse, version 1.0, 14 novembre 2026. Outil en ligne : \url{https://bond-terms.onrender.com}\par}
+\vspace{10pt}
+
+\textbf{Le problème.} Chaque obligation émise en Europe est décrite dans un document officiel de 10 à 200 pages, publié par l'autorité européenne des marchés financiers (ESMA). Les équipes qui tiennent la base des titres d'une banque recopient ces conditions à la main, ou les achètent sans voir d'où vient chaque valeur. Mesurée au cadrage, la saisie manuelle prend 3 minutes par document, avec environ une valeur sur sept fausse.
+
+\textbf{La solution.} bond-terms lit chaque document avec un modèle de langage et en tire les conditions : devise, montant, valeur nominale, échéance, taux, rang. Chaque valeur doit être prouvée par la phrase exacte du document, que le programme retrouve et contrôle ; sans preuve, elle est refusée. Les valeurs sont comparées à FIRDS, la base de référence de l'ESMA, et les documents douteux partent en relecture humaine. L'outil lit aussi une clause absente de FIRDS : le droit de l'émetteur de rembourser avant l'échéance. Il se met à jour seul chaque semaine.
+
+\textbf{Les résultats}, mesurés sur 117 documents jamais vus, avec des seuils fixés avant de mesurer :
+
+\begin{center}
+\small
+\begin{tabular}{lrrr}
+\toprule
+& \textbf{bond-terms} & \textbf{Règles écrites à la main} & \textbf{Saisie manuelle} \\
+\midrule
+Valeurs justes (mêmes champs) & \textbf{93,2~\%} & 67,6~\% & 85,5~\% \\
+Temps par document & 2 secondes & moins d'une seconde & 3 minutes \\
+Temps humain par document & au plus 0,6 minute & -- & 3 minutes \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+\textbf{Le gain.} Seuls les 19,7~\% de documents signalés sont relus, et ils contiennent 79~\% des documents erronés. Relire une fiche dont chaque valeur est citée ne prend pas plus de temps que la saisir : au moins 80~\% du temps humain est économisé, pour une exactitude supérieure. Pour les huit émetteurs suivis, soit environ 135 documents par an, la saisie passerait de 6,8 heures à au plus 1,3 heure de relecture. Le coût de fonctionnement est nul.
+
+\textbf{Les limites.} Deux champs sur neuf atteignent leur seuil de 95 ou 98~\% (devise 100~\%, valeur nominale 99,2~\%) ; l'échéance et le type de taux sont à 95,8~\%, le rang à 88,7~\%. Le montant ne se compare qu'à titre indicatif, car FIRDS publie l'encours et le document le montant émis. La saisie manuelle de référence porte sur dix documents seulement. L'outil reste un assistant : il pré-remplit et contrôle, un humain valide les cas signalés.
+
+\textbf{La méthode.} Une vérité officielle (FIRDS) plutôt qu'une annotation faite à la main ; quatre ouvertures de test sur des documents jamais vus, chacune une seule fois, depuis un commit consigné ; des intervalles de confiance à 95~\% ; une note de décision par version. Code, données de mesure et rapports : \url{https://github.com/mangnathan/bond-terms}.
+
+\end{document}
