@@ -1,0 +1,159 @@
+\documentclass[11pt,a4paper]{article}
+
+\newcommand{\rapporttitre}{Rapport final}
+\newcommand{\rapportversion}{v1.0}
+\input{../latex/preambule}
+\usepackage{needspace}
+\usepackage{amsmath}
+\usepackage{etoolbox}
+% Un titre de section ne reste jamais seul en bas de page.
+\pretocmd{\section}{\needspace{10\baselineskip}}{}{}
+
+\begin{document}
+
+\pagedegarde{Extraction des conditions des obligations à partir des documents de l'ESMA}{14 novembre 2026}{Version 1.0, qualité mesurée et outil présentable}
+
+\setcounter{tocdepth}{1}
+\tableofcontents
+\newpage
+
+\section*{Synthèse}
+\addcontentsline{toc}{section}{Synthèse}
+
+bond-terms lit les conditions d'une obligation dans son document officiel, publié par l'autorité européenne des marchés financiers (ESMA), et prouve chaque valeur par une citation du document. La version 1.0 corrige les lectures fausses relevées en v0.4, ajoute une clause absente de la base officielle, rend l'outil compréhensible par un visiteur qui ne connaît pas le sujet, et le mesure une dernière fois sur un jeu jamais vu.
+
+\begin{itemize}
+  \item \textbf{La meilleure mesure du projet.} Sur 117 documents jamais vus, l'outil est juste sur 93,2~\% des paires document--champ [91,0 ; 95,2], contre 67,6~\% pour des règles écrites à la main, soit 25,6 points d'écart [20,9 ; 30,5]. La devise (100~\%) et la valeur nominale (99,2~\%) atteignent leur seuil.
+  \item \textbf{Moins d'écarts, mieux repérés.} Les écarts signalés avec FIRDS passent de 28 à 16 par rapport au test précédent, et la relecture humaine attrape 22 des 28 documents erronés (79~\%, contre 63~\%).
+  \item \textbf{Un business case mesuré.} Sur les mêmes champs, la saisie manuelle chronométrée au cadrage est juste à 85,5~\% en 3 minutes par document ; l'outil, à 93,2~\% en 2 secondes. Seuls les documents signalés sont relus : au moins 80~\% du temps humain est économisé, à coût nul.
+  \item \textbf{Un outil présentable.} La racine du service en ligne sert une page qui explique le sujet en une phrase, propose des exemples et montre chaque fiche en langage courant, avec la preuve de chaque valeur.
+\end{itemize}
+
+\section{Ce que la version devait livrer}
+
+\begin{table}[H]
+\small
+\begin{tabularx}{\linewidth}{lYl}
+\toprule
+\textbf{Issue} & \textbf{Livrable} & \textbf{Pull request} \\
+\midrule
+\#66 & ADR 0005 : cadrage de la v1.0 & \#73 \\
+\#67 & Corrections de qualité : vérification v4, taux à la française, €STR, raison des replis & \#74 \\
+\#68 & Prompt v4 : clause de remboursement au gré de l'émetteur, montant d'un abondement & \#75 \\
+\#69 & Quatrième jeu de test, figé, ouvert une seule fois & \#76, \#77 et suivante \\
+\#70 & Business case mesuré & dernière \\
+\#71 & Page de démonstration & \#78, \#79 \\
+\#72 & Clôture : rapport, note de synthèse, README, tag & dernière \\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+Les cinq jeux déjà ouverts (le test de la v0.4 compris) ont servi au réglage. Le quatrième jeu de test n'a été ni extrait ni lu avant son ouverture ; seuls ses comptes de lecture ont été vus.
+
+\section{Les corrections, mesurées sur les jeux connus}
+
+Les dix lectures fausses vérifiées en v0.4 avaient des causes précises. Chaque correction a été réglée en relisant les réponses du modèle dans le cache, avec le nouveau code, sans aucune requête.
+
+\begin{itemize}
+  \item \textbf{Taux écrits à la française.} Le modèle recopiait parfois un taux « 2,000 », que la conversion lisait 2\,000. Un taux n'a jamais de séparateur de milliers : sa virgule est désormais décimale.
+  \item \textbf{Vérification v4.} Un taux fixe et une échéance ne sont acceptés que si leur citation les écrit, comme les montants depuis la v0.4. Une première version refusait aussi cinq valeurs justes ; trois causes ont été corrigées avant le gel : un nombre coupé par l'extraction de texte (« 3. 625 per cent »), un espace perdu entre le jour et le mois (« 8November 2051 »), une échéance qui ne donne que le mois et l'année.
+  \item \textbf{Comparaison.} Le code ISIN de l'indice €STR, que FIRDS donne parfois à la place de son nom, est reconnu.
+  \item \textbf{Replis sur les règles.} Chaque fiche lue par les règles, faute de réponse du modèle, garde la raison du repli ; le bilan hebdomadaire les compte par raison.
+\end{itemize}
+
+Sur les cinq jeux connus, les valeurs fausses acceptées passent de 131 à 123, et les valeurs justes de 5\,334 à 5\,336. Sur le test de la v0.4, les écarts signalés passent de 27 à 23.
+
+\section{Le prompt v4 et la clause hors FIRDS}
+
+Le prompt v4 ajoute une clause que FIRDS ne contient pas : le droit de l'émetteur de rembourser l'obligation avant l'échéance, sous la rubrique générale « Issuer Call », « Call Option » ou « Option de remboursement au gré de l'Émetteur », et la première date à laquelle il peut le faire. Les autres options (make-whole, clean-up call, residual maturity call, remboursement pour raison fiscale) sont exclues. Le prompt précise aussi qu'un abondement se lit sur la série entière, cause de deux lectures fausses en v0.4.
+
+\begin{itemize}
+  \item \textbf{Une règle plutôt qu'une consigne.} Le modèle prenait pourtant le make-whole ou le residual maturity call pour la rubrique générale dans 9 documents connus. Un « oui » n'est désormais accepté que si sa citation nomme l'option générale, une fois les options exclues retirées : il ne reste qu'un cas.
+  \item \textbf{Effet sur le reste de la lecture.} Mesuré sur 232 documents connus relus avec le nouveau prompt : aucun changement sur le test de la v0.4, un point de moins sur celui de la v0.3, soit 0,5 point sur 1\,586 valeurs, dans les intervalles. Le prompt v4 a été gardé.
+  \item \textbf{Cohérence.} Là où la rubrique est trouvée dans le texte, le modèle donne la même réponse qu'elle dans 159 cas sur 177. C'est un contrôle de cohérence, pas une mesure de justesse : aucune base officielle ne contient cette clause.
+\end{itemize}
+
+\aretenir{En relisant les désaccords entre le modèle et la recherche de la rubrique, l'erreur était parfois dans la recherche : un renvoi aux modalités masquait « Not Applicable ». Une expression régulière n'est pas une vérité de référence, même quand on l'a écrite soi-même.}
+
+\section{Le quatrième test}
+
+Un jeu de 150 documents a été tiré au hasard parmi les 3\,205 obligations d'autres émetteurs jamais tirées (graine 20261112), puis versionné avant tout téléchargement. Les 151 couples document--ISIN citent tous leur ISIN ; 33 produits structurés sont écartés : 118 couples entrent dans la vérité terrain. Les extracteurs, la vérification et les critères ont été figés dans l'ADR 0005, et la commande d'ouverture répétée sur un jeu connu, sans requête. L'ouverture a eu lieu le 13 novembre 2026 à 12~h~51 UTC, depuis le commit \texttt{130b681}, sans aucun repli sur les règles.
+
+\begin{table}[H]
+\small
+\begin{tabularx}{\linewidth}{Yrrrl}
+\toprule
+\textbf{Champ} & \textbf{Seuil} & \textbf{Règles} & \textbf{LLM [IC 95~\%]} & \textbf{Verdict du LLM} \\
+\midrule
+Devise & 98~\% & 78,0~\% & 100~\% [100 ; 100] & atteint \\
+Échéance & 98~\% & 89,8~\% & 95,8~\% [91,6 ; 99,2] & non atteint \\
+Type de taux & 98~\% & 69,5~\% & 95,8~\% [91,5 ; 99,2] & non atteint \\
+Taux fixe & 98~\% & 69,6~\% & 93,1~\% [88,0 ; 98,0] & non atteint \\
+Valeur nominale & 95~\% & 83,9~\% & 99,2~\% [97,4 ; 100] & atteint \\
+Rang & 95~\% & 42,3~\% & 88,7~\% [82,3 ; 94,7] & non atteint \\
+Taux variables (16 titres) & 95~\% & 25 à 50~\% & 50 à 81~\% & non atteints, très incertains \\
+Montant (indicatif) & -- & 45,5~\% & 87,1~\% [80,0 ; 93,2] & mesuré sans seuil \\
+\midrule
+Exactitude globale & -- & 67,6~\% & 93,2~\% [91,0 ; 95,2] & \\
+\bottomrule
+\end{tabularx}
+\caption{Quatrième test, 117 documents d'émetteurs jamais vus (\texttt{evaluation-test-v10.json}).}
+\end{table}
+
+\begin{itemize}
+  \item \textbf{Écart.} Le LLM devance les règles de 25,6 points [20,9 ; 30,5] : il reste l'extracteur retenu.
+  \item \textbf{Vérification v4.} Sur les mêmes réponses, elle accepte 16 valeurs fausses, contre 17 avec la vérification de la v0.4, pour une valeur juste de moins : elle est gardée.
+  \item \textbf{Relecture humaine.} 23 documents sur 117 (19,7~\%), sous le plafond de 30~\% ; 22 des 28 documents erronés sont attrapés (79~\%).
+  \item \textbf{Écarts avec FIRDS.} 16 dans 15 documents : 11 montants, 2 taux fixes, 2 marges, 1 échéance. La part de vrais écarts n'est pas mesurée sur ce jeu.
+  \item \textbf{Coût.} 117 documents lus par le modèle, 2 secondes par document en médiane, 0~€.
+\end{itemize}
+
+\section{Le business case}
+
+Deux mesures réelles sont comparées sur les mêmes champs : la saisie manuelle chronométrée au cadrage (dix documents) et l'outil sur le quatrième test. L'identifiant de l'émetteur (LEI) est retiré de la saisie manuelle, car l'outil ne le lit pas ; c'était le champ le plus souvent faux à la main.
+
+\begin{table}[H]
+\small
+\begin{tabularx}{\linewidth}{Yrr}
+\toprule
+& \textbf{Saisie manuelle} & \textbf{bond-terms} \\
+\midrule
+Valeurs justes, mêmes champs & 85,5~\% (53 sur 62) & 93,2~\% (764 sur 820) \\
+Valeurs justes, montant exclu & 92,5~\% (49 sur 53) & 94,0~\% (676 sur 719) \\
+Temps par document & 3 minutes & 2 secondes \\
+Temps humain par document & 3 minutes & au plus 0,6 minute \\
+Huit émetteurs, 135 documents par an & 6,8 heures & au plus 1,3 heure \\
+Coût & -- & 0~€ \\
+\bottomrule
+\end{tabularx}
+\caption{Business case (\texttt{business-case.json}).}
+\end{table}
+
+Le temps humain de l'outil est celui de la relecture des 19,7~\% de documents signalés. Il est borné par le temps d'une saisie : le relecteur part de valeurs déjà lues, chacune avec sa phrase et sa page. Le temps humain économisé est donc d'au moins 80~\%. La saisie manuelle de référence reste petite (dix documents, une seule personne non spécialiste) : ses chiffres sont un ordre de grandeur.
+
+\section{Un outil compréhensible}
+
+Jusqu'ici, l'adresse du service ouvrait la documentation des développeurs, illisible pour un visiteur qui ne connaît ni les obligations ni les API. La racine sert désormais une page conçue d'après les guides de création de site : l'outil dans le premier écran, l'explication en une phrase, les chiffres clés, trois exemples choisis dans les données (fiche vérifiée, écart avec la base officielle, document à relire) et une fiche en langage courant. Chaque valeur y porte un repère (vérifiée, à contrôler, non trouvée), la phrase du document et sa page ; chaque écart est expliqué. La page n'utilise aucune bibliothèque externe, sa politique de sécurité de contenu n'autorise que ses propres fichiers, et le texte des documents n'y est jamais interprété comme du code.
+
+\aretenir{En relisant les captures d'écran de la page, un exemple montrait un produit structuré (« Fixed Coupon Autocall Notes ») : le contrôle du libellé cherchait « autocallable », pas « autocall ». La vérité terrain étant figée pour le test, la page écarte seulement ces documents de ses exemples ; le contrôle reste à corriger.}
+
+\section{Revue de sprint et rétrospective}
+
+\textbf{Ce qui a bien marché.} Chaque correction a été mesurée sur les jeux connus avant le gel, en relisant le cache sans requête ; le quatrième test, ouvert une seule fois, confirme les gains sur des documents jamais vus. Le redéploiement automatique après la CI fonctionne, une fois l'application de Render autorisée sur le dépôt.
+
+\textbf{Ce qui a moins bien marché.}
+\begin{itemize}
+  \item Le nouveau prompt a d'abord laissé le modèle confondre les options de remboursement : la consigne n'a pas suffi, il a fallu une règle de vérification.
+  \item La recherche de la rubrique, écrite pour équilibrer un tirage, s'est trompée là où le modèle avait raison.
+  \item Render ne redéployait pas après une fusion : son application GitHub n'avait pas accès au dépôt, public et donc lisible sans elle.
+\end{itemize}
+
+\section{Bilan du projet}
+
+En six versions, bond-terms est passé d'une question de faisabilité à un service en ligne. Le cadrage a fixé une vérité officielle et des seuils avant toute extraction ; la collecte a construit un entrepôt testé ; l'extraction a comparé un modèle de langage à des règles sur un test ouvert une seule fois ; la revue et le rapport d'écarts ont ajouté l'humain là où il compte ; le service s'est mis à jour seul chaque semaine, à coût nul ; la v1.0 a corrigé les lectures fausses et rendu l'outil compréhensible. Entre le premier test (v0.2) et le dernier, l'exactitude du modèle est passée de 90,8~\% à 93,2~\%, toujours mesurée sur des documents jamais vus.
+
+\textbf{Suite possible.} Corriger le contrôle des produits structurés, viser les seuils de 98~\% sur l'échéance et le type de taux, élargir la population au-delà des huit émetteurs, et ajouter d'autres clauses absentes de FIRDS.
+
+Les décisions de cette version sont consignées dans l'ADR 0005, dans le dossier \texttt{docs/adr} du dépôt.
+
+\end{document}
