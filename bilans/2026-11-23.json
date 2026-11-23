@@ -1,0 +1,46 @@
+{
+  "collecte": {
+    "date": "2026-11-23",
+    "firds": "2026-11-21",
+    "obligations_suivies": 841,
+    "documents_registre": 506,
+    "nouveaux_documents": 2,
+    "documents_lus": 2,
+    "erreurs_lecture": 0,
+    "rattachements_errones": 0,
+    "produits_structures": 0,
+    "documents_extraits": 2,
+    "documents_en_repli": 0,
+    "replis_par_raison": {},
+    "arret_quota": false
+  },
+  "indicateurs": {
+    "collecte-2026-11-23": {
+      "documents": 2,
+      "part_en_revue": 0.0,
+      "part_valeurs_refusees": 0.0435,
+      "part_documents_avec_exception": 0.0,
+      "documents_en_repli": 0
+    }
+  },
+  "surveillance": {
+    "fenetre": [
+      "2026-11-23",
+      "2026-11-16",
+      "2026-11-11"
+    ],
+    "documents": 7,
+    "jugee": false,
+    "parts": {
+      "part_en_revue": 0.2857,
+      "part_valeurs_refusees": 0.0328,
+      "part_documents_avec_exception": 0.4286
+    },
+    "seuils": {
+      "part_en_revue": 0.3,
+      "part_valeurs_refusees": 0.1,
+      "part_documents_avec_exception": 0.4
+    },
+    "alertes": []
+  }
+}
