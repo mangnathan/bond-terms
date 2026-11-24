@@ -4,6 +4,9 @@ Les évolutions notables du projet sont notées ici, selon le format [Keep a Cha
 
 ## [Non publié]
 
+### Modifié
+- README : ligne d'état en tête, badges de la collecte hebdomadaire et de Python, résumé en anglais en fin de page.
+
 ## [v1.0] - 2026-11-14
 
 Bilan ([ADR 0005](docs/adr/0005-version-1.md)) : sur un quatrième test de 117 documents jamais vus, ouvert une seule fois, le LLM est juste sur 93,2 % des paires document-champ contre 67,6 % pour les règles ; devise et valeur nominale atteignent leur seuil. Les écarts signalés avec FIRDS passent de 28 à 16 et la relecture humaine attrape 79 % des documents erronés. Business case sur les mêmes champs : 85,5 % de valeurs justes à la main en 3 minutes par document, 93,2 % pour l'outil en 2 secondes, au moins 80 % du temps humain économisé, à coût nul.
