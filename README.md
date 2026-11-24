@@ -46,16 +46,10 @@ La saisie manuelle est comparée sur les mêmes champs que l'outil. Le détail d
 
 ## Comment ça marche
 
-```mermaid
-flowchart LR
-    A[Registre de l'ESMA<br>et base FIRDS] -->|chaque lundi| B[Collecte<br>GitHub Actions]
-    B --> C[Lecture des PDF<br>et OCR des scans]
-    C --> D[Extraction par l'IA<br>avec citations]
-    D --> E[Vérification<br>des citations]
-    E --> F[Comparaison à FIRDS<br>entrepôt dbt]
-    F --> G[Instantané publié<br>en release]
-    G --> H[API et page web<br>sur Render]
-```
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="docs/images/schema-sombre.svg">
+  <img alt="Schéma, dans l'ordre : registre de l'ESMA et base FIRDS, collecte chaque lundi sur GitHub Actions, lecture des PDF et OCR des scans, extraction par l'IA avec citations, vérification des citations, comparaison à FIRDS dans l'entrepôt dbt, instantané publié en release, API et page web sur Render" src="docs/images/schema-clair.svg">
+</picture>
 
 1. **Collecte.** La publication de FIRDS de la semaine donne les obligations suivies (huit émetteurs français : BNP Paribas, Société Générale, Crédit Agricole, BPCE, AXA, LVMH, Kering, Air France-KLM). Le registre de l'ESMA donne leurs documents ; seuls les nouveaux sont traités.
 2. **Lecture.** Le texte de chaque PDF est extrait, et les pages scannées passent par une reconnaissance de caractères locale. Un contrôle vérifie que le document cite bien l'obligation, et écarte les produits structurés que FIRDS déclare comme des obligations classiques.
@@ -146,7 +140,8 @@ uv run python -m bond_terms.exceptions
 # Collecte hebdomadaire, comme le workflow du lundi
 uv run --group ocr --group llm --env-file .env python -m bond_terms.collecte --precedent data/instantane/instantane.json
 
-# Rapports
+# Rapports et schéma du README
+uv run python scripts/docs/readme_diagram.py
 uv run python scripts/docs/build_report_pdf.py docs/v1.0-publique/v1.0-rapport-final.tex docs/pdf/bond-terms_v1.0_Rapport-final.pdf
 ```
 
@@ -180,7 +175,7 @@ src/bond_terms/          code : collecte, lecture, entrepôt, extracteurs, véri
                          revue, écarts, collecte hebdomadaire, surveillance, API
 src/bond_terms/demo/     page de démonstration (HTML, CSS, JavaScript, sans bibliothèque externe)
 entrepot/                projet dbt : modèles, tests de données, profils DuckDB et BigQuery
-scripts/                 étude de faisabilité, mesures des ADR, compilation des rapports
+scripts/                 étude de faisabilité, mesures des ADR, rapports et schéma du README
 tests/                   tests unitaires et construction de l'entrepôt sur des données fabriquées
 docs/adr/                notes de décision, une par version
 docs/v0.0-cadrage/ ...   un dossier par version : rapport LaTeX et chiffres produits
