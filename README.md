@@ -1,9 +1,12 @@
 # bond-terms
 
-[![CI](https://github.com/mangnathan/bond-terms/actions/workflows/ci.yml/badge.svg)](https://github.com/mangnathan/bond-terms/actions/workflows/ci.yml)
-[![Licence MIT](https://img.shields.io/badge/licence-MIT-blue.svg)](LICENSE)
+[![CI](https://github.com/mangnathan/bond-terms/actions/workflows/ci.yml/badge.svg)](https://github.com/mangnathan/bond-terms/actions/workflows/ci.yml) [![Collecte hebdomadaire](https://github.com/mangnathan/bond-terms/actions/workflows/collecte.yml/badge.svg)](https://github.com/mangnathan/bond-terms/actions/workflows/collecte.yml) [![Licence MIT](https://img.shields.io/badge/licence-MIT-blue.svg)](LICENSE) [![Python 3.12](https://img.shields.io/badge/python-3.12-blue.svg)](pyproject.toml)
+
+*English summary at the [end of this page](#english-summary).*
 
 **Lire les conditions d'une obligation dans son document officiel, avec la preuve de chaque valeur.**
+
+État : v1.0 terminée. Le service est en ligne, et la collecte tourne seule chaque lundi pour lire les nouveaux documents.
 
 **[Essayer l'outil en ligne : bond-terms.onrender.com](https://bond-terms.onrender.com)** (hébergement gratuit : si personne ne l'a ouvert depuis un quart d'heure, la première réponse prend environ une minute).
 
@@ -195,6 +198,10 @@ Le projet utilise uniquement des données publiques :
 - **GLEIF** (Global Legal Entity Identifier Foundation) : les identifiants LEI des émetteurs, publiés sous licence CC0 ([conditions d'utilisation](https://www.gleif.org/en/meta/lei-data-terms-of-use)).
 
 Ce projet est indépendant : il n'est ni soutenu ni validé par l'ESMA ou GLEIF. Les valeurs sont lues automatiquement et peuvent contenir des erreurs : elles ne constituent pas un conseil en investissement.
+
+## English summary
+
+bond-terms reads the terms of a bond (currency, amount, denomination, maturity, rate type, rate, floating-rate reference and margin, seniority) from its official document in the register of the European Securities and Markets Authority (ESMA). An LLM (Gemini, free tier) must quote the exact sentence behind each value, and code checks that the quote is in the document and states the value; unproven values are rejected. Each value is compared with FIRDS, ESMA's reference database, and uncertain documents go to human review. On a final test of 117 unseen documents, opened once with thresholds set beforehand, 93.2 % of values are correct [91.0; 95.2], against 67.6 % for a hand-written rule extractor and 85.5 % for manual entry (3 minutes per document, against 2 seconds), which saves at least 80 % of human time. New documents for the 840 tracked bonds are collected, read and published every Monday, at no cost. Reports and decision records are in French.
 
 ## Auteur et licence
 
