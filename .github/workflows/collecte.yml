@@ -26,10 +26,13 @@ jobs:
     name: Collecte de la semaine
     runs-on: ubuntu-24.04
     timeout-minutes: 120
-    env:
-      GH_TOKEN: ${{ github.token }}
+    # Le jeton d'écriture n'est donné qu'aux étapes qui publient, jamais à la collecte : elle
+    # ouvre des PDF venus des émetteurs, et un fichier piégé ne doit pas pouvoir publier un
+    # instantané. Il n'est pas non plus gardé dans la copie du dépôt.
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
 
       - uses: astral-sh/setup-uv@1c37ad07a6a961277cf70c0d37d6f313000f5884 # v10.3.0
         with:
@@ -41,6 +44,8 @@ jobs:
         run: uv sync --locked --group ocr --group llm
 
       - name: Récupérer le dernier instantané
+        env:
+          GH_TOKEN: ${{ github.token }}
         run: |
           # Tri sur la date de publication : createdAt est celle du commit visé, identique pour
           # deux releases posées sur le même commit.
@@ -66,6 +71,8 @@ jobs:
           --commit "$GITHUB_SHA"
 
       - name: Publier l'instantané
+        env:
+          GH_TOKEN: ${{ github.token }}
         run: |
           day=$(date -u +%F)
           gh release create "instantane-$day-$GITHUB_RUN_NUMBER" \
@@ -77,6 +84,8 @@ jobs:
       # Adresse fixe lue par l'API au démarrage : un simple téléchargement sur github.com, sans
       # passer par l'API de GitHub, qui limite les appels sans jeton par adresse IP.
       - name: Mettre l'instantané en service
+        env:
+          GH_TOKEN: ${{ github.token }}
         run: |
           if ! gh release view en-service > /dev/null 2>&1; then
             gh release create en-service --title "Instantané en service" --latest=false \
@@ -85,6 +94,8 @@ jobs:
           gh release upload en-service data/instantane/instantane.json --clobber
 
       - name: Commiter le bilan sur la branche donnees
+        env:
+          GH_TOKEN: ${{ github.token }}
         run: |
           day=$(date -u +%F)
           git config user.name "github-actions[bot]"
@@ -104,13 +115,23 @@ jobs:
             echo "Bilan inchangé"
           else
             git commit -m "Bilan de la collecte du $day"
-            git push origin donnees
+            # Jeton passé à cette seule commande, jamais écrit dans la configuration de Git.
+            AUTH=$(printf 'x-access-token:%s' "$GH_TOKEN" | base64 -w0)
+            echo "::add-mask::$AUTH"
+            git -c http.https://github.com/.extraheader="AUTHORIZATION: basic $AUTH" \
+              push origin donnees
           fi
 
+      # Le contrôle lit l'instantané sans jeton ; seule l'ouverture de l'issue le reçoit.
+      - name: Contrôler les seuils de surveillance
+        run: >-
+          uv run --no-sync python -m bond_terms.surveillance
+          --instantane data/instantane/instantane.json --alertes data/instantane/alertes.md
+
       - name: Ouvrir une issue si un seuil est franchi
+        env:
+          GH_TOKEN: ${{ github.token }}
         run: |
-          uv run --no-sync python -m bond_terms.surveillance \
-            --instantane data/instantane/instantane.json --alertes data/instantane/alertes.md
           if [ -s data/instantane/alertes.md ]; then
             gh label create alerte --color B60205 \
               --description "Seuil de surveillance franchi par la collecte" --force
@@ -122,6 +143,8 @@ jobs:
       # inaperçue jusqu'à ce qu'on regarde l'onglet Actions.
       - name: Ouvrir une issue si la collecte échoue
         if: failure()
+        env:
+          GH_TOKEN: ${{ github.token }}
         run: |
           # Le dépôt est nommé : l'échec a pu survenir avant même sa récupération.
           gh label create alerte --repo "$GITHUB_REPOSITORY" --color B60205 \
