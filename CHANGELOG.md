@@ -4,6 +4,11 @@ Les évolutions notables du projet sont notées ici, selon le format [Keep a Cha
 
 ## [Non publié]
 
+### Sécurité
+- La collecte hebdomadaire ne reçoit plus le jeton d'écriture de GitHub : seules les étapes qui publient l'ont, une par une, et il n'est plus gardé dans la copie du dépôt. L'étape qui ouvre les PDF des émetteurs ne peut donc plus publier un instantané. La CI ne garde plus son jeton non plus.
+- Mise à jour des dépendances qui avaient des failles connues, au plus petit correctif : pypdf 6.21.4, opentelemetry-api, pyasn1, oauthlib, virtualenv. Le texte extrait des PDF est inchangé.
+- Un test vérifie les règles des workflows ; `SECURITY.md` décrit comment signaler une faille en privé, ce qui est exposé et les mesures en place.
+
 ### Modifié
 - README : ligne d'état en tête, badges de la collecte hebdomadaire et de Python, résumé en anglais en fin de page.
 
