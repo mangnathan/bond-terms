@@ -10,6 +10,7 @@ Les évolutions notables du projet sont notées ici, selon le format [Keep a Cha
 - Un test vérifie les règles des workflows ; `SECURITY.md` décrit comment signaler une faille en privé, ce qui est exposé et les mesures en place.
 
 ### Modifié
+- pypdf est borné sous la version 7 (`pypdf>=6,<7`) : le passage à la 6.21.4 a été vérifié (texte extrait identique sur 60 PDF), pas la version 7. Une mise à jour du verrou ne peut plus passer à une version majeure non mesurée.
 - Schéma « Comment ça marche » du README : image SVG (thèmes clair et sombre, `scripts/docs/readme_diagram.py`) à la place du diagramme Mermaid, que GitHub ne dessinait pas chez tous les visiteurs.
 - README : ligne d'état en tête, badges de la collecte hebdomadaire et de Python, résumé en anglais en fin de page.
 
