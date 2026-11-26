@@ -10,7 +10,7 @@ dependencies = [
     "cryptography>=44",
     "defusedxml>=0.7.1",
     "pyarrow>=21",
-    "pypdf>=6",
+    "pypdf>=6,<7",
 ]
 
 [dependency-groups]

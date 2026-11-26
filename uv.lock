@@ -202,7 +202,7 @@ requires-dist = [
     { name = "cryptography", specifier = ">=44" },
     { name = "defusedxml", specifier = ">=0.7.1" },
     { name = "pyarrow", specifier = ">=21" },
-    { name = "pypdf", specifier = ">=6" },
+    { name = "pypdf", specifier = ">=6,<7" },
 ]
 
 [package.metadata.requires-dev]
